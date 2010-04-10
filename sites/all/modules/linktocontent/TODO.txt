@@ -1,0 +1,7 @@
+-== 2008-03-05 ==-
++ add pager (including setting for maximum number of displayed items in listing)
++ option for inserting drupal urls (node/1) or the translated path ("test")
++ #202616: add ability to sort item list
++ #182363: MSSQL-Support (check whether "column IS NULL" is working with MySQL/pgSQL)
++ #227538: TinyMCE API change
++ #226456: show vocabularies depending on selected content types

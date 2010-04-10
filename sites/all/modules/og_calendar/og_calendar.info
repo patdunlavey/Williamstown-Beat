@@ -1,0 +1,12 @@
+name = OG Calendar
+description = Provides each group with a calendar showing only the group's events.
+package = Organic groups
+dependencies[] = og
+dependencies[] = event
+core = 6.x
+; Information added by drupal.org packaging script on 2008-11-28
+version = "6.x-1.0"
+core = "6.x"
+project = "og_calendar"
+datestamp = "1227880233"
+

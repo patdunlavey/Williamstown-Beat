@@ -1,0 +1,12 @@
+; $Id$
+name = Colorpicker
+description = Adds a custom form element type called a colorpicker.
+package = "Colorpicker"
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-05-16
+version = "6.x-2.0-rc3"
+core = "6.x"
+project = "colorpicker"
+datestamp = "1242486621"
+

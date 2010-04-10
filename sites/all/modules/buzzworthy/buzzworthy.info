@@ -1,0 +1,12 @@
+; $Id: buzzworthy.info,v 1.2 2009/01/29 01:23:50 toddnienkerk Exp $
+name = Buzzworthy
+description = Provides a themable block of popular nodes.
+dependencies[] = statistics
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-03-13
+version = "6.x-1.0-rc2"
+core = "6.x"
+project = "buzzworthy"
+datestamp = "1236962714"
+

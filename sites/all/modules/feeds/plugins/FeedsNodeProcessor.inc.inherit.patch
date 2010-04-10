@@ -1,0 +1,149 @@
+--- /Applications/MAMP/localhost htdocs/williamstown616/sites/all/modules/feeds/plugins/FeedsNodeProcessor.inc.original
++++ FeedsNodeProcessor.inc
+@@ -69,6 +69,10 @@
+         // Execute mappings from $item to $node.
+         $this->map($item, $node);
+ 
++        // Add attributes inherited from the source feed node to the node
++        $feed_node = node_load($source->feed_nid);
++        $this->feeds_inherit_do_inherit(&$node, $feed_node);
++
+         // Save the node.
+         node_save($node);
+       }
+@@ -166,6 +170,10 @@
+       'update_existing' => 0,
+       'expire' => FEEDS_EXPIRE_NEVER,
+       'mappings' => array(),
++      'inherit_og' => TRUE,
++      'inherit_language' => TRUE,
++      'inherit_taxonomy' => TRUE,
++      'inherit_author' => TRUE,
+     );
+   }
+ 
+@@ -196,6 +204,37 @@
+       '#description' => t('Select after how much time nodes should be deleted. The node\'s published date will be used for determining the node\'s age, see Mapping settings.'),
+       '#default_value' => $this->config['expire'],
+     );
++
++    if (module_exists('og')) {
++       $form['inherit_og'] = array(
++         '#type' => 'checkbox',
++         '#title' => t('Inherit organic group(s)'),
++         '#description' => t('Feed item nodes inherit organic group settings from parent feed.'),
++         '#default_value' => $this->config['inherit_og'],
++       );
++     }
++     if (module_exists('translation')) {
++       $form['inherit_language'] = array(
++         '#type' => 'checkbox',
++         '#title' => t('Inherit language'),
++         '#description' => t('Feed nodes inherit language settings from parent feed.'),
++         '#default_value' => $this->config['inherit_language'],
++       );
++     }
++     $form['inherit_taxonomy'] = array(
++       '#type' => 'checkbox',
++       '#title' => t('Inherit taxonomy'),
++       '#description' => t('Feed item nodes inherit taxonomy terms from parent feed.'),
++       '#default_value' => $this->config['inherit_taxonomy'],
++     );
++     $form['inherit_author'] = array(
++       '#type' => 'checkbox',
++       '#title' => t('Inherit author'),
++       '#description' => t('Feed item nodes will be authored by the same user as the parent feed.'),
++       '#default_value' => $this->config['inherit_author'],
++     );
++
++
+     return $form;
+   }
+ 
+@@ -330,6 +369,86 @@
+     }
+     return '';
+   }
++
++/**
++ * Inherit the feed's taxonomy, authorship, language and og data to the given feed item.
++ * 
++ * Copied with minor changes from the feedapi_inherit module
++ */
++  protected function feeds_inherit_do_inherit(&$item_node, $feed_node) {
++    $inherit_taxonomy = TRUE;
++    $inherit_og = TRUE;
++    if ($this->config) {
++        $inherit_taxonomy = $this->config['inherit_taxonomy'];
++        $inherit_og = $this->config['inherit_og'];
++        $inherit_author = $this->config['inherit_author'];
++        $inherit_translation = $this->config['inherit_language'];
++    }
++
++    // Pass on author data
++    if ($inherit_author) {
++        $item_node->uid = $feed_node->uid;
++    }
++
++    // Pass on taxonomy data
++    if ($inherit_taxonomy && module_exists('taxonomy')) {
++        $terms = taxonomy_node_get_terms($feed_node);
++        if (!(isset($item_node->taxonomy) && is_array($item_node->taxonomy))) {
++            $item_node->taxonomy = array();
++        }
++        foreach ($terms as $tid => $term) {
++            $vid = $term->vid;
++            $vocabulary = taxonomy_vocabulary_load($vid);
++            if ($vocabulary->multiple) {
++                if (!(isset($item_node->taxonomy[$vid]) && is_array($item_node->taxonomy[$vid]))) {
++                    $item_node->taxonomy[$vid] = array();
++                }
++                if (!in_array($tid, $item_node->taxonomy[$vid])) {
++                    $item_node->taxonomy[$vid][$tid] = $tid;
++                }
++            }
++            else {
++                if (!$item_node->taxonomy[$vid]) {
++                    $item_node->taxonomy[$vid] = $tid;
++                }
++            }
++        }
++    }
++
++    // Pass on group data
++    if ($inherit_og && module_exists('og')) {
++        if (isset($feed_node->og_public) ) {
++            if (!isset($item_node->og_public)) {
++                $item_node->og_public = 1;
++            }
++            $item_node->og_public = $item_node->og_public & $feed_node->og_public;
++        }
++        if (isset($feed_node->og_groups)) {
++            if (!(isset($item_node->og_groups) && is_array($item_node->og_groups))) {
++                $item_node->og_groups = array();
++            }
++            $item_node->og_groups = array_merge($feed_node->og_groups, $item_node->og_groups);
++            foreach ($item_node->og_groups as $gid) {
++                if ($gid != 0) {
++                    $transformed_groups[$gid] = $gid;
++                }
++            }
++            $item_node->og_groups = $transformed_groups;
++        }
++        if (isset($feed_node->og_groups_names)) {
++            if (!is_array($item_node->og_groups_names)) {
++                $item_node->og_groups_names = array();
++            }
++            $item_node->og_groups_names = array_merge($feed_node->og_groups_names, $item_node->og_groups_names);
++        }
++    }
++
++    // Pass on language data
++    if ($inherit_translation && module_exists('translation')) {
++        $item_node->language = $feed_node->language;
++    }
++}
++
+ }
+ 
+ /**

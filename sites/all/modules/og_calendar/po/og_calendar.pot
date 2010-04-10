@@ -1,0 +1,91 @@
+# $Id: og_calendar.pot,v 1.1.2.1 2007/04/03 17:21:02 darrenoh Exp $
+#
+# LANGUAGE translation of Drupal (og_calendar.module)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  og_calendar.module,v 1.10.2.5 2007/04/03 17:02:40 darrenoh
+#  og_calendar.info,v 1.1.2.1 2007/04/03 17:02:40 darrenoh
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2007-04-03 13:19-0400\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: og_calendar.module:14
+msgid "Group Events"
+msgstr ""
+
+#: og_calendar.module:31
+msgid "NOW"
+msgstr ""
+
+#: og_calendar.module:60
+msgid "No upcoming events available"
+msgstr ""
+
+#: og_calendar.module:88
+msgid "@name calendar"
+msgstr ""
+
+#: og_calendar.module:101;113
+msgid "Group calendar"
+msgstr ""
+
+#: og_calendar.module:149
+msgid "Home"
+msgstr ""
+
+#: og_calendar.module:150
+msgid "Groups"
+msgstr ""
+
+#: og_calendar.module:209
+msgid "!name calendar"
+msgstr ""
+
+#: og_calendar.module:217
+msgid "RSS"
+msgstr ""
+
+#: og_calendar.module:225
+msgid "Could not access any events for the @name group."
+msgstr ""
+
+#: og_calendar.module:34
+msgid "1 minute"
+msgid_plural "@count minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: og_calendar.module:37
+msgid "1 hour"
+msgid_plural "@count hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: og_calendar.module:49
+msgid "1 day"
+msgid_plural "@count days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: og_calendar.info:0
+msgid "OG calendar"
+msgstr ""
+
+#: og_calendar.info:0
+msgid "Displays calendars for groups."
+msgstr ""
+
+#: og_calendar.info:0
+msgid "Organic groups"
+msgstr ""
+

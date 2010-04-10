@@ -1,0 +1,14 @@
+; $Id: spaces_design.info,v 1.1.2.1 2009/04/06 20:26:25 yhahn Exp $
+name = "Spaces Design"
+description = "Provides design customization options for spaces"
+package = "Spaces"
+dependencies[] = spaces
+dependencies[] = imagecache
+dependencies[] = color
+core = "6.x"
+; Information added by drupal.org packaging script on 2009-07-13
+version = "6.x-2.0-beta3"
+core = "6.x"
+project = "spaces"
+datestamp = "1247496406"
+

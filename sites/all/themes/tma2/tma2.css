@@ -1,0 +1,40 @@
+/* Override only those bits which are necessary
+*/
+
+  div.messages /* Important messages (status, warning, and error) for the user */
+  {
+    border: 2px solid #ccc;
+    padding: 5px;
+    background-color: #fff;
+  }
+
+  div.status /* Normal priority messages */
+  {
+  }
+
+  div.warning /* Medium priority messages */
+  {
+    border: 2px solid #f0c020;
+  }
+
+  div.warning,
+  tr.warning,
+  body.section-admin tr.warning
+  {
+    color: #220;
+    background: #ffd;
+  }
+
+  div.error /* High priority messages. See also the .error declaration below. */
+  {
+    border: 2px solid #d77;
+    background: #fdd;
+  }
+
+  div.error,
+  tr.error,
+  body.section-admin tr.error
+  {
+    color: #200;
+  }
+

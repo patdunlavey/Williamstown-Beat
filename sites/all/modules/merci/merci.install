@@ -1,0 +1,548 @@
+<?php
+// $Id: merci.install,v 1.1.2.5 2009/06/01 22:35:24 kreynen Exp $
+/**
+ * @file
+ * merci Installer / Uninstaller
+ */
+
+
+/**
+ * Implementation of hook_install().
+ */
+function merci_install() {
+  // Core doesn't load the .module file on install for some reason,
+  // so load it here manually.
+  drupal_load('module', 'merci');
+  // Create tables.
+  drupal_install_schema('merci');
+  //db_query("UPDATE {system} SET weight = 1 WHERE name = 'merci'");
+
+  // Create the date field for the reservation.
+  $field = array(
+    'field_name' => 'field_merci_date',
+    'type_name' => 'merci_reservation',
+    'display_settings' => array(
+      'label' => array(
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'datetime',
+    'required' => '1',
+    'multiple' => '0',
+    'db_storage' => '1',
+    'module' => 'date',
+    'active' => '1',
+    'locked' => '1',
+    'columns' => array(
+      'value' => array(
+        'type' => 'datetime',
+        'not null' => false,
+        'sortable' => true,
+      ),
+      'value2' => array(
+        'type' => 'datetime',
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'granularity' => array(
+      'year' => 'year',
+      'month' => 'month',
+      'day' => 'day',
+      'hour' => 'hour',
+      'minute' => 'minute',
+    ),
+    'timezone_db' => 'UTC',
+    'tz_handling' => 'site',
+    'todate' => 'required',
+    'repeat' => 0,
+    'repeat_collapsed' => '',
+    'output_format_date' => 'm/d/Y - g:ia',
+    'output_format_custom' => '',
+    'output_format_date_long' => 'm/d/Y',
+    'output_format_custom_long' => '',
+    'output_format_date_medium' => 'm/d/Y',
+    'output_format_custom_medium' => '',
+    'output_format_date_short' => 'm/d/Y',
+    'output_format_custom_short' => '',
+    'widget' => array(
+      'default_value' => 'blank',
+      'default_value_code' => '',
+      'default_value2' => 'same',
+      'default_value_code2' => '',
+      'input_format' => 'm/d/Y - g:ia',
+      'input_format_custom' => '',
+      'increment' => '15',
+      'text_parts' => array(),
+      'year_range' => '-3:+3',
+      'label_position' => 'above',
+      'label' => 'Reservation',
+      'weight' => '-1',
+      'description' => 'Select the start and end times for your reservation.',
+      'type' => 'date_popup',
+      'module' => 'date',
+    ),
+  );
+
+  // Need to load the CCK include file where content_field_instance_create() is defined.
+  module_load_include('inc', 'content', 'includes/content.crud');
+  // Create the field.
+  content_field_instance_create($field);
+
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function merci_uninstall() {
+
+  // Remove all MERCI variables.
+  $variables = db_query("SELECT name FROM {variable} WHERE name LIKE 'merci_%'");
+  while ($variable = db_fetch_object($variables)) {
+    variable_del($variable->name);
+  }
+
+  // Remove all MERCI content types and all associated nodes.
+  $content_types = db_query("SELECT type FROM {merci_node_type} WHERE type_setting <> 'disabled'");
+  while ($content_type = db_fetch_object($content_types)) {
+    $nodes = db_query("SELECT nid FROM {node} WHERE type = '%s'", $content_type->type);
+    while ($node = db_fetch_object($nodes)) {
+      node_delete($node->nid);
+    }
+  	node_type_delete($content_type->type);
+  }
+
+  // Remove the programatically created reservation node type
+  // and all associated nodes.
+  $nodes = db_query("SELECT nid FROM {node} WHERE type = 'merci_reservation'");
+  while ($node = db_fetch_object($nodes)) {
+    node_delete($node->nid);
+  }
+  node_type_delete('merci_reservation');
+
+  // You'd think the uninstall submit function would take care of this
+  // but it doesn't look like it.
+  node_types_rebuild();
+  menu_rebuild();
+
+  // Remove field_merci_date.
+  module_load_include('inc', 'content', 'includes/content.crud');
+  content_field_instance_delete('field_merci_date', 'merci_reservation');
+
+  // Remove tables.
+  drupal_uninstall_schema('merci');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function merci_enable() {
+  // Add any node types to the MERCI tables that aren't already there.
+  $existing_types = db_query("SELECT type FROM {merci_node_type}");
+  $types = array();
+  while ($existing_type = db_fetch_object($existing_types)) {
+    $types[] = $existing_type->type;
+  }
+  if (empty($types)) {
+    $new_types = db_query("SELECT type FROM {node_type}");
+  }
+  else {
+    $new_types = db_query("SELECT type FROM {node} WHERE type NOT IN (". db_placeholders($types, 'varchar') .")", $types);
+  }
+  while ($new_type = db_fetch_object($new_types)) {
+    db_query("INSERT INTO {merci_node_type} (type) VALUES ('%s')", $new_type->type);
+  }
+
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function merci_schema() {
+
+  $schema['merci_node_type'] = array(
+    'description' => t('Stores booking-related information that applies to content types.'),
+    'fields' => array(
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("Foreign key for {node_type}.type."),
+      ),
+      'type_setting' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => 'disabled',
+        'description' => t("The MERCI type for the selected content type."),
+      ),
+      'max_hours_per_reservation' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("The maximum hours that the resource can be reserved for."),
+      ),
+      'allow_overnight' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource can be kept overnight."),
+      ),
+      'allow_weekends' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource can be kept over weekends."),
+      ),
+      'late_fee_per_hour' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Per hour fee if the resource is returned late."),
+      ),
+      'rate_per_hour' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Per hour fee for use of the resource."),
+      ),
+      'fee_free_hours' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Number of hours the item can be used before fees are charged."),
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("The status of the resource."),
+      ),
+      'spare_items' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Number of spare items to leave unreserved for the resource."),
+      ),
+      'min_cancel_hours' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Minimum number of hours a user can cancel a reservation for the item."),
+      ),
+      'autocheckout' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is automatically checked out when Reservation starts."),
+      ),
+      'autocheckin' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is automatically checked in when Reservation starts."),
+      ),
+      'selfcheckout' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is managed by selfcheckout."),
+      ),
+    ),
+    'primary key' => array('type'),
+  );
+
+  $schema['merci_reservation'] = array(
+    'description' => t('Stores bookings reservations.'),
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => t("The reservations's associated nid."),
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => t("The reservations's associated vid."),
+      ),
+      'status' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+        'description' => t('Finalized bookings cannot have time conflicts with each other. Finalized availabilities must be obeyed.'),
+      ),
+    ),
+    'primary key' => array('nid', 'vid'),
+  );
+
+  $schema['merci_reservation_detail'] = array(
+    'description' => t('Stores details on resources reserved.'),
+    'fields' => array(
+      'did' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => t('Unique ID for the reservation detail entry.'),
+      ),
+      'nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => t('Foreign key for {merci_reservation}.nid.'),
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => t('Foreign key for {merci_reservation}.vid.'),
+      ),
+      'placeholder_nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The nid for an associated reservation placeholder node for the reservation.'),
+      ),
+      'item_nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The nid for an item node associated with the reservation placeholder node for the reservation.'),
+      ),
+      'item_status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The status of the item associated in the item_nid column.'),
+      ),
+    ),
+    'primary key' => array('did'),
+    'indexes' => array(
+      'nids' => array('nid', 'vid', 'placeholder_nid', 'item_nid'),
+      'item_status' => array('item_status'),
+    ),
+  );
+
+  $schema['merci_bucket_node'] = array(
+    'description' => t('Stores information on bookable bucket nodes.'),
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("The bookable resource nid."),
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("The bookable resource vid."),
+      ),
+      'default_availability' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => t('Default availability of the resource.'),
+      ),
+      'late_fee_per_hour' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Per hour fee if the resource is returned late."),
+      ),
+      'rate_per_hour' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Per hour fee for use of the resource."),
+      ),
+      'fee_free_hours' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Number of hours the item can be used before fees are charged."),
+      ),
+      'min_cancel_hours' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Minimum number of hours a user can cancel a reservation for the item."),
+      ),
+      'autocheckout' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is automatically checked out when Reservation starts."),
+      ),
+      'autocheckin' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is automatically checked in when Reservation starts."),
+      ),
+      'selfcheckout' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is managed by selfcheckout."),
+      ),
+      'sub_type' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => MERCI_SUB_TYPE_ITEM,
+        'description' => t("The subtype of bucket node, either item or reservation."),
+      ),
+    ),
+    'primary key' => array('nid', 'vid'),
+  );
+
+  $schema['merci_resource_node'] = array(
+    'description' => t('Stores information on bookable resource nodes.'),
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("The bookable resource nid."),
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("The bookable resource vid."),
+      ),
+      'default_availability' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => t('Default availability of the item .'),
+      ),
+      'late_fee_per_hour' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Per hour fee if the resource is returned late."),
+      ),
+      'rate_per_hour' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Per hour fee for use of the resource."),
+      ),
+      'fee_free_hours' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Number of hours the item can be used before fees are charged."),
+      ),
+      'min_cancel_hours' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("Minimum number of hours a user can cancel a reservation for the item."),
+      ),
+      'autocheckout' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is automatically checked out when Reservation starts."),
+      ),
+      'autocheckin' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is automatically checked in when Reservation starts."),
+      ),
+      'selfcheckout' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t("TRUE if the resource is managed by selfcheckout."),
+      ),
+      'sub_type' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => MERCI_SUB_TYPE_ITEM,
+        'description' => t("The subtype of resource node, either item or reservation."),
+      ),
+    ),
+    'primary key' => array('nid', 'vid'),
+  );
+
+/*  $schema['merci_group'] = array(
+    'description' => t('Stores information on bookable groups.'),
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => t("The bookable group nid."),
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("The type of bookable resource, either 'item' or 'resource'."),
+      ),
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t('The ID of the bookable resource -- can be either an item nid or a resource node type.'),
+      ),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+  );*/
+
+  // TODO: resource groups, for heirarchical / blanket effects on bookings
+  // possibly for categorizing seats into theatres and theatre sections, for example
+  // $schema[merci_resgroups'] = array();
+
+  return $schema;
+}
+
+function merci_update_1() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {merci_bucket_node} ADD min_cancel_hours TINYINT NOT NULL DEFAULT '0';");
+  $ret[] = update_sql("ALTER TABLE {merci_resource_node} ADD min_cancel_hours TINYINT NOT NULL DEFAULT '0';");
+  $ret[] = update_sql("ALTER TABLE {merci_node_type} ADD min_cancel_hours TINYINT NOT NULL DEFAULT '0';");
+  return $ret;
+}
+
+
+
+function merci_update_3() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {merci_bucket_node} ADD autocheckout TINYINT NOT NULL DEFAULT '0', ADD autocheckin TINYINT NOT NULL DEFAULT '0', ADD selfcheckout TINYINT NOT NULL DEFAULT '0';");
+  $ret[] = update_sql("ALTER TABLE {merci_resource_node} ADD autocheckout TINYINT NOT NULL DEFAULT '0', ADD autocheckin TINYINT NOT NULL DEFAULT '0', ADD selfcheckout TINYINT NOT NULL DEFAULT '0';");
+  $ret[] = update_sql("ALTER TABLE {merci_node_type} ADD autocheckout TINYINT NOT NULL DEFAULT '0', ADD autocheckin TINYINT NOT NULL DEFAULT '0', ADD selfcheckout TINYINT NOT NULL DEFAULT '0';");
+  return $ret;
+}

@@ -1,0 +1,13 @@
+; $Id: referralsources_webform.info,v 1.1 2009/12/18 22:13:18 adamo Exp $
+name = Referral Sources (Webform)
+description = Adds Webform support to Referral Sources module.
+core = 6.x
+package = Other
+dependencies[] = referralsources
+dependencies[] = webform
+; Information added by drupal.org packaging script on 2009-12-18
+version = "6.x-1.0"
+core = "6.x"
+project = "referralsources"
+datestamp = "1261175468"
+

@@ -1,0 +1,13 @@
+/* $Id: CHANGELOG.txt,v 1.1.2.1.2.2 2008/11/20 02:01:31 jrbeeman Exp $ */
+
+
+6.x-1.x
+------------------------
+- Upated to Drupal 6.x API
+- Compatible with Signup 6.x-1.x
+- Added dependency on Date API module.
+
+
+5.x-1.0, 2008-02-29
+------------------------
+- Initial release

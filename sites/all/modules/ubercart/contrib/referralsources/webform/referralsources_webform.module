@@ -1,0 +1,132 @@
+<?php
+// $Id: referralsources_webform.module,v 1.1 2009/12/18 22:13:18 adamo Exp $
+
+/**
+ * @file
+ *
+ * Adds support for Webforms to Referral Sources module.
+ */
+
+/**
+ * Define referral source submission types
+ */
+define('REFERRALSOURCE_SUBMISSION_TYPE_WEBFORM', 'referralsources_webform'); // Submitted through Webform
+
+/**
+ * Implementation of hook_referralsource_submission_type().
+ */
+function referralsources_webform_referralsource_submission_type() {
+  $types = array();
+  $types[REFERRALSOURCE_SUBMISSION_TYPE_WEBFORM] = array(
+    'title' => t('Webforms'),
+    'description' => t('Submissions collected through Webforms.'),
+    'weight' => -3,
+  );
+  return $types;
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ *
+ * Add instructions for  admin page.
+ */
+function referralsources_webform_form_referralsources_admin_settings_form_alter(&$form, &$form_state) {
+  // Check if Webform component has been copied to correct location.
+  $component_file = drupal_get_path('module', 'webform') .'/components/referralsource.inc';
+  if (file_exists($component_file)) {
+    $message = '<p class="ok">The referral sources Webform component was found in the correct location:<br/><em>'. base_path() . $component_file .'</em></p>'
+              .'<p>You can embed a referral sources prompt into any Webform by simply adding this component to your Webform.<br/>'
+              .'Be sure to update this component whenever you update the Referral Sources (Webform) module.</p>'
+              .'<p>The Webform component file included with the Referral Sources (Webform) module can be found here:<br/>'
+              .'<em>'. drupal_get_path('module', 'referralsources_webform') .'/webform_component/referralsource.inc</em></p>';
+  }
+  else {
+    $message = '<p class="error">This module includes a Webform component to make it easy to embed the referral sources selection into any webform.<br/>'
+              .'Before you can do this, you need to copy "referralsource.inc" into the "components" folder of the Webform module.<p>'
+              .'<p>The "referralsource.inc" file can be found at the following location:<br/>'
+              . drupal_get_path('module', 'referralsources_webform') .'/webform_component/referralsource.inc</p>'
+              .'<p>It needs to be copied into this folder:<br/>'
+              . drupal_get_path('module', 'webform') .'/components</p>';
+  }
+
+  $form['webforms'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Webforms'),
+    '#collapsible' => TRUE,
+    '#weight' => 3,
+  );
+  $form['webforms']['webforms_text'] = array(
+    '#type' => 'markup',
+    '#value' => $message,
+  );
+
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function referralsources_webform_form_alter(&$form, $form_state, $form_id) {
+  if (substr($form_id, 0, strlen('webform_client_form_')) == 'webform_client_form_') {
+    // This is a webform generated form.  Add submit callback so we can check for referral source
+    // submissions when the form is submitted, and track them in another table.
+    $form['#submit'][] = 'referralsources_webform_client_form_submit';
+  }
+}
+
+/**
+ * Submit callback for Webforms
+ *
+ * Checks for referral source components, saves submitted values to separate table
+ */
+function referralsources_webform_client_form_submit($form, &$form_state) {
+  global $user;
+  $components = array();
+  referralsources_webform_check_components($form['submitted'], $components);
+  foreach ($components as $component) {
+    db_query("UPDATE {referralsources_submissions} SET rid = %d, other = '%s', created_datetime = '%s' WHERE sid = %d AND cid = %d",
+      $component['#value']['referralsources_rid'], $component['#value']['referralsources_other'], date('c'),
+      $form_state['values']['details']['sid'], $component['#cid']
+    );
+    if (db_affected_rows() == 0) {
+      /*
+       * We look up the title of the Webform node here, and store it with the referral source submission.
+       * This is so the title of the Webform is always available when viewing submission statistics,
+       * regardless of what has happened to the Webform node since the submission was received.  This way
+       * historical referral source submission data will be kept intact even if the Webforms that data
+       * was submitted from no longer exist.
+       *
+       * We run the query through db_rewrite_sql to conform with Drupal security standards.  The user
+       * submitting the Webform will always have access to this node though, since this node is the
+       * Webform they are submitting.
+       *
+       * We get the title regardless of whether the node is published, so admins can test out forms before
+       * publishing them.
+       */
+      $query = db_rewrite_sql("SELECT title FROM {node} WHERE nid = %d");
+      $title = db_result(db_query($query, $form_state['values']['details']['nid']));
+
+      db_query("INSERT INTO {referralsources_submissions} (rstid, sid, cid, nid, title, uid, rid, other, created_datetime) VALUES ('%s', %d, %d, %d, '%s', %d, %d, '%s', '%s')",
+        REFERRALSOURCE_SUBMISSION_TYPE_WEBFORM, $form_state['values']['details']['sid'], $component['#cid'], $form_state['values']['details']['nid'],
+        $title, $user->uid, $component['#value']['referralsources_rid'], $component['#value']['referralsources_other'], date('c')
+      );
+    }
+  }
+}
+
+/**
+ *  Recursively check $array for referralsource components, and add them to $components array.
+ */
+function referralsources_webform_check_components($array, &$components) {
+  foreach ($array as $k => $v) {
+    // Ignore properties
+    if (substr($k, 0, 1) != '#') {
+      // Check for referralsources_select element
+      if (isset($v['#type']) && $v['#type'] == 'referralsources_select') {
+        // Add referralsources_select element to components array
+        $components[$k] = $v;
+      }
+      // Recursively check child elements
+      referralsources_webform_check_components($v, $components);
+    }
+  }
+}

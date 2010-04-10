@@ -1,0 +1,1266 @@
+<?php
+// $Id: outline.module,v 1.58 2009/05/04 21:35:56 cvsadmin Exp $
+
+/**
+ * @file
+ * A module to enhance the core book.module, adding more customability and flexibility.
+ *
+ */
+
+// functions are in this order:
+////// GENERAL HOOKS /////////////////////////////////////////////////////////////////////////////////////
+////// FORM HANDLING /////////////////////////////////////////////////////////////////////////////////////
+////// OWN FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////
+////// MENU CALLBACKS ////////////////////////////////////////////////////////////////////////////////////
+////// THEME FUNCTIONS ///////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////// GENERAL HOOKS /////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////// Listed in alphabetical order //////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * @see book_form_alter()
+ */
+function outline_form_alter(&$form, $form_state, $form_id) {
+  
+  // Site wide settings.
+  if ('book_admin_settings' == $form_id) {
+    $form['book_child_type']['#description'] .= '<br /><strong>' . t('This setting is the site-wide default. Outline.module allows you to have a per-book default and a per node value.') . '</strong>';
+  }
+ 
+  $node_form = FALSE;
+  // Add or remove node form items according to outline perm settings.
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    $node_form = TRUE;
+    $node = $form['#node'];
+    if(isset($node->nid)) {
+      _outline_load_node($node);
+    }
+    $book_action = user_access('administer book outlines');
+    if (user_access('add content to books') && ((!empty($node->book['mlid']) && !empty($node->nid)) 
+        || book_type_is_allowed($node->type))) {
+      $book_action = TRUE;
+    }
+    $action = outline_check_action($node, 'node_form', $book_action);
+    switch ($action) {
+      case 'create':
+        // Copied from book_form_alter();
+        _book_add_form_elements($form, $node);
+        $form['book']['pick-book'] = array(
+          '#type' => 'submit',
+          '#value' => t('Change book (update list of parents)'),
+          '#submit' => array('node_form_submit_build_node'),
+          '#weight' => 20,
+        );
+        break;
+      case 'delete':
+        unset($form['book']);
+        // fallthrough to set default values.
+      case 'leave off':
+        if (!empty($node->outline)) { // The book is outlined, but the user has no permission to change the book settings.
+          $form['bid'] = array(
+            '#type' => 'value',
+            '#value' => $node->book['bid'],
+          );
+          $form['mlid'] = array(
+            '#type' => 'value',
+            '#value' => $node->book['mlid'],
+          );
+        }
+        break;
+    }
+    if (!empty($form['book'])) {
+      $form['book']['bid']['#options'] = _outline_book_options($node);
+    }
+
+  }
+
+  // Node outline tab and node form.
+  if (!empty($form['book']) && ('book_outline_form' == $form_id // Form on node outline tab, or (below) form on node edit tab.
+       || $node_form)) {
+
+    $access = TRUE; // TODO. See book_form_alter().
+    if ($access) {
+      // We replace the ahah callback with our own.
+      $form['book']['bid']['#ahah']['path'] = 'outline/js/form';
+      $form['book']['bid']['#ahah']['wrapper'] = 'outline-ahah-wrapper';
+      // The weights are added to make sure the wrapper includes only and all what we want. 
+      $form['book']['plid']['#weight'] = 11; 
+
+      $form['book']['outline-ahah-wrapper-begin'] = array(
+        '#value' => ' ',
+        '#prefix' => '<div id="outline-ahah-wrapper">',
+        '#weight' => 10,
+      );
+      $form['book']['outline-ahah-wrapper-end'] = array(
+        '#value' => ' ',
+        '#suffix' => '</div>',
+        '#weight' => 12,
+      );
+      // Add our own form elements.
+      $bid = isset($form['#node']->book['bid']) ? $form['#node']->book['bid'] : 0; 
+      outline_add_elements_form($form, $bid);
+    }
+  }
+
+  // In addition to the fields above, we need to add a submit handler for the form on the outline tab.
+  if ('book_outline_form' == $form_id) {
+    $form['#submit'][] = 'outline_tab_form_submit';
+  }
+
+}
+
+/**
+ * Implementation of hook_help().
+ */
+function outline_help($path, $arg) {
+  // TODO: http://drupal.org/node/114774#hook-help
+  switch ($path) {
+    case 'admin/help#outline':
+      return t('<p>Outline module enhances the functionality of book.module. It allows to have a more fine grained customization of each book, adding more settings and permissions to it.</p>');
+
+    case 'admin/content/book/settings':
+      return t('<p>You may also look at the <a href="!outline-setting-url">outline.module setting page</a> for more relevant settings.</p>', array('!outline-setting-url' => url('admin/settings/outline')));
+
+    case 'admin/content/book/%': 
+      return t('See the menu setting to insert other pages into menu outline.');
+
+    case 'admin/build/menu-customize/%':
+       // TODO: if (% is_book outline) ...
+      return t('check the book setting.');
+
+    case 'admin/settings/outline':
+      return t('<p>You may also look at the <a href="!book-setting-url">book.module setting page</a> for more relevant settings.</p>', array('!book-setting-url' => url('admin/content/book/settings')));
+
+  }
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function outline_init() {
+  drupal_add_css(drupal_get_path('module', 'outline') .'/stylesheet.css');
+}
+
+/**
+ * Implementation of hook_link().
+ */
+function outline_link($type, $node = NULL, $teaser = FALSE) {
+  global $user;
+  $links = array();
+
+  if ('node' == $type && isset($node->book)) {
+    $bid = $node->outline['bid'];
+    if (!$teaser) {
+      $action = outline_check_perm($node, FALSE, 'add');
+      if ($action) {
+        if (outline_check_author_perm($bid, $user->uid)) {
+          $child_type = variable_get('book_child_type', 'book');
+          $node_type = $node->outline['books'][$bid]['child_type'];
+          $child_type_book_default = $node->outline['books'][$bid]['default_child_type'];
+          if ('<default>' != $node_type) { // A node defining its own child type.
+            $child_type = $node_type;
+          }
+          elseif ('<default>' != $child_type_book_default) {
+            $child_type = $child_type_book_default;
+          }
+	  
+	  // Added by PD to provide compatibility with OG User Roles
+	 if (module_exists('og') && module_exists('og_user_roles') && $thegroup = og_get_group_context()) {
+	 $gidpath = '&gids[]='.$thegroup->nid;
+	 }
+          if (node_access('create', $child_type) && 1 == $node->status && $node->book['depth'] < MENU_MAX_DEPTH) {
+            $links['outline_add_child'] = array(
+              'title' => t('Add child !node_type', array( '!node_type' => node_get_types('name', $child_type))),
+              'href' => "node/add/". str_replace('_', '-', $child_type),
+              'query' => "parent=". $node->book['mlid'].$gidpath,
+            );
+          }
+        }
+      }
+    }
+  }
+  return $links;
+}
+
+/**
+ * Implementation of hook_link_alter().
+ */
+function outline_link_alter(&$links, $node) {
+  // Since hook_link_alter is called several times, it's easier to unset the book_add_child link
+  // which has already been replaced by our own in outline_link().
+  if (isset($links['book_add_child'])) {
+    unset($links['book_add_child']);
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function outline_menu() {
+  $items = array();
+
+  $items['admin/settings/outline'] = array(
+    'title' => 'Outline settings',
+    'description' => 'Set the site-wide default the TOC depth.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('outline_admin_settings'),
+    'access arguments' => array('administer book outlines'));
+  $items['outline/js/form'] = array(
+    'page callback' => 'outline_form_update',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/book'] = array(
+    'title' => 'Books',
+    'description' => "Manage your site's book outlines.",
+    'page callback' => 'outline_admin_overview',
+    'access arguments' => array('administer book outlines'),
+  );
+  $items['admin/content/book/%node/permission'] = array(
+    'title' => 'Edit the book permissions',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('outline_permission_form', 3),
+    'access callback' => '_book_outline_access',
+    'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function outline_nodeapi(&$node, $op, $teaser, $page) {
+  global $user;
+
+  switch ($op) {
+    case 'delete revision':
+      db_query('DELETE FROM {outline_book} WHERE book_vid = %d', $node->vid);
+      db_query('DELETE FROM {outline_node} WHERE vid = %d', $node->vid);
+      break;
+    case 'load':
+      // If we need, we can completely override the book meta data, thereby controlling which book navigation it will show. // TODO
+      
+      $info = NULL;
+      $result = db_query('SELECT n.*, b.book_vid, b.uid, b.default_child_type, b.default_toc_depth, b.book_role_perm, b.book_user_perm, b.restricted_types 
+        FROM {outline_node} n JOIN {outline_book} b ON n.book_vid = b.book_vid WHERE nid = %d AND vid = %d ORDER BY is_default DESC', 
+        $node->nid, $node->vid);
+      while ($row = db_fetch_array($result)) {
+        if ($row['is_default']) {
+          $info['outline']['bid'] = $row['bid'];
+        }
+        $info['outline']['books'][$row['bid']] = $row;
+      }
+      return $info;
+    case 'prepare':
+      // Prepare defaults in cases they are needed but book.module didn't prepare them.
+      // Why doesn't book.module prepare the node in every case, regardless to permissions?
+      // Is there any side effect to it?
+      if (empty($node->nid) && isset($_GET['parent']) && is_numeric($_GET['parent'])) {
+        // Load outline property to $node object.
+        $parent = book_link_load($_GET['parent']);
+        $result = db_query('SELECT b.* FROM {outline_book} b JOIN {node} n ON b.bid = n.nid 
+          WHERE b.bid = %d AND n.vid = b.book_vid', $parent['bid']);
+        $node->outline = array();
+        $row = db_fetch_array($result);
+        $node->outline['bid'] = $row['bid'];
+        $node->outline['books'][$row['bid']] = $row;
+      }
+
+      if (empty($node->book) && !user_access('add content to books') && !user_access('administer book outlines')) {
+        $node->book = array();
+        if (empty($node->nid) && isset($_GET['parent']) && is_numeric($_GET['parent'])) {
+          // Handle "Add child page" links:
+          $parent = book_link_load($_GET['parent']);
+          if ($parent && $parent['access']) {
+            $node->book['bid'] = $parent['bid'];
+            $node->book['plid'] = $parent['mlid'];
+            $node->book['menu_name'] = $parent['menu_name'];
+          }
+        }
+        // Set defaults.
+        $node->book += _book_link_defaults(!empty($node->nid) ? $node->nid : 'new');
+      }
+      else {
+        if (isset($node->book['bid']) && !isset($node->book['original_bid'])) {
+          $node->book['original_bid'] = $node->book['bid'];
+        }
+      }
+      // Find the depth limit for the parent select.
+      if (isset($node->book['bid']) && !isset($node->book['parent_depth_limit'])) {
+        $node->book['parent_depth_limit'] = _book_parent_depth_limit($node->book);
+      }
+      break;
+
+    case 'view':
+      if (!$teaser) {
+        if (!empty($node->book['bid']) && NODE_BUILD_NORMAL == $node->build_mode) {
+          $node->content['outline_navigation'] = array(
+            '#value' => theme('outline_navigation', $node),
+            '#weight' => 0,
+          );
+
+        }
+      }
+      break;
+    case 'update':
+    case 'insert':
+      _outline_update_outline($node);
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function outline_perm() {
+  //return array('administer outlines', 'outline posts', 'create new volumes', 'see printer-friendly version');
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function outline_theme() {
+  return array(
+    'outline_navigation' => array(
+      'arguments' => array('node' => NULL),
+      'template' => 'Outline-navigation', // It is modified from the original book-navigation template.
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_theme_registry_alter().
+ */
+function outline_theme_registry_alter(&$theme_registry) {
+  // We cannot use this function to alter the book_navigation theme registry,
+  // because otherwise book.module would call template_preprocess_outline_navigation
+  // with the wrong argument.
+  // We must completely obliterate it instead.
+  $theme_registry['book_navigation'] = NULL;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////// FORM HANDLING /////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Form builder: edit the book outline permissions. 
+ *
+ */
+function outline_permission_form(&$form_state, $node) { 
+  $bid = $node->book['bid'];
+  if ($node->nid != $bid) {
+    drupal_goto('admin/content/book/' . $bid . '/permission');
+  }
+  drupal_set_title(t('Outline permissions for %book', array('%book' => $node->title)));
+  $form = array();
+  
+  $breadcrumb = array();
+  $breadcrumb[] = l(t('Home'), NULL);
+  $breadcrumb[] = l(t('Administer'), 'admin');
+  $breadcrumb[] = l(t('Content management'), 'admin/content');
+  $breadcrumb[] = l(t('Books'), 'admin/content/book');
+  drupal_set_breadcrumb($breadcrumb);
+
+  $perms = array(
+    'add' => array(
+      'title' => t('Add content'),
+      'description' => t('Grant the permission to add or move nodes into this book.'),
+      'book_perm' => t('add content to books'),
+      'per_role_perm' => TRUE,
+    ),
+    'author' => array(
+      'title' => t('Authorship'),
+      'description' => t('If any user is set below, only nodes authored by these users can be added to the book.
+        Thus, you can have a single author or a multi-authors book, where the authors are specified.') . ' ' .
+        t('Make sure that the authors themselves have the right to add nodes to their own book!') . '<br />' .
+        t('If no user is specified, nodes authored by anybody can be added to the outline.') . '<br />' .
+        t('Users with the %perm can add any node authored by anybody in any case.', array('%perm' => t('administer book outlines'))),
+      'book_perm' => t('add content to books'),
+      'per_role_perm' => FALSE,
+    ),
+  );
+
+  $form['bid'] = array(
+    '#type' => 'value',
+    '#value' => $bid,
+  );
+
+  $form['vid'] = array(
+    '#type' => 'value',
+    '#value' => $node->vid,
+  );
+
+  $restrict_per_role = $node->outline['books'][$bid]['book_role_perm'];
+
+  $form['restrict_per_role_previous_value'] = array(
+    '#type' => 'value',
+    '#value' => $restrict_per_role,
+  );
+
+  $form['restrict_per_role'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Restrict to specific roles.'),
+    '#default_value' => $restrict_per_role,
+    '#description' => t('Check this box to restrict or expand all the permissions below to specific roles for this book.') . '<br />' .
+      t('Uncheck it to remove all such restrictions and use the book module default permissions.'),
+  );
+
+  $form['perm'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Permissions for this book'),
+    '#collapsible' => FALSE,
+    '#tree' => TRUE,
+  );
+
+  foreach ($perms AS $name => $perm) {
+    $form['perm'][$name] = array(
+      '#type' => 'fieldset',
+      '#title' => $perm['title'],
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE, //TRUE,
+      '#tree' => TRUE,
+    );
+
+    $form['perm'][$name]['description'] = array(
+      '#value' => '<p>' . $perm['description'] . '</p>',
+    );
+
+    // Per ROLE form elements.
+
+    if ($restrict_per_role && $perm['per_role_perm']) {
+      $roles = user_roles(TRUE);
+      $restrict_per_role_description = '<p>' . 
+        t('Currently only the users who have the role listed above have this permission for this book.') . '<br />' .
+        t('Uncheck the %restrict box if you want to use the book module defaults instead.', 
+            array('%restrict' => t('Restrict to specific roles.')))
+        . '</p>';
+      $role_default_value = array();
+      $result = db_query("SELECT * FROM {outline_perm} WHERE bid = %d AND perm = '%s' AND type = 'role'", $bid, $name);
+      while ($role = db_fetch_object($result)) {
+        $role_default_value[$role->type_id] = $role->type_id;
+      }
+    }
+    elseif ($perm['per_role_perm']) {
+      $roles = array();
+      $role_default_value = array();
+      $restrict_per_role_description = '<p>' . t('Currently all users with the %perm have this permission for this book.<br />
+          Check the %restrict box if you want to restrict or expand the permissions to specific roles.',
+          array('%perm' => $perm['book_perm'], '%restrict' => t('Restrict to specific roles.'))) . '</p>';
+    }
+
+    if ($perm['per_role_perm']) {
+      $form['perm'][$name]['roles'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Roles'),
+        '#default_value' => $role_default_value,
+        '#options' => $roles,
+        '#description' => $restrict_per_role_description,
+      );
+    }
+    else {
+      $form['perm'][$name]['roles'] = array(
+        '#type' => 'value',
+        '#value' => FALSE,
+      );
+    }
+
+    // Per USER form elements.
+
+    $users = array();
+    $user_default_value = array();
+    $result = db_query("SELECT * FROM {outline_perm} WHERE bid = %d AND perm = '%s' AND type = 'user'",
+        $bid, $name);
+    while ($item = db_fetch_object($result)) {
+      $user = user_load(array('uid' => $item->type_id));
+      $users[$user->uid] = $user->name;
+      $user_default_value[$user->uid] = $user->uid;
+    }
+    $description = t('Uncheck a user name to revoke the permission.');
+    if (empty($users)) {
+      $description = t('No individual user have this permission.');
+    }
+
+    $form['perm'][$name]['users'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Users'),
+      '#default_value' => array(),
+      '#options' => $users,
+      '#description' => $description,
+      '#default_value' => $user_default_value,
+    );
+
+    $form['perm'][$name]['new_user'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Add a new user'),
+      '#description' => t('Individually selected users will be given this additional permission regardless of their roles or other permissions.'),
+      '#default_value' => '',
+      '#autocomplete_path' => 'user/autocomplete',
+    );
+  }
+
+
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+      );
+
+  return $form;
+}
+
+/**
+ * Form submit callback. 
+ *
+ */
+function outline_permission_form_submit($form, &$form_state) { 
+  $v = $form_state['values'];
+  $book_user_perm = FALSE;
+
+  foreach ($v['perm'] AS $perm_name => $perm) {
+
+    // Save permissions per role:
+    if ($v['restrict_per_role_previous_value'] && FALSE !== $perm['roles']) {
+      db_query("DELETE FROM {outline_perm} WHERE bid = %d AND perm = '%s' AND type = 'role'", $v['bid'], $perm_name);
+      foreach ($perm['roles'] AS $role_id) {
+        if ($role_id) {
+          db_query("INSERT INTO {outline_perm} (bid, perm, type, type_id) VALUES (%d, '%s', 'role', %d)", 
+              $v['bid'], $perm_name, $role_id);
+        }
+      }
+    }
+
+    // Save permissions per user:
+    db_query("DELETE FROM {outline_perm} WHERE bid = %d AND perm = '%s' AND type = 'user'", $v['bid'], $perm_name);
+    if ($perm['new_user']) {
+      $user = user_load(array('name' => $perm['new_user']));
+      if ('author' != $perm_name) {
+        $book_user_perm = TRUE;
+      }
+      db_query("INSERT INTO {outline_perm} (bid, perm, type, type_id) VALUES (%d, '%s', 'user', %d)", 
+          $v['bid'], $perm_name, $user->uid);
+    }
+    foreach ($perm['users'] AS $user_id) {
+      if ($user_id) {
+        if ('author' != $perm_name) {
+          $book_user_perm = TRUE;
+        }
+        db_query("INSERT INTO {outline_perm} (bid, perm, type, type_id) VALUES (%d, '%s', 'user', %d)", 
+            $v['bid'], $perm_name, $user_id);
+      }
+    }
+
+  }
+
+  db_query('UPDATE {outline_book} SET book_role_perm = %d, book_user_perm = %d WHERE bid = %d AND book_vid = %d', 
+      $v['restrict_per_role'], $book_user_perm, $v['bid'], $v['vid']);
+  drupal_set_message(t('The permissions have been saved'), 'status');
+}
+
+/**
+ * Submit handler for the form on the node outline tab.
+ * 
+ * See also related handling in outline_nodeapi().
+ */
+function outline_tab_form_submit($form, &$form_state) {
+  $node = $form['#node'];
+  _outline_update_outline($node);
+}
+
+/**
+ * Common helper fonction for outline_tab_form_submit() and node forms.
+ *
+ * Performs all additions and updates to the book outline through node addition,
+ * node editing, node deletion, or the outline tab.
+ * See _book_update_outline().
+ *
+ * This function has to catter for all the following scenarios (list non exhaustive):
+ *
+ * - A node is created, but not outlined:
+ *   $node->is_new = 1;
+ *   $node->book['bid'] = 0;
+ *   $node->revision = 0;
+ *   $node->outline = '';
+ *   -> do nothing.
+ *
+ * - A non-outlined node is edited and is used to create a new book without a revision:
+ *   $node->is_new = '';
+ *   $node->book['bid'] = $node->nid;
+ *   $node->revision = 0;
+ *   $node->outline = '';
+ *   -> INSERT.
+ *
+ * - A non-outlined node is edited and is outlined in an existing book without a revision:
+ *   $node->is_new = '';
+ *   $node->book['bid'] = $bid; // i.e. !empty().
+ *   $node->revision = 0;
+ *   $node->outline = '';
+ *   -> INSERT.
+ *
+ * - An outlined node is edited without a revision:
+ *   $node->is_new = '';
+ *   $node->book['bid'] = $bid; // i.e. !empty().
+ *   $node->revision = 0;
+ *   -> UPDATE.
+ *
+ */
+function _outline_update_outline($node) {
+  // Check whether there exist an outline record for this node.
+  // $node->outline is passed empty, so we set it here.
+  _outline_load_node($node);
+
+  $bid = FALSE;
+  if (!empty($node->book['bid'])) { // The book form was set.
+    $bid = $node->book['bid'];
+    $mlid = $node->book['mlid'];
+    $o = $node->outline;
+  }
+  elseif (!empty($node->bid)) { // There was no book form. Get values if applicable.
+    $bid = $node->bid;
+    $mlid = $node->mlid;
+    $o = $node->outline;
+  }
+
+  // Set defaults for users without proper permissions:
+  if ($bid && !isset($node->book['outline'])) {
+    // TODO: bugfix use proper default values.
+    $b = array(); 
+    $b['child_type'] = isset($o['books'][$bid]['child_type']) ? $o['books'][$bid]['child_type'] : '<default>';
+    $b['toc_depth'] = isset($o['books'][$bid]['toc_depth']) ? $o['books'][$bid]['toc_depth'] : -1;
+    $b['book_toc_depth'] = isset($o['books'][$bid]['default_toc_depth']) ? $o['books'][$bid]['default_toc_depth'] : -1;
+  }
+  elseif (isset($node->book['outline'])) {
+    $b = $node->book['outline'];
+  }
+  else { // Nothing to do.
+    return;
+  }
+
+  // Update an existing page which is already outlined, and without making a new revision:
+  if ($bid && empty($node->is_new) && empty($node->revision) && !empty($node->outline)) {
+    // The vid doesn't change.
+    if ($bid == $node->nid) { // We are updating a book cover.
+      db_query("UPDATE {outline_book} 
+        SET uid = %d, default_child_type = '%s', default_toc_depth = %d, book_role_perm = %d, book_user_perm = %d 
+        WHERE book_vid = %d", 
+        $node->uid, $b['child_type'], $b['book_toc_depth'], $o['books'][$bid]['book_role_perm'], 
+        $o['books'][$bid]['book_user_perm'], $node->vid);
+      db_query("UPDATE {outline_node} SET mlid = %d, child_type = '%s', toc_depth = %d WHERE vid = %d",
+        $mlid, $b['child_type'], $b['toc_depth'], $node->vid);
+    }
+    elseif (isset($node->outline)) { // We are upating a page in the book.
+      db_query("UPDATE {outline_node} SET mlid = %d, child_type = '%s', toc_depth = %d WHERE vid = %d",
+        $mlid, $b['child_type'], $b['toc_depth'], $node->vid);
+    }
+    return; // No INSERT to be done in this case.
+  }
+
+  // Create a new page, or insert a new revision, or insert a previously not outlined node:
+  if ($bid) { // The page is added to a book.
+    if ($bid == $node->nid) { // We are creating a new book.
+      db_query("INSERT INTO {outline_book} (bid, book_vid, uid, default_child_type, default_toc_depth, book_role_perm, book_user_perm) 
+        VALUES (%d, %d, %d, '%s', '%s', %d, %d)", 
+        $bid, $node->vid, $node->uid, $b['child_type'], $b['book_toc_depth'], $o['books'][$bid]['book_role_perm'],
+        $o['books'][$bid]['book_user_perm']);
+      db_query("INSERT INTO {outline_node} (mlid, nid, vid, bid, book_vid, is_default, child_type, toc_depth)
+        VALUES (%d, %d, %d, %d, %d, 1, '%s', %d)", 
+        $mlid, $node->nid, $node->vid, $bid, $node->vid, $b['child_type'], $b['toc_depth']);
+      // Update the vid in {outline_node}, so that the JOIN is up to date.
+      db_query('UPDATE {outline_node} SET book_vid = %d WHERE bid = %d', $node->vid, $node->nid);
+    }
+    else {
+      $book_vid = db_result(db_query('SELECT vid FROM {node} WHERE nid = %d', $bid));
+      db_query("INSERT INTO {outline_node} (mlid, nid, vid, bid, book_vid, is_default, child_type, toc_depth)
+        VALUES (%d, %d, %d, %d, %d, 1, '%s', %d)", 
+        $mlid, $node->nid, $node->vid, $bid, $book_vid, $b['child_type'], $b['toc_depth']);
+
+    }
+  }
+}
+
+/**
+ * Form builder: add exta settings form elements to the node forms and on the outline tab.
+ *
+ * @param $bid: 0 if <none>, 'new' if <create a new book> or the bid of the chosen book.
+ */
+function outline_add_elements_form(&$form, $bid) { 
+  global $user;
+  $node  = $form['#node'];
+
+  if (!$bid) { // we are not inserting the node in a book.
+    $form['book']['outline'] = array(); // Unset the outline form.
+    return;
+  }
+
+  $is_book_cover = FALSE;
+  if ('new' == $bid || (!empty($node->nid) && $bid == $node->nid)) {
+    $is_book_cover = TRUE;
+  }
+
+  $access = user_access('administer book outlines');
+  if (!$access) {
+    return;
+  }
+
+  $form['book']['outline'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Outline options'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#tree' => TRUE,
+    '#weight' => 11,
+    '#access' =>   $access,
+  );
+
+  //
+  // Child page node type.
+  //
+
+  $types = node_get_types();
+  $book_allowed_types = variable_get('book_allowed_types', array('book'));
+  $nt_options = array();
+  $nt_options['<default>'] = '<use the book default>';
+  foreach ($book_allowed_types as $nt) {
+    $nt_options[$nt] = $types[$nt]->name;
+  }
+  $site_default_type = variable_get('book_child_type', 'book');
+  $nt_description = t('What node type do you want to chose for child pages?');
+
+  if ($is_book_cover) {
+    $nt_description .= '<br />'. t('The site default is currenty %nt but it may be changed any time', array('%nt' => $site_default_type));
+    $nt_options['<default>'] = '<use the site default>';
+
+  } else {
+    $default_child_type = isset($node->outline['books'][$bid]['default_child_type']) 
+      ? $node->outline['books'][$bid]['default_child_type'] : '<default>';
+    if ('<default>' == $default_child_type) {
+      $default_child_type = $site_default_type;
+    }
+    $nt_description .= '<br />'. t('The book default is currenty %nt but it may be changed any time', array('%nt' => $default_child_type));
+  }
+
+  $form['book']['outline']['child_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Content type for child pages'),
+    '#description' => $nt_description,
+    '#default_value' => (empty($node->outline['books'][$bid]['child_type']) ? '<default>' : $node->outline['books'][$bid]['child_type']),
+    '#options' => $nt_options,
+    '#access' =>   $access,
+  );
+
+  //
+  // TOC depth for child pages:
+  //
+
+  $toc_options = drupal_map_assoc(array(-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+  $toc_options[-1] = '<use the site default>';
+  $toc_description = t('The table of contents on the outline page will be displayed to this depth (depending upon your theme).');
+  $site_default_toc_depth = variable_get('toc_default_depth', 5);
+
+  if ($is_book_cover) {
+    $book_toc_description = $toc_description;
+    $book_toc_description .= '<br />'. t('This value will apply for the whole book, though it can be overridden at the node level if wanted.');
+    $book_toc_description .= '<br />'. t('The site default is currenty %toc but it may be changed any time', 
+      array('%toc' => $site_default_toc_depth));
+
+    $form['book']['outline']['book_toc_depth'] = array(
+      '#type' => 'select',
+      '#title' => t('Preferred depth for table of contents display <em>for child pages</em>'),
+      '#default_value' => (empty($node->outline['books'][$bid]['default_toc_depth']) ? -1 : $node->outline['books'][$bid]['default_toc_depth']),
+      '#options' => $toc_options,
+      '#description' => $book_toc_description,
+      '#access' =>   $access,
+    );
+
+  }
+
+  //
+  // TOC depth for each node:
+  //
+
+  $toc_options[-1] = '<use the book default>';
+
+  $default_toc_depth = isset($node->outline['books'][$bid]['default_toc_depth']) 
+    ? $node->outline['books'][$bid]['default_toc_depth'] : '<default>';
+  if (-1 == $default_toc_depth) {
+    $default_toc_depth = $site_default_toc_depth;
+  }
+  $toc_description .= '<br />'. t('The book default is currenty %toc but it may be changed any time', array('%toc' => $default_toc_depth));
+
+  $form['book']['outline']['toc_depth'] = array(
+    '#type' => 'select',
+    '#title' => t('Preferred depth for table of contents display'),
+    '#default_value' => (empty($node->outline['books'][$bid]['toc_depth']) ? -1 : $node->outline['books'][$bid]['toc_depth']),
+    '#options' => $toc_options,
+    '#description' => $toc_description,
+    '#access' =>   $access,
+  );
+}
+
+/**
+ * Form builder, for the admin setting pages (book and outline's).
+ */
+function outline_admin_settings_form() {  
+
+  $description = t('This value will be overriden by a per-book specific setting, if there is one.');
+  $description .= t("This setting only makes a difference with outline's alternative navigation box.");
+  $form['toc_default_depth'] = array(
+    '#type' => 'select',
+    '#title' => t('Default depth for table of contents display for posts newly added to an outline'),
+    '#description' => $description,
+    '#default_value' => variable_get('toc_default_depth', 5),
+    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9)),
+  );
+
+  return $form;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////// OWN FUNCTIONS /////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Check if there are any authorships restriction to nodes added in outline.
+ * 
+ * @param $uid int:
+ *   $user->uid.
+ * @return bool:
+ *   whether the user is allowed to perform the operation or not.
+ */
+function outline_check_author_perm($bid, $uid) {
+
+  $count = db_result(db_query("SELECT COUNT(*) FROM {outline_perm} WHERE bid = %d AND perm = 'author' AND type = 'user'", $bid));
+  if (!$count) {
+    return TRUE; // There are no record, so no restriction apply.
+  }
+
+  $count = db_result(db_query("SELECT COUNT(*) FROM {outline_perm} WHERE bid = %d AND perm = 'author' AND type = 'user' 
+    AND type_id = %d", $bid, $uid));
+  if ($count) {
+    return TRUE; // Nodes by this author are allowed.
+  }
+
+  return FALSE; // Nodes by this author are not allowed.
+}
+
+/**
+ * Returns an array of books a user can add or move nodes to.
+ * 
+ * This array can be directly used in a form.
+ */
+function _outline_book_options($node) {
+  global $user;
+  static $options;
+
+  if (isset($options)) {
+    return $options;
+  }
+
+  // See book.module book_form_alter().
+  $options = array();
+  $nid = isset($node->nid) ? $node->nid : 'new';
+
+  if (isset($node->nid) && ($nid == $node->book['original_bid']) && (0 == $node->book['parent_depth_limit'])) {
+    // This is the top level node in a maximum depth book and thus cannot be moved.
+    $options[$node->nid] = $node->title;
+  }
+  else {
+    foreach (book_get_books() as $book) {
+      $book_node = node_load($book['nid']);
+      if (outline_check_perm($book_node, user_access('add content to books'), 'add')) {
+        if ($book_node->book['bid'] == $node->book['original_bid']) { // We can leave the node in the current book.
+          $options[$book['nid']] = $book['title'];
+        }
+        elseif (outline_check_author_perm($book_node->book['bid'], $node->uid)) { // For other books, see authorship restrictions.
+          $options[$book['nid']] = $book['title'];
+        }
+      }
+    }
+  }
+  if (user_access('create new books') && ('new' == $nid || ($nid != $node->book['original_bid']))) {
+    // The node can become a new book, if it is not one already.
+    $options = array($nid => '<'. t('create a new book') .'>') + $options;
+  }
+  if (!$node->book['mlid']) {
+    // The node is not currently in a the hierarchy.
+    $options = array(0 => '<'. t('none') .'>') + $options;
+  }
+
+  // If 'none' is the only option, unset everything.
+  if (1 == count($options) && isset($options[0]) && '<'. t('none') .'>' == $options[0]) {
+    $options = array();
+  }
+  return $options;
+}
+
+/**
+ * Load the $node->outline property into the node object.
+ *
+ * The node object passed to some hooks are not fully loaded and do not contain the $node->outline property.
+ * We cannot use node_load() as it will override the original values of other $node properties.
+ */
+function _outline_load_node(&$node) {
+  static $outline;
+
+  if (isset($outline) && empty($node->old_vid)) { // When creating a new revision, we must force a reload.
+    $node->outline = $outline;
+  }
+
+  if (empty($node->outline)) {
+    // When creating a new revision to a node, we need to check the record for the older revision.
+    $current_vid = $node->vid;
+    if (!empty($node->old_vid)) {
+      $node->vid = $node->old_vid;
+    }
+    $load_outline = outline_nodeapi($node, 'load', 0, 1);
+    $node->outline = $load_outline['outline'];
+    $outline = $load_outline['outline'];
+    $node->vid = $current_vid;
+  }
+}
+
+/**
+ * Check whether the user is permitted to perform the action or not.
+ *
+ * @param $outline_action (bool):
+ *   It is actually the default book.module permission.
+ */
+function outline_check_perm($node, $outline_action, $perm) {
+  global $user;
+  $bid = $node->outline['bid'];
+
+  if (user_access('administer book outlines')) {
+    $outline_action = TRUE;
+  }
+  elseif ($node->uid == $user->uid) {
+    $outline_action = TRUE;
+  }
+  elseif (  array_key_exists($user->uid, $node->coherent_access['editors']) ) {
+    $outline_action = TRUE;
+  }
+  elseif ($node->outline['books'][$bid]['book_role_perm']) {
+    $rids = array();
+    foreach ($user->roles AS $rid => $role) {
+      $rids[$rid] = $rid;
+    }
+    $args = array();
+    $args[] = $bid;
+    $args[] = 'add';
+    $args += $rids;
+    $count = db_result(db_query("SELECT COUNT(*) FROM {outline_perm} WHERE bid = %d AND perm = '%s' AND type = 'role' 
+      AND type_id IN (" . db_placeholders($rids) . ")", $args));
+    $outline_action = !empty($count);
+  }
+
+  if (!$outline_action && $node->outline['books'][$bid]['book_user_perm']) {
+    $count = db_result(db_query("SELECT COUNT(*) FROM {outline_perm} WHERE bid = %d AND perm = '%s' AND type = 'user' 
+      AND type_id = %d", $bid, $perm, $user->uid));
+    $outline_action = !empty($count);
+  }
+
+  return $outline_action;
+}
+
+/**
+ * Check whether we need to overrule book.module's behavior, and if so in which way.
+ *
+ * @param: $node node object.
+ * @param: $context, string identifying the context (who is calling this function). // TODO: when all features are implemented, check whether $context is needed. Remove if necessary.
+ * @param: $book_action, bool: whether book.module believes the user has the perm or not.
+ * @return: $action string.
+ */
+function outline_check_action($node, $context, $book_action) {
+
+  if (empty($node->outline)) { // Creating a new node. Book.module didn't set anything for lack of permission.
+    $options = _outline_book_options($node);
+    if (!empty($options)) {
+      return 'create';
+    }
+    else {
+      return 'leave off';
+    }
+  }
+
+  $outline_action = outline_check_perm($node, $book_action, 'add');
+
+  switch (TRUE) {
+    case $book_action AND $outline_action:
+      // Both modules agree the user has such a perm. Some extra checks might be needed.
+      return 'leave on';
+    case !$book_action AND !$outline_action:
+      // Both modules agree the use has no such perm. Do nothing.
+      return 'leave off';
+    case $book_action AND !$outline_action:
+      // Overule book.module: remove the appropriate items.
+      return 'delete';
+    case !$book_action AND $outline_action:
+      // Overule book.module: add the appropriate items.
+      return 'create';
+  }
+
+}
+
+/**
+ * Format the menu links for the TOC of the current page.
+ *
+ * @param $node
+ *   The node object for the current page.
+ */
+function outline_page_toc($node) {
+  $book_link = $node->book;
+  $tree = menu_tree_all_data($book_link['menu_name']);
+  $tree = _outline_page_toc_find_current_page($tree, $book_link);
+  $depth = _outline_get_actual_toc_depth($node);
+  $tree = _outline_page_toc_limit_depth($tree, $depth);
+  if ($tree) {
+    return menu_tree_output($tree);
+  }
+}
+
+/**
+ * Helper function for outline_page_toc().
+ * 
+ * The array structure returned by menu_tree_all_data has strange keys
+ * containing the number 50000, the node title and its mlid. 
+ * I have not been able to find which part of core set such strange keys.
+ * Therefore, in this function, I don't care what the keys are named.
+ *
+ * @param: $tree
+ *   The part of the menu array returned by menu_tree_all_data() 
+ *     where we're looking for the portion of the array which is starting with the current page.
+ * @param $book_link
+ *   The menu array for the current page.
+ *
+ * @return $found
+ *   The part of the menu array returned by menu_tree_all_data() 
+ *     that we want to display on the current page.
+ *  
+ */
+function _outline_page_toc_find_current_page($tree, $book_link) {
+  if (!empty($tree)) {
+    foreach ($tree AS $key => $data) {
+      if ($data['link']['mlid'] == $book_link['mlid']) {
+        $found = $tree[$key]['below'];
+        return $found;
+      }
+      if (!empty($data['below'])) {
+        foreach ($data['below'] AS $key_below => $below) {
+          $found = _outline_page_toc_find_current_page(array($key_below => $below), $book_link);
+          if ($found) {
+            return $found;
+          }
+        }
+      }
+    } 
+  }
+}
+
+/**
+ * Helper function for outline_page_toc().
+ * 
+ * @param $tree
+ *   The part of the menu array returned by menu_tree_all_data() 
+ *   that we have to curtail according to depth.
+ *
+ * @param $depth
+ *   Integer, the number of levels we have left to go down before we cut whatever is below.
+ */
+function _outline_page_toc_limit_depth($tree, $depth) {
+  if (0 == $depth) {
+    return NULL;
+  }
+
+  if (is_array($tree)) {
+    foreach ($tree AS $key => $branch) { 
+      if (!empty($branch['below'])) {
+        $tree[$key]['below'] = _outline_page_toc_limit_depth($branch['below'], $depth - 1);
+      }
+    }
+  }
+
+  return $tree;
+}
+
+/**
+ * Helper function: get the actual TOC depth to use on a node view.
+ *
+ * The TOC depth can be set at the node level, at the book level, or at the site level.
+ * Return the most appropriate depth set.
+ */
+function _outline_get_actual_toc_depth($node) {
+  $bid = $node->outline['bid'];
+  // Node level:
+  if ( -1 != $node->outline['books'][$bid]['toc_depth']) {
+    return $node->outline['books'][$bid]['toc_depth'];
+  }
+  // Book level:
+  if ( -1 != $node->outline['books'][$bid]['default_toc_depth']) {
+    return $node->outline['books'][$bid]['default_toc_depth'];
+  }
+  // Site level:
+  return variable_get('toc_default_depth', 5); 
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////// MENU CALLBACKS ////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/**
+ * Returns an administrative overview of all books.
+ *
+ * We override book_admin_overview() so that we can add our own operations.
+ */
+function outline_admin_overview() {
+  $rows = array();
+  foreach (book_get_books() as $book) {
+    $rows[] = array('data' => array(
+      l(t('edit'), 'node/' . $book['nid'] . '/edit'),
+      l(t('permissions'), 'admin/content/book/' . $book['nid'] . '/permission'),
+      l(t('outline'), 'admin/content/book/'. $book['nid']),
+      array('data' => l($book['title'], $book['href'], $book['options']), 'class' => 'book-title')
+    ));
+  }
+  $headers = array(array('data' => t('Operations'), 'colspan' => 3), array('data' => t('Book'), 'width' => '100%', 'class' => 'book-title'));
+
+  return theme('table', $headers, $rows, array('id' => 'outline-admin-overview'));
+}
+
+/**
+ * Menu callback: change outline module administrative settings
+ */
+function outline_admin_settings() {  
+  $form = outline_admin_settings_form();
+  return system_settings_form($form);
+}
+
+
+
+/**
+ * AJAX callback to replace the book parent select options.
+ *
+ * This function is modified from the original book_form_update().
+ *
+ * This function is called when the selected book is changed.  It updates the
+ * cached form (either the node form or the book outline form) and returns
+ * rendered output to be used to replace the select containing the possible
+ * parent pages in the newly selected book.
+ *
+ * @param $build_id
+ *   The form's build_id.
+ * @param $bid
+ *   A bid from from among those in the form's book select.
+ * @return
+ *   Prints the replacement HTML in JSON format.
+ */
+function outline_form_update() {
+  $cid = 'form_'. $_POST['form_build_id'];
+  $bid = $_POST['book']['bid'];
+  $cache = cache_get($cid, 'cache_form');
+  if ($cache) {
+    $form = $cache->data;
+
+    // Validate the bid.
+    if (isset($form['book']['bid']['#options'][$bid])) {
+      $book_link = $form['#node']->book;
+      $book_link['bid'] = $bid;
+      // Get the new options and update the cache.
+      $form['book']['plid'] = _book_parent_select($book_link);
+      outline_add_elements_form($form, $bid);
+      cache_set($cid, $form, 'cache_form', $cache->expire);
+
+      // Build and render the new select element, then return it in JSON format.
+      $form_state = array();
+      $form['#post'] = array();
+      $form = form_builder($form['form_id']['#value'] , $form, $form_state);
+      $output = drupal_render($form['book']['plid']);
+      // There is a bug in core: we need to replace the ID. See http://drupal.org/node/247980 .
+      $output = preg_replace('/edit-book-plid-wrapper/', 'edit-book-plid-wrapper-bis', $output);
+      $output .= drupal_render($form['book']['outline']);
+      drupal_json(array('status' => TRUE, 'data' => $output));
+    }
+    else {
+      drupal_json(array('status' => FALSE, 'data' => ''));
+    }
+  }
+  else {
+    drupal_json(array('status' => FALSE, 'data' => ''));
+  }
+  exit();
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////// THEME FUNCTIONS ///////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Process variables for Outline-navigation.tpl.php.
+ *
+ * This funuction is overriding template_preprocess_book_navigation().
+ * See outline_theme_registry_alter();
+ * 
+ * The $variables array contains the following arguments:
+ * - $node
+ *
+ * @see Outline-navigation.tpl.php
+ */
+function template_preprocess_outline_navigation(&$variables) {
+  $book_link = $variables['node']->book;
+
+  // Provide extra variables for themers. Not needed by default.
+  $variables['book_id'] = $book_link['bid'];
+  $variables['book_title'] = check_plain($book_link['link_title']);
+  $variables['book_url'] = 'node/'. $book_link['bid'];
+  $variables['current_depth'] = $book_link['depth'];
+
+  $variables['tree'] = '';
+  if ($book_link['mlid']) {
+    $variables['tree'] = outline_page_toc($variables['node']);
+
+    if ($prev = book_prev($book_link)) {
+      $prev_href = url($prev['href']);
+      drupal_add_link(array('rel' => 'prev', 'href' => $prev_href));
+      $variables['prev_url'] = $prev_href;
+      $variables['prev_title'] = check_plain($prev['title']);
+    }
+    if ($book_link['plid'] && $parent = book_link_load($book_link['plid'])) {
+      $parent_href = url($parent['href']);
+      drupal_add_link(array('rel' => 'up', 'href' => $parent_href));
+      $variables['parent_url'] = $parent_href;
+      $variables['parent_title'] = check_plain($parent['title']);
+    }
+    if ($next = book_next($book_link)) {
+      $next_href = url($next['href']);
+      drupal_add_link(array('rel' => 'next', 'href' => $next_href));
+      $variables['next_url'] = $next_href;
+      $variables['next_title'] = check_plain($next['title']);
+    }
+  }
+
+  $variables['has_links'] = FALSE;
+  // Link variables to filter for values and set state of the flag variable.
+  $links = array('prev_url', 'prev_title', 'parent_url', 'parent_title', 'next_url', 'next_title');
+  foreach ($links as $link) {
+    if (isset($variables[$link])) {
+      // Flag when there is a value.
+      $variables['has_links'] = TRUE;
+    }
+    else {
+      // Set empty to prevent notices.
+      $variables[$link] = '';
+    }
+  }
+} 

@@ -1,0 +1,13 @@
+; $Id: linktocontent_category.info,v 1.3 2007/10/08 15:18:09 stborchert Exp $
+name = "Linktocontent Category"
+description = "Enhances linktocontent_node.module to use it with category.module."
+dependencies[] = linktocontent_node
+dependencies[] = category
+package = Content
+
+; Information added by drupal.org packaging script on 2008-03-06
+version = "6.x-2.x-dev"
+project = "linktocontent"
+datestamp = "1228469162"
+core = 6.x
+

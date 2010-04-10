@@ -1,0 +1,51 @@
+<?php
+// $Id
+
+/**
+ * Implementation of hook_uninstall
+ */
+function resource_conflict_uninstall() {
+  _resource_conflict_variable_delete_like('rc_type_%');
+  _resource_conflict_variable_delete_like('rc_date_field_%');
+  _resource_conflict_variable_delete_like('rc_reference_fields_%');
+  
+  variable_del('rc_types');
+}
+
+/**
+ * Update from version 1.x to version 2.x.
+ */
+function resource_conflict_update_5200() {
+  $ret = array();
+  
+  // Rename all resource_conflict_$type variables to rc_type_$type
+  $q = "SELECT name FROM {variable} WHERE name LIKE 'resource_conflict_%' AND name NOT LIKE 'resource_conflict_fields_%'";
+  $result = db_query($q);
+  while($row = db_fetch_array($result)) {
+    $type = str_replace('resource_conflict_', '', $row['name']);
+    $q = "UPDATE {variable} SET name = 'rc_type_" . $type .  "' WHERE name = 'resource_conflict_" . $type . "'";
+    $ret[] = update_sql($q);
+    
+    // Also set the type to be event
+    variable_set('rc_date_field_' . $type, 'event');
+    
+    // Finally, rename the enabled fields for the type
+    $q = "UPDATE {variable} SET name = 'rc_reference_fields_" . $type . "' WHERE name = 'resource_conflict_fields_" . $type . "'";
+    $ret[] = update_sql($q);
+  }
+  
+  return $ret;
+}
+
+/**
+ * Delete all variables matching a pattern using SQL 'LIKE' syntax.
+ * @param $pattern
+ *   The pattern of variables to delete. 
+ */
+function _resource_conflict_variable_delete_like($pattern) {
+  $q = "SELECT name FROM {variable} WHERE name LIKE '%s'";
+  $result = db_query($q, $pattern);
+  while ($row = db_fetch_array($result)) {
+    variable_del($row['name']);
+  }
+}

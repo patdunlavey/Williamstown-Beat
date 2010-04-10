@@ -1,0 +1,14 @@
+<?php
+// $Id: linktocontent.install,v 1.2 2007/10/08 15:18:09 stborchert Exp $
+
+/*
+* @file
+* Linktocontent Module for Drupal 6.x (patched for FCKeditor)
+*/
+
+function linktocontent_uninstall() {
+  variable_del('linktocontent_enabled_plugins');
+  variable_del('linktocontent_plugin_weight');
+  variable_del('linktocontent_registered_plugins');
+  drupal_set_message(t('Linktocontent module successfully uninstalled'));
+}

@@ -1,0 +1,56 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Enables the use of personal contact forms for anonymous and registered users.
+ */
+
+/**
+ * Implementation of hook_perm().
+ */
+function contact_user_anon_perm() {
+  return array('access personal contact form');
+}
+
+/**
+ * Implementation of hook_menu_alter().
+ */
+function contact_user_anon_menu_alter(&$callbacks) {
+  $callbacks['user/%user/contact']['access callback'] = '_contact_user_anon_access';
+  $callbacks['user/%user/contact']['page callback'] = 'contact_user_anon_page';
+  $callbacks['user/%user/contact']['file'] = 'contact_user_anon.pages.inc';
+  $callbacks['user/%user/contact']['module'] = 'contact_user_anon';
+}
+
+/**
+ * Determine if a user can access to the personal contact tab.
+ */
+function _contact_user_anon_access($account) {
+  global $user;
+  if (!isset($account->contact)) {
+    $account->contact = FALSE;
+    //$account->contact = variable_get('contact_default_status', 1);
+  }
+  return ($user->uid != $account->uid && $account->contact && user_access('access personal contact form')) || user_access('administer users');
+}
+
+/**
+ * Implementation of hook_mail().
+ */
+function contact_user_anon_mail($key, &$message, $params) {
+  $language = $message['language'];
+  switch ($key) {
+    case 'user_mail':
+    case 'user_copy':
+      $user = $params['user'];
+      $account = $params['account'];
+      $message['subject'] .= '['. variable_get('site_name', 'Drupal') .'] '. $params['subject'];
+      $message['body'][] = "$account->name,";
+      $message['body'][] = t("!name (!name-url) has sent you a message via your contact form (!form-url) at !site.", array('!name' => $user->name, '!name-url' => $user->uid ? url("user/$user->uid", array('absolute' => TRUE, 'language' => $language)) : $user->mail, '!form-url' => url($_GET['q'], array('absolute' => TRUE, 'language' => $language)), '!site' => variable_get('site_name', 'Drupal')), $language->language);
+      $message['body'][] = t("If you don't want to receive such e-mails, you can change your settings at !url.", array('!url' => url("user/$account->uid", array('absolute' => TRUE, 'language' => $language))), $language->language);
+      $message['body'][] = t('Message:', NULL, $language->language);
+      $message['body'][] = $params['message'];
+      break;
+  }
+}

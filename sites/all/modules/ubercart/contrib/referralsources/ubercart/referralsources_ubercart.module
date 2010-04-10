@@ -1,0 +1,163 @@
+<?php
+// $Id: referralsources_ubercart.module,v 1.1 2009/12/18 22:13:18 adamo Exp $
+
+/**
+ * @file
+ *
+ * Adds Ubercart support to Referral Sources module.
+ */
+
+/**
+ * Define referral source submission types
+ */
+define('REFERRALSOURCE_SUBMISSION_TYPE_UC_ORDER', 'referralsources_uc_order');  // Submitted while placing an order via Ubercart
+
+/**
+ * Implementation of hook_referralsource_submission_type().
+ */
+function referralsources_ubercart_referralsource_submission_type() {
+  $types = array();
+  $types[REFERRALSOURCE_SUBMISSION_TYPE_UC_ORDER] = array(
+    'title' => t('Ubercart Orders'),
+    'description' => t('Submissions collected from Ubercart orders.'),
+    'weight' => -4,
+  );
+  return $types;
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ *
+ * Add links for Ubercart pane settings to Referral Sources admin page.
+ */
+function referralsources_ubercart_form_referralsources_admin_settings_form_alter(&$form, &$form_state) {
+  $form['ubercart'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Ubercart'),
+    '#description' => t('Settings for the Ubercart checkout and order panes are managed by Ubercart.'),
+    '#collapsible' => TRUE,
+    '#weight' => 2,
+  );
+  $form['ubercart']['ubercart_links'] = array(
+    '#type' => 'markup',
+    '#value' => '<p>'. l('Ubercart checkout pane settings can be found here.', 'admin/store/settings/checkout/edit/panes') .'</p>'.
+                '<p>'. l('Ubercart order pane settings can be found here.', 'admin/store/settings/orders/edit/panes') .'</p>',
+  );
+}
+
+/**
+ * Implementation of Ubercart's hook_checkout_pane().
+ */
+function referralsources_ubercart_checkout_pane() {
+  $panes[] = array(
+    'id' => 'referralsource',
+    'callback' => 'referralsources_ubercart_uc_checkout_pane',
+    'title' => check_plain(variable_get('referralsource_fieldset_title', REFERRALSOURCE_FIELDSET_TITLE_DEFAULT)),
+    'weight' => 7,
+    'collapsible' => TRUE,
+  );
+  return $panes;
+}
+
+/**
+ * Implementation of Ubercart's hook_order_pane().
+ */
+function referralsources_ubercart_order_pane() {
+  $panes[] = array(
+    'id' => 'referralsource',
+    'callback' => 'referralsources_ubercart_uc_order_pane',
+    'title' => check_plain(variable_get('referralsource_fieldset_title', REFERRALSOURCE_FIELDSET_TITLE_DEFAULT)),
+    'class' => 'abs-left',
+    'weight' => 7,
+    'show' => array('view'),
+  );
+  return $panes;
+}
+
+/**
+ * Implementation of Ubercart's hook_order().
+ */
+function referralsources_ubercart_order($op, &$arg1, $arg2) {
+  switch ($op) {
+    // Save order referral source to the database.
+    case 'save':
+      if (isset($arg1->referralsource)) {
+        db_query("UPDATE {referralsources_submissions} SET uid = %d, rid = %d, other = '%s', created_datetime = '%s' WHERE order_id = %d",
+          $arg1->uid, $arg1->referralsource['rid'], $arg1->referralsource['other'], date('c'), $arg1->order_id);
+        if (db_affected_rows() == 0) {
+          db_query("INSERT INTO {referralsources_submissions} (rstid, order_id, uid, rid, other, created_datetime) VALUES ('%s', %d, %d, %d, '%s', '%s')",
+            REFERRALSOURCE_SUBMISSION_TYPE_UC_ORDER, $arg1->order_id, $arg1->uid, $arg1->referralsource['rid'], $arg1->referralsource['other'], date('c'));
+        }
+      }
+      break;
+
+    // Load order referral source from the database.
+    case 'load':
+      $result = db_query("SELECT rid, other FROM {referralsources_submissions} WHERE order_id = %d", $arg1->order_id);
+      if ($data = db_fetch_object($result)) {
+        $arg1->referralsource['rid'] = check_plain($data->rid);
+        $arg1->referralsource['other'] = check_plain($data->other);
+      }
+      break;
+  }
+}
+
+/**
+ * Callback function for referral source checkout pane for Ubercart
+ */
+function referralsources_ubercart_uc_checkout_pane($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'view':
+      $description = t(variable_get('referralsource_fieldset_description', REFERRALSOURCE_FIELDSET_DESCRIPTION_DEFAULT));
+      $contents['referralsource'] = array(
+        '#type' => 'referralsources_select',
+        '#default_value' => array(
+          'referralsources_rid' => check_plain($arg1->referralsource['rid']),
+          'referralsources_other' => check_plain($arg1->referralsource['other']),
+        ),
+      );
+      return array('description' => $description, 'contents' => $contents);
+
+    case 'process':
+      if (isset($arg2['referralsource'])) {
+        $arg1->referralsource['rid'] = $arg2['referralsource']['referralsources_rid'];
+        $arg1->referralsource['other'] = $arg2['referralsource']['referralsources_other'];
+      }
+
+      $test = $arg2;
+
+      return TRUE;
+
+    case 'review':
+      $options = referralsources_select_options(TRUE);
+      if ($arg1->referralsource['rid'] == 'OTHER' || (empty($arg1->referralsource['rid']) && !empty($arg1->referralsource['other']))) {
+        // "Other" selected, or nothing selected and "other" text entered... show other text.
+        $review[] = '<div style="text-align:center;">'. check_plain($arg1->referralsource['other']) .'</div>';
+      }
+      elseif (isset($options[$arg1->referralsource['rid']])) {
+        // Normal option selected, show name of referral source selection.
+        $review[] = '<div style="text-align:center;">'. check_plain($options[$arg1->referralsource['rid']]) .'</div>';
+      }
+      return $review;
+  }
+}
+
+/**
+ * Callback function for referral sources order pane for Ubercart
+ */
+function referralsources_ubercart_uc_order_pane($op, $arg1) {
+  switch ($op) {
+    case 'view':
+      $options = referralsources_select_options(TRUE);
+      if ($arg1->referralsource['rid'] == 'OTHER' ||
+        (empty($arg1->referralsource['rid']) && !empty($arg1->referralsource['other']))) {
+        // "Other" selected, or nothing selected and "other" text entered... show other text.
+        $referralsource = check_plain($arg1->referralsource['other']);
+      }
+      elseif (isset($options[$arg1->referralsource['rid']])) {
+        // Normal option selected, show name of referral source selection.
+        $referralsource = check_plain($options[$arg1->referralsource['rid']]);
+      }
+      return $referralsource;
+  }
+}

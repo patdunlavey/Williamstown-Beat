@@ -1,0 +1,705 @@
+<?php
+// $Id: views_uc_attribute.module,v 0.3 2008/04/09 22:00:00 thefreefood Exp $
+
+/**
+ * Implementation of hook_views_tables()
+ */
+function views_uc_attribute_views_tables() {  
+  if (module_exists('uc_attribute')) {
+  
+    $attributes = uc_get_attributes();
+    
+    foreach ($attributes as $attr) {
+      $tables["uc_product_attributes_$attr->aid"] = array(
+        'name' => 'uc_product_attributes',
+        'provider' => 'internal',
+        'join' => array(
+          'left' => array(
+            'table' => 'node',
+            'field' => 'nid',
+          ),
+          'right' => array(
+            'field' => 'nid',
+          ),
+        ),
+        'fields' => array(
+          'options' => array(
+            'name' => t('Product: Options for @attr-name', array('@attr-name' => $attr->name)),
+            'sortable' => false,
+            'help' => t('This will display all product options for %attr-name. Note that this causes one extra query per row displayed, and might have a minor performance impact.', array('%attr-name' => $attr->name)),
+            'handler' => 'views_uc_attribute_handler_nodeoptions',
+            'attribute' => $attr->aid,
+            'notafield' => true,
+          ),
+        ),
+        'filters' => array(
+          'combination' => array(
+            'name' => t('Product: Options for @attr-name (All)', array('@attr-name' => $attr->name)),
+            'help' => t('This filters by product option regardless of whether or not the product option is in stock.'),
+            'value' => views_uc_attribute_option_form($attr->aid),
+            'value-type' => 'array',
+            'operator' => 'views_handler_operator_andor',
+            'handler' => 'views_handler_filter_combination',
+          ),
+        ),      
+      ); 
+    }
+
+    $tables['uc_product_attributes'] = array(
+      'name' => 'uc_product_attributes',
+      'provider' => 'internal',
+      'join' => array(
+        'left' => array(
+          'table' => 'node',
+          'field' => 'nid',
+        ),
+        'right' => array(
+          'field' => 'nid',
+        ),
+      ),
+    ); 
+
+    $tables['uc_product_options'] = array(
+      'name' => 'uc_product_options',
+      'provider' => 'internal',
+      'join' => array(
+        'left' => array(
+          'table' => 'node',
+          'field' => 'nid',
+        ),
+        'right' => array(
+          'field' => 'nid',
+        ),
+      ),
+    );
+
+    $tables['uc_attributes'] = array(
+      'name' => 'uc_attribute_options',
+      'provider' => 'internal',
+      'join' => array(
+        'left' => array(
+          'table' => 'uc_product_attributes',
+          'field' => 'aid',
+        ),
+        'right' => array(
+          'field' => 'aid',
+        ),
+      ),
+    );
+
+    $tables['uc_attribute_options'] = array(
+      'name' => 'uc_attribute_options',
+      'provider' => 'internal',
+      'join' => array(
+        'left' => array(
+          'table' => 'uc_product_options',
+          'field' => 'oid',
+        ),
+        'right' => array(
+          'field' => 'oid',
+        ),
+      ),
+    );
+
+    $tables['uc_product_adjustments'] = array(
+      'name' => 'uc_product_adjustments',
+      'provider' => 'internal',
+      'join' => array(
+        'left' => array(
+          'table' => 'node',
+          'field' => 'nid',
+        ),
+        'right' => array(
+          'field' => 'nid',
+        ),
+      ),
+      'fields' => array(
+        'combination' => array(
+          'name' => t('Product: Option Combination (All)'),
+          'help' => t('This will display all product option combinations regardless of whether or not those combinations are in stock.'),
+          'sortable' => FALSE,
+          'handler' => 'views_uc_attribute_handler_option_combination',
+          'notafield' => true,
+        ),
+      ),
+      'filters' => array(
+        'combination' => array(
+          'name' => t('Product: Option Combination (All)'),
+          'help' => t('This filters by product option combinations regardless of whether or not those combinations are in stock.'),
+          'value' => views_uc_attribute_option_form(),
+          'value-type' => 'array',
+          'operator' => 'views_handler_operator_andor',
+          'handler' => 'views_handler_filter_combination',
+          'option' => views_uc_attribute_form(),
+        ),
+      ),
+    );
+    
+    
+    if (module_exists('uc_stock')) {
+      $tables['uc_product_stock'] = array(
+        'name' => 'uc_product_stock',
+        'provider' => 'internal',
+        'join' => array(
+          'left' => array(
+            'table' => 'uc_product_adjustments',
+            'field' => 'model',
+          ),
+          'right' => array(
+            'field' => 'sku',
+          ),
+        ),
+      );
+      
+      foreach ($attributes as $attr) {
+        $tables["uc_product_attributes_$attr->aid"]['filters']['combination_instock'] = array(
+          'name' => t('Product: Options for @attr-name (In Stock)', array('@attr-name' => $attr->name)),
+          'help' => t('This filters by product option regardless of whether or not the product option is in stock.'),
+          'value' => views_uc_attribute_option_form($attr->aid),
+          'value-type' => 'array',
+          'operator' => 'views_handler_operator_andor',
+          'handler' => 'views_handler_filter_combination',
+          'instock' => true,
+        );         
+      }
+      
+      $tables['uc_product_adjustments']['fields']['combination_instock'] = array(
+        'name' => t('Product: Option Combination (In stock)'),
+        'help' => t('This will display all product option combinations that are in stock.'),
+        'sortable' => FALSE,
+        'handler' => 'views_uc_attribute_handler_option_combination',
+        'notafield' => true,
+        'instock' => true,
+      );
+
+      $tables['uc_product_adjustments']['filters']['combination_instock'] = array(
+        'name' => t('Product: Option Combination (In Stock)'),
+        'help' => t('This filters by product option combinations that are in stock.'),
+        'value' => views_uc_attribute_option_form(),
+        'value-type' => 'array',
+        'operator' => 'views_handler_operator_andor',
+        'handler' => 'views_handler_filter_combination',
+        'option' => views_uc_attribute_form(),
+        'instock' => true
+      );      
+    }
+    
+    return $tables;
+  }
+}
+
+/**
+ * Implementation of hook_views_arguments()
+ */
+function views_uc_attribute_views_arguments() {
+  $arguments['combination_name'] = array(
+    'name' => t('Product: Option Name (All)'),
+    'help' => t('This argument filters results by the existence of one or more options specified by Name, regardless of whether or not those options are in stock.'),
+    'handler' => 'views_uc_attribute_handler_arg_combination_name'
+  );
+  $arguments['combination_id'] = array(
+    'name' => t('Product: Option ID (All)'),
+    'help' => t('This argument filters results by the existence of one of more options specified by ID, regardless of whether or not those options are in stock'),
+    'handler' => 'views_uc_attribute_handler_arg_combination_id'
+  );
+  $arguments['combination_name_instock'] = array(
+    'name' => t('Product: Option Name (In Stock)'),
+    'help' => t('This argument filters results by the availability of one or more options specified by Name.'),
+    'handler' => 'views_uc_attribute_handler_arg_combination_name',
+    'instock' => true
+  );
+  $arguments['combination_id_instock'] = array(
+    'name' => t('Product: Option ID (In Stock)'),
+    'help' => t('This argument filters results by the availability of one of more options specified by ID.'),
+    'handler' => 'views_uc_attribute_handler_arg_combination_id',
+    'instock' => true
+  );
+
+
+  return $arguments;
+}
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function views_uc_attribute_form_alter($form_id, &$form) {
+  if ($form_id == 'views_edit_view') {
+  
+    foreach ($form['filter'] as $key=>$filter) {      
+      if (strpos($filter['id']['#value'],'uc_product_adjustments') !== false) {
+        $default_option = $filter['options']['#default_value'];
+        $default_option = explode(',',$default_option);     
+        $form['filter'][$key]['options']['#default_value'] = $default_option;
+      }
+    }
+  }
+  else if ($form_id == 'views_filters') {
+    $this_vid = $form['view']['#value']->vid;
+    $exposed_filters = array();
+    
+    foreach ($form['view']['#value']->exposed_filter as $filter) {
+      if (strpos($filter['field'],'uc_product_adjustments') !== false) {
+        $filter_temp = new stdClass();
+        $filter_temp->id = $filter['id'];
+        $filter_temp->field = $filter['field'];
+        $exposed_filters[] = $filter_temp;
+      }
+    }
+    
+    $updated_filters = array();
+  
+    foreach ($exposed_filters as $exposed) {
+      foreach ($form['view']['#value']->filter as $match_filter) {        
+        if ($match_filter['id'] == $exposed->id) {
+          $exposed->options = $match_filter['options'];
+        }
+      }
+      $updated_filters[] = $exposed;
+    }
+    
+    $exposed_filters = $updated_filters;
+
+    foreach ($exposed_filters as $key => $exposed) {
+      if ($exposed->options) {
+        $filter_name = 'filter' . $key;
+        
+        $new_element = views_uc_attribute_option_form($exposed->options, $form[$filter_name]['#multiple']);
+        
+        $form[$filter_name]['#options'] = $new_element['#options'];
+        $form[$filter_name]['#size'] = $new_element['#size'];
+      }
+    }
+  }
+}
+
+/**
+ * Turn the Attribute Combination into a meaningful text value
+ *
+ * This function is really inefficient in its use of SQL queries.
+ * Can it be rewritten more efficiently?
+ *
+ */
+function views_uc_attribute_handler_option_combination($fieldinfo, $fielddata, $value, $data) {
+  
+  $attributes = uc_get_attributes();
+  $sorted_options = array();
+  
+  foreach ($attributes as $attr) {
+    foreach ($attr->options as $option) {
+      $sorted_options[] = $option;
+    }
+  }
+  
+  $option_objarray = array();
+  if ($fieldinfo['instock']) {
+    $combo_query = db_query("SELECT * FROM {uc_product_adjustments} AS adj LEFT JOIN {uc_product_stock} AS stock ON adj.model = stock.sku WHERE adj.nid = %d AND stock.active = 1 AND stock.stock > stock.threshold", $data->nid);
+  }
+  else {
+    $combo_query = db_query("SELECT * FROM {uc_product_adjustments} WHERE nid = %d", $data->nid);
+  }
+  
+  while ($combo = db_fetch_object($combo_query)) {
+    $option_objarray[$combo->model] = array();
+    $array = unserialize($combo->combination);
+
+    if ($array) {
+      foreach ($array as $option) {
+        $this_option = new stdClass();
+
+        foreach($sorted_options as $key=>$current) {          
+          if ($current->oid == $option) {
+            $this_option->ordering = $key;
+            $this_option->name = check_plain($current->name);
+          }
+        }
+        $option_objarray[$combo->model][] = $this_option;
+      }
+    }
+    uasort($option_objarray[$combo->model], '_uc_attribute_sort');
+  }
+
+  uasort($option_objarray, '_views_uc_attribute_combination_sort');
+
+  $option_string = array();  
+  foreach ($option_objarray as $key=>$combo_array) {
+    $option_string[$key] = array();  
+
+    foreach ($combo_array as $option_object) {
+      $option_string[$key][] = $option_object->name;
+    }
+
+    $option_string[$key] = !empty($option_string[$key]) ? implode(' > ', $option_string[$key]) : '';
+
+  }
+  
+  $option_string = !empty($option_string) ? implode(', ', $option_string) : '';
+  return $option_string;
+
+}
+
+/**
+ * Handler for filters based on attribute options or combinations of options
+ */
+function views_handler_filter_combination($op, $filter, $filterinfo, &$query) {
+  $array = array();
+  
+  foreach ($filter['value'] as $value) {
+    $array_sub = array();
+    
+    if ($value != '') {
+      $array_sub[] = $value;
+      $array = array_merge($array, $array_sub);  
+    }
+  }
+
+  if ($array) {
+    if ($filterinfo['instock']) {
+      _views_uc_attribute_add_options(strtoupper($filter['operator']), $array, $filterinfo['instock'], &$query);
+    }
+    else {
+      _views_uc_attribute_add_options(strtoupper($filter['operator']), $array, false, &$query);
+    }
+  }  
+}
+
+/**
+ * Apply an argument filter based on a passed Option Name
+ */
+function views_uc_attribute_handler_arg_combination_name($op, &$query, $argtype, $arg = '') {
+  if ($arg != '') {
+    $result = db_fetch_object(db_query("SELECT * FROM {uc_attribute_options} WHERE name='%s'", check_plain($arg)));
+    return views_uc_attribute_handler_arg_combination_id($op, &$query, $argtype, $result->oid);
+  }
+}
+
+/**
+ * Apply an argument filter based on one or more passed Option IDs
+ */
+function views_uc_attribute_handler_arg_combination_id($op, &$query, $argtype, $arg = '') {
+  switch($op) {
+    case 'summary':
+      $query->ensure_table('uc_attribute_options', true);
+      $query->add_field('name', 'uc_attribute_options');
+      $query->add_field('ordering', 'uc_attribute_options');
+      $query->add_field('oid', 'uc_attribute_options');
+      $query->add_groupby('uc_product_options.oid');
+      $fieldinfo['field'] = "uc_attribute_options.name";
+      return $fieldinfo;
+    case 'sort':
+      $query->ensure_table('uc_attributes', true);
+      $query->add_orderby('uc_attributes', 'ordering', $argtype);
+      $query->add_orderby('uc_attribute_options', 'ordering', $argtype);
+      $query->add_orderby('uc_attribute_options', 'name', $argtype);
+      break;
+    case 'filter':
+      if ($arg == 0) { // untagged only!
+        $query->ensure_table('uc_product_adjustments');
+        $query->add_where("uc_product_adjustments.combination IS NULL");
+      }
+      else {
+        $values = _views_break_phrase($arg);
+        _views_uc_attribute_add_options(strtoupper($values[0]), $values[1], $argtype['instock'], $query);
+      }
+      break;
+    case 'link':
+      $name = ($query->name ? $query->name : t('Uncategorized'));
+      return l($name, "$arg/" . intval($query->oid));
+    case 'title':
+      if (!$query) {
+        return t('Uncategorized');
+      }
+      list($type, $info) = _views_break_phrase($query);
+      if (!$info) {
+        return t('Uncategorized');
+      }
+      $oids = implode(',', $info); // only does numbers so safe
+
+      $result = db_query("SELECT name FROM {uc_attribute_options} WHERE oid IN (%s)", $oids);
+      while ($option = db_fetch_object($result)) {
+        $title .= ($title ? ($type == 'or' ? ' + ' : ', ') : '') . check_plain($option->name);
+      }
+      return $title;
+  }
+}
+
+/**
+ * Create a form that lists options hierarchically for each attribute.
+ */
+function views_uc_attribute_option_form($attribute_list = array(), $multiple = true) {
+  $attributes = uc_get_attributes();
+  
+  if (!is_array($attribute_list)) {
+    $attribute_list = explode(',', $attribute_list);
+  }
+  
+  if (!empty($attribute_list)) {
+    $limited = array();
+    foreach ($attributes as $attr) {
+      if (in_array($attr->aid, $attribute_list)) {
+        $limited[] = $attr;
+      }
+    }
+    $attributes = $limited;
+  }
+
+  $options = array();
+  $options[''] = t('- None selected -');
+  
+  $depth = 0;
+  $this_option = array();
+  
+  $options = _views_uc_attribute_build_form($options, $attributes, $this_option, $depth);
+  
+  $form = array(
+    '#type' => 'select',
+    '#title' => t('Attribute Options'),
+    '#default_value' => $options[0],
+    '#options' => $options,
+    '#description' => t('Attribute Options'),
+    '#multiple' => $multiple,
+    '#size' => $multiple ? min(9, count($options)) : 0,
+    '#weight' => -15,
+    '#theme' => 'attribute_option_select',
+  );
+
+  return $form;
+}
+
+/**
+ * Create a form that lists attributes.
+ */
+function views_uc_attribute_form() {
+  $attributes = uc_get_attributes();
+
+  $options = array();
+  $options[''] = t('- All Attributes -');
+  
+  foreach ($attributes as $attr) {
+    $options[$attr->aid] = $attr->name;
+  }
+  
+  $form = array(
+    '#type' => 'select',
+    '#title' => t('Attributes'),
+    '#default_value' => $options[0],
+    '#options' => $options,
+    '#description' => t('Attributes to Include in Options List on Exposed Filters; Default Is All Attributes.'),
+    '#multiple' => TRUE,
+    '#size' => $multiple ? min(9, count($options)) : 0,
+    '#weight' => -15,
+    '#theme' => 'attribute_option_select',
+    '#validate' => array(
+      'views_uc_attribute_form_validate' => array(),
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ *
+ */
+function views_uc_attribute_form_validate($element) {
+  $value_string = implode(',', $element['#value']);
+    form_set_value($element, $value_string);
+}
+
+/**
+ * We use the default selection field for choosing terms.
+ */
+function theme_attribute_option_select($element) {
+  return theme('select', $element);
+}
+
+/**
+ * Display all the options for a given attribute in a given node.
+ */
+function views_uc_attribute_handler_nodeoptions($fieldinfo, $fielddata, $value, $data) {
+  $attr = uc_attribute_load($fieldinfo['attribute'], $data->nid, 'product');
+  $values = array();
+  
+  foreach ($attr->options as $option) {
+    $values[] = check_plain($option->name);
+  }
+  $values = !empty($values) ? implode(' | ', $values) : '';
+  return $values;
+}
+
+/**
+ * Display all the options for a given attribute.
+ */
+function views_uc_attribute_handler_alloptions($fieldinfo, $fielddata, $value, $data) {
+  $attr = uc_attribute_load($fieldinfo['attribute']);
+  $values = array();
+  
+  foreach ($attr->options as $option) {
+    $values[] = check_plain($option->name);
+  }
+  $values = !empty($values) ? implode(' | ', $values) : '';
+  return $values;
+}
+
+
+/**
+ * Load all attributes.
+ */
+function uc_get_attributes() {
+  $result = db_query("SELECT aid FROM {uc_attributes} ORDER BY ordering");
+  $chosen_attr = array();
+  while ($attr = db_fetch_object($result)){
+    $chosen_attr[$attr->aid] = uc_attribute_load($attr->aid);
+  }
+  uasort($chosen_attr, '_uc_attribute_sort');
+  return $chosen_attr;
+}
+
+/**
+ * This function should be called recursively to build the options form.
+ */
+function _views_uc_attribute_build_form($options, $attributes, $prior_option = array(), $depth = 0) {
+  $depth = $depth + 1;
+  
+  $remaining_attributes = array_slice($attributes, 1);
+  reset($attributes);
+  $attr = current($attributes);
+  
+  foreach ($attr->options as $option) {  
+    
+    $this_option = $prior_option;
+    $this_option[] = $option->oid;
+      
+    $choice = new stdClass();
+    $choice->option = array(implode(',', $this_option) => str_repeat('-', $depth - 1) . ' ' . $option->name);
+    $options[] = $choice;
+    
+    if ($remaining_attributes) {
+      $options = _views_uc_attribute_build_form($options, $remaining_attributes, $this_option, $depth);
+    } 
+  }
+  
+  return $options;
+}
+
+/**
+ * usort() callback.
+ */
+function _views_uc_attribute_combination_sort($a, $b){  
+  $a_ordering = array();
+  $b_ordering = array();
+  foreach ($a as $a_option) {
+    $a_ordering[] = $a_option->ordering;
+  }
+  foreach ($b as $b_option) {
+    $b_ordering[] = $b_option->ordering;
+  }
+  $max_options = max(array_pop(array_keys($a_ordering)), array_pop(array_keys($b_ordering)));
+  
+  for ($i=0; $i <= $max_options; $i++) {
+    if ($a_ordering[$i] != $b_ordering[$i]) {
+      return ($a_ordering[$i] < $b_ordering[$i]) ? -1 : 1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * This function actually adds the where clauses for attribute options when using filters or arguments.
+ */
+function _views_uc_attribute_add_options($op, $value, $instock = false, &$query) {
+  if ($value) {
+    if ($op == 'OR') {
+      $query->ensure_table('uc_product_adjustments');
+      $where = array();
+      
+      foreach ($value as $option) {
+        $where_sub = array();
+        $option = explode(',', $option);
+        $option = array_map('intval', $option);
+        
+        foreach ($option as $combo_option) {
+          $where_sub[] = sprintf("(combination LIKE '%%\"%d\";%%' )" , $combo_option);          
+        }
+        $where_sub = '(' . implode(' AND ', $where_sub) . ')';
+        $where[] = $where_sub;
+      }
+      if ($instock) {
+        $query->ensure_table('uc_product_stock');
+        $where = '((' . implode(' OR ', $where) . ') AND active = 1 AND stock > threshold)';
+      }
+      else {
+        $where = '(' . implode(' OR ', $where) . ')';
+      }
+      $query->add_where($where);    
+    }
+    else if ($op == 'NOR') {
+      //ignore the depth for this case
+      $table_data = _views_get_tables();
+      $joininfo = $table_data['uc_product_adjustments']['join'];
+
+      foreach ($value as $option) {
+        $option = explode(',', $option);
+        $option = array_map('intval', $option);
+        
+        foreach ($option as $combo_option) {
+          $key = sprintf("combination LIKE '%%\"%d\";%%' " , $combo_option);
+          $joininfo['extra'][$key] = NULL;
+        }
+      }
+      $num = $query->add_table('uc_product_adjustments', false, 1, $joininfo);
+      $tablename = $query->get_table_name('uc_product_adjustments', $num);
+      $query->add_where("$tablename.combination IS NULL");
+/*
+      $where = array();
+      
+      foreach ($value as $option) {
+        $num = $query->add_table('uc_product_adjustments');
+	$tablename = $query->get_table_name('uc_product_adjustments', $num);        
+        $where_sub = array();
+        $option = explode(',', $option);
+        $option = array_map('intval', $option);
+        
+        foreach ($option as $combo_option) {
+          $where_sub[] = sprintf("(%s.combination LIKE '%%\"%d\";%%' )", $tablename, $combo_option);          
+        }
+        
+        $where_sub = '(' . implode(' AND ', $where_sub) . ')';
+        $where[] = $where_sub;
+      }
+      if ($instock) {
+        $query->ensure_table('uc_product_stock');
+        $where = '(( NOT ' . implode(' AND NOT ', $where) . ') AND active = 1 AND stock > threshold)';
+      }
+      else {
+        $where = '( NOT ' . implode(' AND NOT ', $where) . ')';
+      }
+      $query->add_where($where);        
+*/
+    }
+    else {
+      $where = array();
+      
+      foreach ($value as $option) {
+        $num = $query->add_table('uc_product_adjustments');
+	$tablename = $query->get_table_name('uc_product_adjustments', $num);        
+        $where_sub = array();
+        $option = explode(',', $option);
+        $option = array_map('intval', $option);
+        
+        foreach ($option as $combo_option) {
+          $where_sub[] = sprintf("(%s.combination LIKE '%%\"%d\";%%' )", $tablename, $combo_option);          
+        }
+        
+        $where_sub = '(' . implode(' AND ', $where_sub) . ')';
+        $where[] = $where_sub;
+      }
+      if ($instock) {
+        $query->ensure_table('uc_product_stock');
+        $where = '((' . implode(' AND ', $where) . ') AND active = 1 AND stock > threshold)';
+      }
+      else {
+        $where = '(' . implode(' AND ', $where) . ')';
+      }
+      $query->add_where($where);        
+    }    
+  }
+}

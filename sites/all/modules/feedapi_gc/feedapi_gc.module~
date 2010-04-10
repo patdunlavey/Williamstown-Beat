@@ -1,0 +1,60 @@
+<?php
+/**
+ * @file
+ * FeedAPI Garbage collector main function definitions.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function feedapi_gc_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#feedapi_gc':
+      return t('Processor for FeedAPI, unpublishes existing feed items that are not present feed. Use with FeedAPI Node processor.');
+    case 'feedapi/full_name':
+      return t('FeedAPI Garbage Collector');
+  }
+}
+
+/**
+ * Implementation of hook_feedapi_item().
+ * 
+ * Empty, only used so that FeedAPI recognizes this module as a processor.
+ */
+function feedapi_gc_feedapi_item($op) {
+}
+
+/**
+ * Implementation of hook_feedapi_after_refresh().
+ * 
+ * Go through all feed items associated with this feed and unpublish those that
+ * aren't present on the newly downloaded feed.
+ */
+function feedapi_gc_feedapi_after_refresh($feed) {
+  foreach ($feed->items as $item) {
+    $present[$item->options->guid] = $item->options->guid;
+  }
+  
+  // Is there a way to figure out of the refresh operation actually succeeded in
+  // connecting to the feed? Since I don't know how to do that, and we don't want to
+  // unpublish all feed items when that happens, I'm adding a test to see if any
+  // feed items are present. If they are, then we proceed. Otherwise, just exit.
+  if(count($present)) {
+  $result = db_query('SELECT fi.nid, fi.guid FROM {feedapi_node_item} fi JOIN {feedapi_node_item_feed} ff ON ff.feed_item_nid = fi.nid JOIN {node} n ON n.nid = fi.nid WHERE ff.feed_nid = %d AND n.status <> 0', $feed->nid);
+  $checked = 0;
+  $unpublished = 0;
+  while ($feed_item = db_fetch_object($result)) {
+    $checked++;
+    if (!isset($present[$feed_item->guid])) {
+      $unpublished++;
+      db_query('UPDATE {node} SET status = 0 WHERE nid = %d', $feed_item->nid);
+    }
+  }
+
+  drupal_set_message(t('!checked items checked, !unpublished items unpublished.', array('!checked' => $checked, '!unpublished' => $unpublished)));
+  }
+  else
+  {
+   drupal_set_message(t('No feed items found on server or server connection failed'));
+   }
+}

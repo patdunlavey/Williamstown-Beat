@@ -1,0 +1,626 @@
+<?php
+/***
+ * $Id: uc_ajax_cart.module,v 1.13.2.16 2009/10/22 14:07:11 erikseifert Exp $
+ *
+ * @author Erik Seifert <support@b-connect.de>
+ *
+ */
+
+/**
+ * override hook perm
+ */
+function uc_ajax_cart_perm()
+{
+	return array('access content');
+}
+
+/**
+ * overide hook_theme
+ * 
+ * @return array theming functions
+ * 
+ * @see http://api.drupal.org/api/function/hook_theme/6
+ * 
+ */
+function uc_ajax_cart_theme()
+{
+	return array(
+    'uc_ajax_cart_error_message' => array(
+      'arguments' => array( 'message' => null ),
+    ),
+    'uc_ajax_cart_error' => array(
+      'arguments' => array( 'content' => null ),
+    )
+  );
+}
+
+/**
+ * override hook menu 
+ * 
+ * Add default path's to listen
+ * 
+ * @return array path listener
+ * 
+ * @see http://api.drupal.org/api/function/hook_theme/6
+ */
+function uc_ajax_cart_menu()
+{
+    $items = array();
+    /** Ajax cart update URL **/
+
+    //This URL recieve all ajax calls from product pages
+    $items['cart/ajax/update'] = array(
+      'title' => t('Shopping ajax cart'),
+      'page callback' => 'uc_ajax_cart_handler',
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
+    );
+    //This URL recieve all ajax calls cart view
+    /**
+    $items['cart/ajax/view'] = array(
+      'title' => t('Shopping ajax cart view'),
+      'page callback' => 'uc_ajax_cart_handler_update',
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
+    );
+    */
+    return $items ;
+}
+
+
+/**
+ *  override hook_block
+ *  
+ *  @see http://api.drupal.org/api/function/hook_block/6
+ * 
+ * @param $op String $op  
+ * @param $delta
+ * @param $edit
+ * @return unknown_type
+ */
+function uc_ajax_cart_block($op = 'list', $delta = 0, $edit = array())
+{
+   if ($op == 'list')
+   {
+        // Retrieve block informations
+        $cBlocks = uc_cart_block('list');
+        $blocks[0] = $cBlocks[0];
+        $blocks[0]['info'] = t('Ubercart ajax shopping cart');
+        return $blocks;
+   } elseif ($op == 'view')
+   {
+        //Only a wrapper to uc_cart_block
+        $content = uc_cart_block($op,$delta,$edit);
+        $content['content'] = '<div id="ajaxCartUpdate">' . $content['content'] . '</div>' ;
+        return $content ;
+   } elseif ($op == 'configure')
+   {
+        // Get settings for from uc_cart block
+        $form = uc_cart_block($op,$delta,$edit);
+        $form['ajaxSettings'] = array(
+            '#type' => 'fieldset',
+            '#collapsed' => false,
+            '#title' => t('Ajax Cart Options'),
+            '#description' => t('Set some options for Ajax Cart.')
+        );
+        //Rebuild cache after ajax call ?
+        $form['ajaxSettings']['rebuildCache'] = array(
+            '#type' => 'checkbox',
+            '#return_value' => true,
+            '#title' => t('Rebuild cart cache.'),
+            '#description' => t("Rebuild cart cache on every ajax call."),
+            '#default_value' => variable_get('uc_ajax_cart_rebuild', false)
+        );
+        //Clear cache option
+        $form['ajaxSettings']['clearCache'] = array(
+            '#type' => 'checkbox',
+            '#return_value' => true,
+            '#title' => t('Clear cart cache on every ajax call.'),
+            '#description' => t("With this option enabled, cart content is rebuilded every request."),
+            '#default_value' => variable_get('uc_ajax_cart_del_cache', false)
+        );
+        //Disable button on ajax request ?
+        $form['ajaxSettings']['buttonDisable'] = array(
+            '#type' => 'checkbox',
+            '#return_value' => 1,
+            '#title' => t('Disable button on ajax call.'),
+            '#description' => t("Disable the button , so you don't have multiple requests."),
+            '#default_value' => variable_get('uc_ajax_cart_button_disable', 1)
+        );
+        //Alternate button text
+        $form['ajaxSettings']['alternateText'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Change button text.'),
+            '#default_value' => variable_get('uc_ajax_cart_button_txt', "")
+        );
+        //Ajax button class
+        $form['ajaxSettings']['alternateButtonClass'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Button class for an ajax call.'),
+            '#description' => t('Giving the button this class for request time.'),
+            '#default_value' => variable_get('uc_ajax_cart_button_class', "")
+        );
+        //Alternate button text for products already in cart
+        $form['ajaxSettings']['alternateTextCart'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Change button text for products already in cart.'),
+            '#description' => t('Be aware does not work with attributes!'),
+            '#default_value' => variable_get('uc_ajax_cart_button_c', "")
+        );
+
+        //Effects ?
+        $form['ajaxSettings']['effects'] = array(
+            '#type' => 'checkbox',
+            '#return_value' => 1,
+            '#title' => t('Use jquery ui effects.'),
+            '#description' => t('Highlights cart and product after ajax call.'),
+            '#default_value' => variable_get('uc_ajax_cart_effects', false)
+        );
+                
+        $form['#submit'] = array_merge(array('uc_ajax_cart_block_submit' => array()), (array) $form['#submit']);
+        return $form ;
+   } elseif ( $op == 'save' && isset($edit['uc_cart_block_empty_hide']) )
+   {
+        //Set configuration
+        variable_set('uc_ajax_cart_js_src', $edit['alternateJS']) ;
+        variable_set('uc_ajax_cart_button_txt', $edit['alternateText']) ;
+        variable_set('uc_ajax_cart_button_c', $edit['alternateTextCart']) ;
+        variable_set('uc_ajax_cart_button_class', $edit['alternateButtonClass']) ;
+        variable_set('uc_ajax_cart_button_disable', $edit['buttonDisable']) ;
+        if ( $edit['rebuildCache'] == true )
+        {
+        	variable_set('uc_ajax_cart_rebuild',true) ;
+        } else variable_set('uc_ajax_cart_rebuild',false) ;
+        if ( $edit['effects'] == true )
+        {
+            variable_set('uc_ajax_cart_effects',true) ;
+        } else variable_set('uc_ajax_cart_effects',false) ;
+
+        variable_set('uc_ajax_cart_button_disable', $edit['buttonDisable']) ;
+        //Set configuration for cart block
+        uc_cart_block($op,$delta,$edit);
+   }
+}
+/**
+ * override hook_form_alter
+ * 
+ * insert all relevant informations to form
+ * 
+ * @param $form array form array 
+ * @param $formState string form state
+ * @param $formID string form id
+ */
+function uc_ajax_cart_form_alter(&$form,$formState,$formID)
+{
+	
+	if ( eregi("uc_product_add_to_cart_form",$formID) )
+    {
+        //Alter single product form
+    	_uc_ajax_cart_alter_cart($form);
+    } elseif ( eregi("uc_catalog_buy_it_now_form",$formID ) )
+    {
+    	//alter catalog view to change button to "choose option", because attributes are not displayed
+    	//@check is there an option in catlog to show attribute form ? 
+    	if ( !_uc_ajax_cart_check_for_required_attributes($form) )
+    	{ 
+    		_uc_ajax_cart_alter_cart($form);
+    	} else {
+    		_uc_ajax_cart_alter_cart_attributes($form);
+    	}
+    } elseif ( $formID == "uc_product_table")
+    {
+        _uc_ajax_cart_alter_form_all($form) ;
+        
+    } elseif ( $formID == 'uc_cart_view_form' )
+    {
+    	/** Experimental Feature **/
+    	return ;
+    	$items = uc_cart_get_contents();
+    	$form['#type'] = 'markup' ;
+    	$table = &$form['items'] ;
+
+    	foreach (element_children($table) as $i) 
+    	{
+		    $item = $items[$i] ;
+		    if ( isset ( $table[$i]['remove'] ) )
+		    {
+			    $table[$i]['remove'] = array(
+			    	'#type' 	=> 'markup',
+			    	'#value'	=> drupal_get_form('uc_ajax_cart_remove_button',$item,$i)
+			    );
+		    	$table[$i]['remove']['#cell_attributes'] = array('align' => 'center', 'class' => 'remove');
+			    $table[$i]['image']['#cell_attributes'] = array('class' => 'image');
+			    $table[$i]['desc']['#cell_attributes'] = array('width' => '100%', 'class' => 'desc');
+			    $table[$i]['qty']['#cell_attributes'] = array('class' => 'qty');
+			    $table[$i]['total']['#cell_attributes'] = array('nowrap' => 'nowrap', 'class' => 'price');
+			    $table[$i]['#attributes'] = array('valign' => 'top', 'meta' => drupal_to_js(array('nid' => $item->nid , 'data' => $item->data, 'key' => $i )));
+		    }
+	  }
+    }
+}
+
+function uc_ajax_cart_remove_button( $fid, $cartItem , $cartPosition )
+{
+
+	$form = array
+    	(
+    		'#action' => 'cart/ajax/view',
+    		'nid' => array
+    		(
+    			'#type' => 'hidden' ,
+    			'#value' => $cartItem->nid
+    		),
+    		'key' => array
+    		(
+    			'#type' => 'hidden' ,
+    			'#value' => $cartPosition
+    		),
+    		'data' => array
+    		(
+    			'#type' => 'hidden' ,
+    			'#value' => drupal_to_js((array)$cartItem->data)
+    		),
+    		'qty' => array
+    		(
+    			'#type' => 'hidden' ,
+    			'#value' => 0
+    		),
+    		'quiet' => array
+    		(
+    			'#type' => 'hidden' ,
+    			'#value' => true
+    		),
+    		'remove' => array
+    		(
+    			'#type' => 'button',
+    			'#value' => 'remove'
+    		)
+    	);
+    	return $form ;
+}
+
+
+/**
+ * change button text for products with required attributes in catalog view
+ * 
+ * @param $form array form array
+ */
+function _uc_ajax_cart_alter_cart_attributes(&$form)
+{
+	$form['submit']['#value'] = t('Choose an option.') ;
+}
+
+/**
+ * check for required attributes
+ * 
+ * @param $form
+ * @return boolean
+ */
+function _uc_ajax_cart_check_for_required_attributes(&$form)
+{
+	if ( !module_exists('uc_attribute') ) return false ;
+	$nid = $form['nid']['#value'];
+	$attributes = uc_product_get_attributes($nid);
+	if ( !is_array($attributes) )
+	{
+		return false ;
+	}
+	foreach ( $attributes as $att )
+	{
+		if ( $att->required == 1 )
+		{
+			return true ;
+		}
+	}
+}
+
+/**
+ * change text for add to cart button 
+ * 
+ * change text when product already in cart
+ * 
+ * @param $form array form array
+ * @param $isKit boolean is product kit ?
+ */
+function _uc_ajax_cart_alter_cart(&$form,$isKit = false)
+{
+        $txt = variable_get('uc_ajax_cart_button_c',false) ;
+        // Display another text on button if product is on cart
+        if ( $txt !== false && !empty($txt) )
+        {
+            $cart = uc_cart_get_contents() ;
+            $nid = $form['nid']['#value'] ;
+            foreach ( $cart as $key  => $item )
+            {
+                if ( $item->nid == $nid )
+                {
+                    $form['submit']['#value'] = t($txt) ;
+                    break ;
+                }
+            }
+        }
+        _uc_ajax_cart_alter_form_all($form);
+}
+
+
+function _uc_ajax_cart_load_res()
+{
+	static $loaded ;
+
+    if ( isset($loaded) && $loaded === true  ) return ;
+
+    /** Add standard js **/
+    drupal_add_js( 'misc/jquery.form.js' );
+    drupal_add_js( drupal_get_path('module', 'uc_ajax_cart') .'/js/jqModal.js' );
+    drupal_add_js( drupal_get_path('module', 'uc_ajax_cart') .'/js/jquery.ajax.cart.js' );
+    
+    drupal_add_css( drupal_get_path('module', 'uc_ajax_cart') .'/css/ajaxcart.css' );
+    drupal_add_css( drupal_get_path('module', 'uc_ajax_cart') .'/css/jqModal.css' );
+
+    /** Experimental Feature **/
+//    drupal_add_js( drupal_get_path('module', 'uc_ajax_cart') .'/js/jquery.ajax.cart.view.js' );
+
+    /** Intitalize vars **/
+
+    $effects     = false ;
+
+
+    /** Get button text **/
+    $txt = variable_get('uc_ajax_cart_button_txt','') ;
+    if ( !empty($txt) )
+    {
+        $txt = t($txt) ;
+    } else {
+        $txt = false ;
+    }
+
+    $settings = array(
+            'url' =>  url('cart/ajax/update'), // Ajax update URL
+    		'view_url' =>  url('cart/ajax/update/view'), // Ajax update URL
+            'text' => $txt,                    // alternative button text
+            'effects' => $effects ,            // enable effects ?
+            'disable' => variable_get('uc_ajax_cart_button_disable',1),  // disable "Add to cart" button
+            'bclass' => variable_get('uc_ajax_cart_button_class','disable')  // disable css class ?
+    );
+    //export settings
+    drupal_add_js( array('uc_ajax_cart' => $settings) , "setting");
+    $loaded = true ;
+}
+
+
+function _uc_ajax_cart_alter_form_all(&$form)
+{
+        /** Add standard js **/
+    _uc_ajax_cart_load_res();
+    if ( !is_array($form['submit']['#attributes']) ) $form['submit']['#attributes'] = array();
+    $form['submit']['#attributes']['class'] .=  ' ajax-submit-form';
+    $form['#attributes']['class'] .= ' ajax-cart-form ajax-cart-form-kit';
+
+    $vars = array();
+    $vars['qty'] = $form['qty']['#value'] ;
+    $vars['nid'] = $form['nid']['#value'] ;
+    
+    $form['pnid'] = array
+    (
+    	'#type' => 'hidden',
+    	'#value' => $form['nid']['#value']
+    );
+
+    $form['submit']['#attributes']['add_to_cart'] = drupal_to_js($vars);
+}
+
+function uc_ajax_cart_handler_update()
+{
+	header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+	exit();
+}
+
+function uc_ajax_cart_handler()
+{
+	if ( isset($_REQUEST['products']) && is_array($_REQUEST['products']) )
+    {
+    	uc_ajax_cart_handler_kit();
+    }
+ 
+	header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+    header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // past date
+
+    $formID = $_REQUEST['form_id'] ;
+    $nid = $_REQUEST['pnid'] ;
+    
+    if ( isset($_REQUEST['uc-ajax-cart-callback']) )
+    {
+    	$formID = $_REQUEST['uc-ajax-cart-callback'];
+    }
+
+    $formValues = $_REQUEST;
+    $formValues['nid'] = $nid ;
+
+    if ( is_numeric($nid) && $nid > 0 )
+    {
+        $node = node_load($nid);
+        if ( is_object($node) && uc_product_is_product($node) )
+        {
+        	if ( !isset($_REQUEST['qty']) || !is_numeric($_REQUEST['qty']) )
+            {
+            	$qty = 1 ;
+            } else $qty = $_REQUEST['qty'];
+            $result = (array) module_invoke_all('add_to_cart', $nid, $qty, $formValues);
+            
+            if (is_array($result) && count($result) > 0 ) 
+            {
+            	if ( $row['success'] === FALSE )
+            		foreach ( $result as $key => $val )
+					{
+						$val['nid'] = $nid ;
+					}
+            		uc_ajax_cart_create_ajax_msg($formID,$result);
+            } else uc_cart_add_item($nid, $qty , module_invoke_all('add_to_cart_data',$formValues), null ,false ,false) ;
+        }
+    }
+    if ( true ==  variable_get('uc_ajax_cart_del_cache',false) ) 
+    {
+        uc_cart_get_contents( null, 'rebuild');
+    }
+    $output = "" ;
+    if ( true ==  variable_get('uc_ajax_cart_rebuild',false) )
+    {
+        uc_cart_get_contents( null, 'rebuild');
+    }
+    $cart = uc_cart_block('view');
+    $output = $cart['content'] ;
+
+    $data = array
+    (
+        'form_id' => $formID,
+        'content' => $output,
+    	'success' => true
+    );
+    print drupal_to_js($data) ;
+    exit();
+}
+
+function uc_attribute_add_to_cart($nid, $qty, $data)
+{
+	$atts = uc_product_get_attributes($nid);
+	if ( !is_array($atts) || count($atts) == 0 ) return ;
+	if ( !is_array($data) || !is_array($data['attributes']) )
+	{
+		$data['attributes'] = array();
+	}
+	$attsSubmitted = $data['attributes'] ;
+	foreach ( $atts as $key => $att )
+	{
+		if ( !$att->required )
+		{
+			continue ;
+		}
+		if ( !isset( $data['attributes'][$att->aid] ) || empty($data['attributes'][$att->aid]) )
+		{
+			return array(array(
+				'success' => false,
+				'message' => t('Please choose a option')
+			));
+		}
+	}
+}
+
+function uc_stock_add_to_cart($nid, $qty, $data)
+{
+	$product = node_load($nid);
+	uc_product_load($product) ;
+	$sql = "SELECT nid FROM {uc_product_stock} WHERE sku = '%s' AND nid = '%s' AND threshold > stock ";
+	$result = db_fetch_object(db_query($sql,$product->model,$nid));
+	if (  db_affected_rows($result) == 1 ) 
+	{
+		return array(array('success' => false, 'message' => t('Product out of stock'))) ;
+	}
+}
+
+
+function uc_ajax_cart_add_to_cart( $nid, $qty, $data ) 
+{
+	//Here can placed some restrictions
+}
+
+function uc_ajax_cart_handler_kit()
+{
+    header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+    header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Datum in der Vergangenheit
+    $formID = $_REQUEST['form_id'] ;
+    $nid = $_REQUEST['pnid'];
+    $formValues = $_REQUEST;
+    $formValues['nid'] = $nid ;
+    $result = array();
+    
+    if ( isset($_REQUEST['uc-ajax-cart-callback']) )
+    {
+    	$formID = $_REQUEST['uc-ajax-cart-callback'];
+    }
+    
+    $products = $_REQUEST['products'];
+    
+    if ( isset($products) && is_array($products) )
+    {
+    	foreach ( $products as $key => $val )
+    	{
+    		$tResult =  array_merge(module_invoke_all('add_to_cart', $val['nid'], $val['qty'], $val ));
+    		if ( is_array($tResult)  )
+    		{
+    			foreach( $tResult as $rRes )
+    			{
+    				$result[] = $rRes ;
+    			}
+    		}
+    	}
+    }
+
+    if (  count($result) > 0  )
+    {
+    	uc_ajax_cart_create_ajax_msg($formID,$result);
+    	exit();
+    }
+    if ( is_numeric($nid) && $nid > 0 )
+    {
+        $node = node_load($nid);
+        if ( is_object($node) && $node->type == 'product_kit' )
+        {
+            if ( !isset($_REQUEST['qty']) && is_numeric($_REQUEST['qty']) )
+            {
+            	$qty = 1 ;
+            } else $qty = (int) $_REQUEST['qty'] ;
+            $result = uc_product_kit_add_to_cart($nid, $qty ,$val , false , false ) ;
+        }
+    }
+    if ( true ==  variable_get('uc_ajax_cart_del_cache',false) )
+    {
+        uc_cart_get_contents( null, 'rebuild');
+    }
+    $output = "" ;
+    if ( true ==  variable_get('uc_ajax_cart_rebuild',false) )
+    {
+        uc_cart_get_contents( null, 'rebuild');
+    }
+
+    $cart = uc_cart_block('view');
+    $output = $cart['content'] ;    
+
+    $data = array
+    (
+        'success' => true,
+    	'form_id' => $formID,
+        'content' => $output
+    );
+    print drupal_to_js($data) ;
+    exit();
+}
+
+function uc_ajax_cart_create_ajax_msg( $formID, $data )
+{
+	$output = "" ;
+	if ( !is_array($data) ) $data = array();
+	foreach ( $data as $key => $val )
+	{
+		$output .= theme('uc_ajax_cart_error_message',$val['message']) ;
+	}	
+	$output = theme('uc_ajax_cart_error', $output ) ;
+	$data = array
+    (
+        'form_id' => $formID,
+        'content' => $output,
+    	'success' => false
+    );
+    print drupal_to_js($data) ;
+    exit();
+}
+
+
+function theme_uc_ajax_cart_error_message( $message )
+{
+	return '<p class="error">' . $message . '</p>' ;
+}
+
+function theme_uc_ajax_cart_error( $content )
+{
+	return '<div class="error"><a href="#" class="jqmClose">'.t('Close').'</a>' . $content . '</div>' ;
+}

@@ -1,0 +1,122 @@
+<?php
+// $Id: og_user_roles.test,v 1.2 2009/05/26 05:35:06 sun Exp $
+
+/**
+ * @file
+ * OG User Roles tests.
+ */
+
+require_once drupal_get_path('module', 'og') .'/tests/og_testcase.php';
+
+class OGUserRolesTestCase extends OgTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('OG User Roles functionality'),
+      'description' => t('Add, edit and delete custom block. Configure and move a module-defined block.'),
+      'group' => t('Organic groups'),
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp('views', 'og', 'og_views', 'og_user_roles');
+
+    // Create and log in an administrative user with all permissions.
+    $permissions = module_invoke_all('perm');
+    $this->admin_user = $this->drupalCreateUser($permissions);
+    $this->drupalLogin($this->admin_user);
+
+    // Create a group node content type.
+    $this->og_group_type = $this->drupalCreateContentType();
+    variable_set('og_content_type_usage_' . $this->og_group_type->name, 'group');
+
+    // Create a group post content type.
+    $this->og_post_type = $this->drupalCreateContentType();
+    variable_set('og_content_type_usage_' . $this->og_post_type->name, 'group_post');
+
+    // Create two groups and a post for each group.
+    $this->gid1 = $this->addOgGroup($this->og_group_type->name);
+    $this->gid2 = $this->addOgGroup($this->og_group_type->name);
+    $this->nid1 = $this->addOgPost($this->og_post_type->name, array($this->gid1));
+    $this->nid2 = $this->addOgPost($this->og_post_type->name, array($this->gid2));
+
+    // Rebuild the menu so the new content types will appear in the menu.
+    menu_rebuild();
+
+    // Create a web user.
+    $web_user = $this->drupalCreateUser(array('access comments', 'access content'));
+    $this->web_user = $web_user;
+
+    // Subscribe web user to first group.
+    $result = module_invoke('og', 'subscribe_user', $this->gid1, $web_user);
+    $this->assertTrue(isset($result['type']) && $result['type'] == 'subscribed', 'Web user subscribed to organic group.');
+
+    // Create a role for OGUR privilege escalation.
+    $this->drupalPost('admin/user/roles', array('name' => 'ogur'), 'Add role');
+    $this->role_ogur = db_result(db_query("SELECT rid FROM {role} WHERE name = '%s'", 'ogur'));
+    $this->assertTrue($this->role_ogur > 0, 'User role for OGUR was created.');
+
+    // Allow group admins to assign 'ogur' role.
+    $edit = array(
+      'og_user_roles_roles_' . $this->og_group_type->name . '[' . $this->role_ogur . ']' => 1,
+    );
+    $this->drupalPost('admin/og/og_user_roles', $edit, 'Save configuration');
+
+    // Allow users in role 'ogur' to alter stories and post comments.
+    $edit = array(
+      $this->role_ogur . '[create ' . $this->og_post_type->name . ' content]' => 1,
+      $this->role_ogur . '[delete any ' . $this->og_post_type->name . ' content]' => 1,
+      $this->role_ogur . '[edit any ' . $this->og_post_type->name . ' content]' => 1,
+      $this->role_ogur . '[post comments]' => 1,
+      $this->role_ogur . '[post comments without approval]' => 1,
+    );
+    $this->drupalPost('admin/user/permissions', $edit, t('Save permissions'));
+  }
+
+  /**
+   * Test user role escalation.
+   */
+  function testUserRoleEscalation() {
+    // Assign role 'ogur' to web user in first group.
+    $edit = array(
+      'user_roles[' . $this->web_user->uid . '][' . $this->role_ogur . ']' => 1,
+    );
+    $this->drupalPost('og/users/' . $this->gid1 . '/roles', $edit, 'Save');
+    $this->assertText('The changes have been saved.', 'Role ogur was assigned to user.');
+
+    // Load group posts.
+    $node1 = node_load($this->nid1);
+    $node2 = node_load($this->nid2);
+
+    // Verify that group posts are displayed on front page.
+    $this->drupalGet('');
+    $this->assertText($node1->title, 'First group post found on front page.');
+    $this->assertText($node2->title, 'Second group post found on front page.');
+
+    // Log in web user.
+    $this->drupalLogin($this->web_user);
+
+    // Verify that user is not permitted to create content.
+    $this->assertNoLink('Create content');
+    // Verify that user can access both group posts.
+    $this->drupalGet('');
+    $this->assertText($node1->title, 'User can access first group post.');
+    $this->assertText($node2->title, 'User can access second group post.');
+
+    // Verify that user cannot edit group post belonging to second group.
+    $this->drupalGet('node/' . $node2->nid);
+    $this->assertNoLink('Edit');
+
+    // Verify that user can edit group post belonging to first group.
+    $this->drupalGet('node/' . $node1->nid);
+    $this->assertLink('Edit');
+    $this->clickLink('Edit');
+    $this->drupalPost(NULL, array(), 'Save');
+    $t_args = array('@type' => $this->og_post_type->name, '%title' => $node1->title);
+    $this->assertRaw(t('@type %title has been updated.', $t_args), 'User can update post in group.');
+  }
+}
+

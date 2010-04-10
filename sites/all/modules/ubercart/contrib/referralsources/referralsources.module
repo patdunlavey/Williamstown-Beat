@@ -1,0 +1,385 @@
+<?php
+// $Id: referralsources.module,v 1.1 2009/12/18 22:04:43 adamo Exp $
+
+/**
+ * @file
+ *
+ * Module for tracking customer referral sources.
+ */
+
+/**
+ * Define default settings
+ */
+define('REFERRALSOURCE_FIELDSET_TITLE_DEFAULT', 'Where did you hear about us?');
+define('REFERRALSOURCE_FIELDSET_DESCRIPTION_DEFAULT', 'We would love to know where you heard about us!');
+define('REFERRALSOURCE_SELECT_LABEL_DEFAULT', 'Selection');
+define('REFERRALSOURCE_OTHER_LABEL_DEFAULT', 'Other');
+define('REFERRALSOURCE_REGISTER_ENABLE_DEFAULT', TRUE);
+define('REFERRALSOURCE_REGISTER_WEIGHT_DEFAULT', 7);
+
+/**
+ * Define referral source submission types
+ */
+define('REFERRALSOURCE_SUBMISSION_TYPE_USER_REGISTER', 'referralsources_user_register'); // Submitted during new account signup
+define('REFERRALSOURCE_SUBMISSION_TYPE_FAPI', 'referralsources_fapi'); // Submitted through 3rd party FAPI form
+
+/**
+ * Implementation of hook_referralsource_submission_type().
+ */
+function referralsources_referralsource_submission_type() {
+  $types = array();
+  $types[REFERRALSOURCE_SUBMISSION_TYPE_USER_REGISTER] = array(
+    'title' => t('User Registrations'),
+    'description' => t('Submissions collected from new account signups.'),
+    'weight' => -5,
+  );
+  $types[REFERRALSOURCE_SUBMISSION_TYPE_FAPI] = array(
+    'title' => t('Other Forms'),
+    'description' => t('Submissions collected through generic FAPI forms.'),
+    'weight' => -1,
+  );
+  return $types;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function referralsources_perm() {
+  return array(
+    'edit referral sources',
+    'view referral source statistics',
+    'administer referral source settings',
+  );
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function referralsources_theme() {
+  return array(
+    'referralsources_admin_table_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'referralsources_select' => array(
+      'arguments' => array('element' => NULL),
+    )
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function referralsources_menu() {
+  $items = array();
+
+  $items['admin/content/referralsources'] = array(
+    'title' => t('Referral sources'),
+    'description' => t('Manage referral sources'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('referralsources_admin_table_form'),
+    'file' => 'referralsources.admin.inc',
+    'access arguments' => array('edit referral sources'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/content/referralsources/list'] = array(
+    'title' => t('List'),
+    'description' => t('List referral sources.'),
+    'access arguments' => array('edit referral sources'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  $items['admin/content/referralsources/add'] = array(
+    'title' => t('Add'),
+    'description' => t('Add new referral source.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('referralsources_admin_form'),
+    'file' => 'referralsources.admin.inc',
+    'access arguments' => array('edit referral sources'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/content/referralsources/statistics'] = array(
+    'title' => t('Statistics'),
+    'description' => t('Basic statistics of referral source submissions.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('referralsources_admin_statistics'),
+    'file' => 'referralsources.admin.inc',
+    'access arguments' => array('view referral source statistics'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/content/referralsources/%/edit'] = array(
+    'title' => t('Edit referral source'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('referralsources_admin_form', 3),
+    'file' => 'referralsources.admin.inc',
+    'access arguments' => array('edit referral sources'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/referralsources/%/delete'] = array(
+    'title' => t('Delete referral source'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('referralsources_admin_delete_form', 3),
+    'file' => 'referralsources.admin.inc',
+    'access arguments' => array('edit referral sources'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/settings/referralsources'] = array(
+    'title' => t('Referral sources'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('referralsources_admin_settings_form'),
+    'file' => 'referralsources.admin.inc',
+    'access arguments' => array('administer referral source settings'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_user();
+ */
+function referralsources_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'register':
+      if (variable_get('referralsource_register_enable', REFERRALSOURCE_REGISTER_ENABLE_DEFAULT)) {
+        $form = array();
+        $form['referralsource'] = array(
+          '#type' => 'fieldset',
+          '#title' => check_plain(variable_get('referralsource_fieldset_title', REFERRALSOURCE_FIELDSET_TITLE_DEFAULT)),
+          '#description' => check_plain(variable_get('referralsource_fieldset_description', REFERRALSOURCE_FIELDSET_DESCRIPTION_DEFAULT)),
+          '#collapsible' => TRUE,
+          '#collapsed' => FALSE,
+          '#weight' => variable_get('referralsource_register_weight', REFERRALSOURCE_REGISTER_WEIGHT_DEFAULT),
+        );
+        $form['referralsource']['referralsources_select'] = array(
+          '#type' => 'referralsources_select',
+        );
+        return $form;
+      }
+      break;
+
+    case 'insert':
+      if (!empty($edit['referralsources_select'])) {
+        db_query("INSERT INTO {referralsources_submissions} (rstid, uid, rid, other, created_datetime) VALUES ('%s', %d, %d, '%s', '%s')",
+          REFERRALSOURCE_SUBMISSION_TYPE_USER_REGISTER, $edit['uid'], $edit['referralsources_select']['referralsources_rid'], $edit['referralsources_select']['referralsources_other'], date('c')
+        );
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_elements().
+ */
+function referralsources_elements() {
+  return array('referralsources_select' => array(
+    '#input' => TRUE,
+    '#process' => array('referralsources_select_process'),
+    '#element_validate' => array('referralsources_select_validate'),
+  ));
+}
+
+/**
+ * Implementation of form_type_hook_value().
+ */
+function form_type_referralsources_select_value($element, $edit = FALSE) {
+  if (func_num_args() == 1) {
+    if (empty($element['#default_value']['referralsources_rid'])
+      && !empty($element['#default_value']['referralsources_other'])) {
+      // If no rid is empty and other is not, make 'Other' the default selection (instead of "Please select...")
+      $element['#default_value']['referralsources_rid'] = t('OTHER');
+    }
+    return $element['#default_value'];
+  }
+}
+
+/**
+ * Template form for selecting referral source.
+ * Can be embedded anywhere and referral source data will be recorded in DB.
+ *
+ * @param[in,out] $form_state
+ *   Standard FAPI $form_state variable.
+ * @param[in] $rsid
+ *   ID of FAPI referral sources record to load (optional)
+ * @param[in] $submit_button
+ *   If TRUE, this function will add a Submit button to the form.
+ * @param[in] $fieldset
+ *   If TRUE, the referral source selection items will be wrapped in a fieldset.
+ * @param[in] $weight
+ *
+ */
+function referralsources_select_form(&$form_state, $rsid = NULL, $submit_button = FALSE, $fieldset = TRUE, $weight = 0, $rstid = REFERRALSOURCE_SUBMISSION_TYPE_FAPI) {
+  global $user;
+
+  if (!empty($rsid)) {
+    // Load specified referral source selection record
+    $data = db_fetch_array(db_query("SELECT form_id, uid, rid, other FROM {referralsources_submissions} WHERE rsid = %d", $rsid));
+  }
+
+  // Define form items
+  $item_referralsources_rsid = array(
+    '#type' => 'value',
+    '#value' => check_plain($rsid),
+  );
+  $item_referralsources_rstid = array(
+    '#type' => 'value',
+    '#value' => check_plain($rstid),
+  );
+  $item_referralsources_uid = array(
+    '#type' => 'value',
+    '#value' => $user->uid,
+  );
+  $item_referralsources_select = array(
+    '#type' => 'referralsources_select',
+    '#default_value' => array(
+      'referralsources_rid' => isset($data['rid']) ? check_plain($data['rid']) : NULL,
+      'referralsources_other' => isset($data['other']) ? check_plain($data['other']) : '',
+    ),
+  );
+
+  // Build form
+  $form = array();
+  if ($fieldset) {
+    // Wrap referralsource selection in fieldset
+    $form['referralsource'] = array(
+      '#type' => 'fieldset',
+      '#title' => check_plain(variable_get('referralsource_fieldset_title', REFERRALSOURCE_FIELDSET_TITLE_DEFAULT)),
+      '#description' => check_plain(variable_get('referralsource_fieldset_description', REFERRALSOURCE_FIELDSET_DESCRIPTION_DEFAULT)),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    $form['referralsource']['referralsources_rsid'] = $item_referralsources_rsid;
+    $form['referralsource']['referralsources_rstid'] = $item_referralsources_rstid;
+    $form['referralsource']['referralsources_uid'] = $item_referralsources_uid;
+    $form['referralsource']['referralsources_select'] = $item_referralsources_select;
+    $form['referralsource']['#weight'] = $weight;
+  }
+  else {
+    // Display referralsource selection without fieldset
+    $form['referralsources_rsid'] = $item_referralsources_rsid;
+    $form['referralsources_rstid'] = $item_referralsources_rstid;
+    $form['referralsources_uid'] = $item_referralsources_uid;
+    $form['referralsources_select'] = $item_referralsources_select;
+    $form['referralsources_select']['#weight'] = $weight;
+  }
+  if ($submit_button) {
+    // Add submit button to form.
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+      '#weight' => 999,
+    );
+  }
+
+  // Explicitly specify submit callback in case this is being embedded in another form
+  $form['#submit'][] = 'referralsources_select_form_submit';
+
+  return $form;
+}
+
+/**
+ * Submit callback for referral source template FAPI form.
+ */
+function referralsources_select_form_submit($form, &$form_state) {
+  if (!empty($form_state['values']['referralsources_select']['referralsources_rid'])
+    || !empty($form_state['values']['referralsources_select']['referralsources_other'])) {
+    // Save referral source selection to DB
+    db_query("UPDATE {referralsources_submissions} SET rstid = '%s', form_id = '%s', uid = %d, rid = %d, other = '%s', created_datetime = '%s' WHERE rsid = %d",
+      $form_state['values']['referralsources_rstid'] , $form_state['values']['form_id'], $form_state['values']['referralsources_uid'],
+      $form_state['values']['referralsources_select']['referralsources_rid'],
+      $form_state['values']['referralsources_select']['referralsources_other'], date('c'), $form_state['values']['referralsources_rsid']
+    );
+    if (db_affected_rows() == 0) {
+      db_query("INSERT INTO {referralsources_submissions} (rstid, form_id, uid, rid, other, created_datetime) VALUES ('%s', '%s', %d, %d, '%s', '%s')",
+        $form_state['values']['referralsources_rstid'], $form_state['values']['form_id'], $form_state['values']['referralsources_uid'],
+        $form_state['values']['referralsources_select']['referralsources_rid'],
+        $form_state['values']['referralsources_select']['referralsources_other'], date('c')
+      );
+      // New referral source selection record added to DB, add id value to form for submit handlers to use
+      $form_state['values']['referralsources_rsid'] = db_last_insert_id("{referralsources_submissions}", 'rsid');
+    }
+  }
+}
+
+/**
+ * Process callback for referral source select element
+ */
+function referralsources_select_process($element, $edit, &$form_state, $complete_form) {
+  // Build the element
+  $element['#tree'] = TRUE;
+  $element['referralsources_rid'] = array(
+    '#type' => 'select',
+    '#title' => check_plain(variable_get('referralsource_select_label', REFERRALSOURCE_SELECT_LABEL_DEFAULT)),
+    '#options' => referralsources_select_options(),
+    '#default_value' => check_plain($element['#value']['referralsources_rid']),
+  );
+  $element['referralsources_other'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain(variable_get('referralsource_other_label', REFERRALSOURCE_OTHER_LABEL_DEFAULT)),
+    '#size' => 50,
+    '#maxlength' => 255,
+    '#default_value' => check_plain($element['#value']['referralsources_other']),
+  );
+  return $element;
+}
+
+/**
+ * Returns array of referral source options for select lists
+ */
+function referralsources_select_options($flat = FALSE) {
+  static $options = array();
+  static $options_flat = array();
+
+  if (empty($options)) {
+    // Get referral sources from DB
+    $result = db_query("SELECT rid, title, grouping FROM {referralsources} ORDER BY weight asc");
+    while ($row = db_fetch_object($result)) {
+      if (variable_get('referralsource_group_select_list', TRUE)) {
+        // Create a grouped list of referral sources
+        if (!empty($row->grouping)) {
+          $options[$row->grouping][$row->rid] = $row->title;
+        }
+        else {
+          $options['Other'][$row->rid] = $row->title;
+        }
+      }
+      else {
+        // Create a flat list of referral sources
+        $options[$row->rid] = $row->title;
+      }
+    }
+  }
+
+  if ($flat) {
+    // Remove grouping from options, reduce to key/value pairs (return array of valid options).
+    if (empty($options_flat)) {
+      foreach ($options as $k => $v) {
+        if (is_array($v)) {
+          foreach ($v as $k => $v) {
+            $options_flat[$k] = $v;
+          }
+        }
+        else {
+          $options_flat[$k] = $v;
+        }
+      }
+    }
+    $return = $options_flat;
+  }
+  else {
+    // Return grouped array of options for select list.
+    $return = $options;
+    // Add "Please select one..." option to beginning of select list.
+    $return = array_merge(array('' => array('' => t('Please select one...'))), $return);
+    // Add "Other" option to end of select list.
+    $return['Other']['OTHER'] = t('Other (please specify below)');
+  }
+
+  return $return;
+}
+
+/**
+ * Theme function for displaying referral source select element
+ */
+function theme_referralsources_select($element) {
+  $output = $element['#children'];
+  return $output;
+}

@@ -1,0 +1,10 @@
+<?php
+// $Id: og_calendar.install,v 1.1.2.2 2007/04/09 23:01:05 darrenoh Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function og_calendar_uninstall() {
+  db_query("DELETE FROM {blocks} WHERE module = 'og_calendar'");
+}
+

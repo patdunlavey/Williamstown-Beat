@@ -1,0 +1,20 @@
+--- /Applications/MAMP/localhost htdocs/williamstown616/sites/all/modules/location/handlers/location_views_handler_filter_proximity.inc.original
++++ location_views_handler_filter_proximity.inc
+@@ -182,6 +182,17 @@
+       }
+     }
+     if (empty($this->value['latitude']) || empty($this->value['longitude'])) {
++    // pdcarto: added user location lookup
++    // pdcarto: if no latitude/longitude by this point, then see if the user has a location
++        global $user;
++        if (!isset($user->locations)) {
++          $user = user_load($user->uid);
++        }
++        if (isset($user->locations[0]['latitude']) || !empty($user->locations[0]['latitude'])) {
++          $this->value['latitude'] = (float)$user->locations[0]['latitude'];
++          $this->value['longitude'] = (float)$user->locations[0]['longitude'];
++          return true;
++        } 
+       return false;
+     }
+     return true;

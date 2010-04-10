@@ -1,0 +1,21 @@
+; $Id: merci.info,v 1.1.2.1 2009/09/02 15:37:53 kreynen Exp $
+name = MERCI
+package = MERCI
+description = "Managed Equipment Reservation Checkout and Inventory"
+
+core = 6.x
+
+dependencies[] = content
+dependencies[] = date
+dependencies[] = date_api
+dependencies[] = date_popup
+dependencies[] = date_timezone
+dependencies[] = views
+dependencies[] = taxonomy
+
+; Information added by drupal.org packaging script on 2009-10-07
+version = "6.x-1.0"
+core = "6.x"
+project = "merci"
+datestamp = "1254943259"
+

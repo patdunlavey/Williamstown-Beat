@@ -1,0 +1,154 @@
+# Translation of de.po to German.
+# $Id: de.po,v 1.3 2005/08/21 20:11:00 jvandyk Exp $
+# Sascha Tönnies <babel@sascha-toennies.de>, 2005.
+# Uwe Hermann <uwe@hermann-uwe.de>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: de\n"
+"POT-Creation-Date: 2005-02-04 11:28+0100\n"
+"PO-Revision-Date: 2005-08-21 17:12+0200\n"
+"Last-Translator: Uwe Hermann <uwe@hermann-uwe.de>\n"
+"Language-Team: German\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+"X-Generator: KBabel 1.9.1\n"
+
+# d:\ccoro\modules\workspace.module:36
+msgid "my workspace"
+msgstr "Mein Arbeitsbereich"
+
+# d:\ccoro\modules\workspace.module:42
+msgid "list"
+msgstr "Liste"
+
+# d:\ccoro\modules\workspace.module:48
+msgid "configure"
+msgstr "Konfigurieren"
+
+# d:\ccoro\modules\workspace.module:55;178;198
+msgid "delete"
+msgstr "Löschen"
+
+# d:\ccoro\modules\workspace.module:87;274
+msgid "Select..."
+msgstr "Auswahl"
+
+# d:\ccoro\modules\workspace.module:92;283
+msgid "Add new item"
+msgstr "Neues Element erstellen"
+
+# d:\ccoro\modules\workspace.module:101;0
+msgid "workspace"
+msgstr "Arbeitsbereich"
+
+# d:\ccoro\modules\workspace.module:113;253
+msgid "Save configuration"
+msgstr "Konfiguration speichern"
+
+# d:\ccoro\modules\workspace.module:213
+msgid "Your workspace settings were saved."
+msgstr "Ihre Arbeitsbereichseinstellungen wurden gespeichert."
+
+# d:\ccoro\modules\workspace.module:120
+msgid "workspace : %username"
+msgstr "Arbeitsbereich: %username"
+
+# d:\ccoro\modules\workspace.module:154;219
+msgid "Type"
+msgstr "Typ"
+
+# d:\ccoro\modules\workspace.module:155
+msgid "Title"
+msgstr "Titel"
+
+# d:\ccoro\modules\workspace.module:156
+msgid "Owner"
+msgstr "Autor"
+
+# d:\ccoro\modules\workspace.module:157
+msgid "Published"
+msgstr "Veröffentlicht"
+
+# d:\ccoro\modules\workspace.module:158
+msgid "Modified"
+msgstr "Verändert"
+
+# d:\ccoro\modules\workspace.module:159
+msgid "Replies"
+msgstr "Antworten"
+
+# d:\ccoro\modules\workspace.module:160
+msgid "Operations"
+msgstr "Aktionen"
+
+# d:\ccoro\modules\workspace.module:165
+msgid "yes"
+msgstr "Ja"
+
+# d:\ccoro\modules\workspace.module:166
+msgid "no"
+msgstr "Nein"
+
+# d:\ccoro\modules\workspace.module:190;194
+msgid "edit"
+msgstr "Bearbeiten"
+
+# d:\ccoro\modules\workspace.module:201
+msgid "comment"
+msgstr "Kommentar"
+
+# d:\ccoro\modules\workspace.module:213
+msgid "Your workspace is currently empty."
+msgstr "Ihr Arbeitsbereich ist momentan leer."
+
+# d:\ccoro\modules\workspace.module:220
+msgid "Filename"
+msgstr "Dateiname"
+
+# d:\ccoro\modules\workspace.module:221
+msgid "Size"
+msgstr "Größe"
+
+# d:\ccoro\modules\workspace.module:231
+msgid "Files"
+msgstr "Dateien"
+
+# d:\ccoro\modules\workspace.module:250
+msgid "Number of items"
+msgstr "Anzahl der Einträge"
+
+# d:\ccoro\modules\workspace.module:250
+msgid "Maximum number of items to display in your workspace."
+msgstr "Maximale Anzahl der Einträge, die in Ihrem Arbeitsbereich angezeigt werden."
+
+# d:\ccoro\modules\workspace.module:252
+msgid "Number of files"
+msgstr "Anzahl der Dateien"
+
+# d:\ccoro\modules\workspace.module:252
+msgid "Maximum number of filenames to display in your workspace."
+msgstr "Maximale Anzahl der Dateinamen, welche in Ihrem Arbeitsbereich angezeigt werden."
+
+# d:\ccoro\modules\workspace.module:273
+msgid "Choose what kind of content you would like to add."
+msgstr "Wählen Sie, welchen Inhalt Sie hinzufügen wollen."
+
+# d:\ccoro\modules\workspace.module:282
+msgid "Add content"
+msgstr "Inhalt hinzufügen"
+
+# d:\ccoro\modules\workspace.module:294;297
+msgid "Please enter a numeric value."
+msgstr "Bitte geben Sie einen numerischen Wert ein."
+
+# d:\ccoro\modules\workspace.module:68
+msgid "administer own workspace"
+msgstr "Eigenen Arbeitsbereich administrieren"
+
+#: d:\drupal-contributions-4-6\modules\workspace\workspace.module:68
+msgid "For individual users to manage their workspace"
+msgstr "Für individuelle Benutzer, um Ihren Arbeitsbereich zu verwalten"
+

@@ -1,0 +1,572 @@
+# $Id: feedapi.pot,v 1.1.2.2 2009/03/06 16:17:17 aronnovak Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  feedapi.module,v 1.23.2.119.2.47 2009/02/24 07:34:42 aronnovak
+#  feedapi.admin.inc,v 1.1.2.1 2009/02/17 14:58:40 aronnovak
+#  feedapi.info,v 1.1.2.3.2.2 2008/04/11 19:42:50 aronnovak
+#  feedapi.install,v 1.5.2.21.2.11 2008/10/10 09:58:24 aronnovak
+#  feedapi.opml.inc,v 1.1.2.1 2009/02/17 14:58:40 aronnovak
+#  feedapi.views.inc,v 1.1.2.6 2009/02/26 06:49:09 aronnovak
+#  feedapi_handler_field_node_link_purge.inc,v 1.1.2.1 2009/01/23 13:47:11 alexb
+#  feedapi_handler_field_node_link_refresh.inc,v 1.1.2.1 2009/01/23 13:47:11 alexb
+#  feedapi_handler_field_url.inc,v 1.1.2.1 2009/01/23 13:47:11 alexb
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2009-03-06 17:04+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: feedapi.module:25
+msgid "Provides feed management interface and handles underlying processors and parsers for any type of feeds."
+msgstr ""
+
+#: feedapi.module:26
+msgid "Feeds are based on content types. Default content types are created on install. You can create new content types on the <a href=\"@content-types\">add content types</a> page. To do that, enable the \"Is a feed content type\" checkbox under the Feed API group on the content type edit form. Then choose the processors and parsers that you would like to use. At least one parser and one processor must be enabled."
+msgstr ""
+
+#: feedapi.module:29
+msgid "Current feeds are listed below. For each FeedAPI-enabled content type, the <em>Quick create</em> block may be enabled at the <a href=\"@block\">blocks administration page</a>."
+msgstr ""
+
+#: feedapi.module:31
+msgid "Feeds can be imported from a valid OPML file. You can check your OPML file at <a href=\"@validator\">OPML Validator</a>."
+msgstr ""
+
+#: feedapi.module:33
+msgid "You can find more configuration options on the content type edit form of FeedAPI-enabled <a href=\"@content-types\">content types</a>."
+msgstr ""
+
+#: feedapi.module:128
+msgid "There are no enabled parsers for this content type. In order to import feed items, you need to select a feed parser from the <a href=\"@url\">content type settings</a>."
+msgstr ""
+
+#: feedapi.module:131
+msgid "There is no parser enabled for this content-type. Contact your site administrator for help."
+msgstr ""
+
+#: feedapi.module:136
+msgid "There are no enabled processors for this content type. In order to import feed items, you need to select a processor from the <a href=\"@url\">content type settings</a>."
+msgstr ""
+
+#: feedapi.module:139
+msgid "There is no processor enabled for this content-type. Contact your site administrator for help."
+msgstr ""
+
+#: feedapi.module:204
+msgid "FeedAPI: Quick create !preset"
+msgstr ""
+
+#: feedapi.module:210
+msgid "Create !preset"
+msgstr ""
+
+#: feedapi.module:232
+msgid "Link to site"
+msgstr ""
+
+#: feedapi.module:298
+msgid "Delete all the feed items from !name"
+msgstr ""
+
+#: feedapi.module:300
+msgid "Are you sure you want to delete all the feed items from !name?"
+msgstr ""
+
+#: feedapi.module:301
+msgid "Yes"
+msgstr ""
+
+#: feedapi.module:301
+msgid "No"
+msgstr ""
+
+#: feedapi.module:355
+msgid "Feed API"
+msgstr ""
+
+#: feedapi.module:362
+msgid "Is a feed content type"
+msgstr ""
+
+#: feedapi.module:363
+msgid "Check if you want to use this content type for downloading feeds to your site."
+msgstr ""
+
+#: feedapi.module:369;408;446
+msgid "Default settings"
+msgstr ""
+
+#: feedapi.module:376
+msgid "Parser settings"
+msgstr ""
+
+#: feedapi.module:377
+msgid "Parsers turn a feed into an object ready for processing. Choose at least one."
+msgstr ""
+
+#: feedapi.module:394;432
+msgid "Enable"
+msgstr ""
+
+#: feedapi.module:395
+msgid "Check this box if you want to enable the @name parser on this feed."
+msgstr ""
+
+#: feedapi.module:402;440
+msgid "Weight"
+msgstr ""
+
+#: feedapi.module:403
+msgid "Control the execution order. Parsers with lower weights are called before parsers with higher weights."
+msgstr ""
+
+#: feedapi.module:414
+msgid "Processor settings"
+msgstr ""
+
+#: feedapi.module:415
+msgid "Processors are any kind of add on modules that hook into the feed handling process on download time - you can decide here what should happen to feed items once they are downloaded and parsed."
+msgstr ""
+
+#: feedapi.module:433
+msgid "Check this box if you want to enable the @name processor on this feed."
+msgstr ""
+
+#: feedapi.module:441
+msgid "Control the execution order. Processors with lower weights are called before processors with higher weights."
+msgstr ""
+
+#: feedapi.module:459
+msgid "This field will be populated with the feed title. You can override by filling in this field."
+msgstr ""
+
+#: feedapi.module:460
+msgid "This field will be populated with the feed description. You can override by filling in this field."
+msgstr ""
+
+#: feedapi.module:463
+msgid "Feed"
+msgstr ""
+
+#: feedapi.module:477;668
+msgid "Feed URL"
+msgstr ""
+
+#: feedapi.module:478
+msgid "Enter feed URL."
+msgstr ""
+
+#: feedapi.module:497
+msgid "Parsers"
+msgstr ""
+
+#: feedapi.module:498
+msgid "Processors"
+msgstr ""
+
+#: feedapi.module:555
+msgid "Title could not be retrieved from feed."
+msgstr ""
+
+#: feedapi.module:575
+msgid "Refresh feed on creation"
+msgstr ""
+
+#: feedapi.module:576
+msgid "If checked, feed items will be processed immediately after a feed is created."
+msgstr ""
+
+#: feedapi.module:581
+msgid "Update existing feed items"
+msgstr ""
+
+#: feedapi.module:582
+msgid "If checked, existing feed items will be updated when feed is refreshed."
+msgstr ""
+
+#: feedapi.module:587
+msgid "Pause automatic feed update"
+msgstr ""
+
+#: feedapi.module:588
+msgid "If checked, feed will not be updated automatically on cron."
+msgstr ""
+
+#: feedapi.module:592 feedapi.admin.inc:41;52
+msgid "Never"
+msgstr ""
+
+#: feedapi.module:595
+msgid "Delete news items older than"
+msgstr ""
+
+#: feedapi.module:676
+msgid "Add"
+msgstr ""
+
+#: feedapi.module:694
+msgid "Feed successfully created."
+msgstr ""
+
+#: feedapi.module:698
+msgid "Could not retrieve title from feed."
+msgstr ""
+
+#: feedapi.module:1055
+msgid "No processors specified for URL %url. Could not refresh."
+msgstr ""
+
+#: feedapi.module:1079;1147
+msgid "There are no new items in the feed."
+msgstr ""
+
+#: feedapi.module:1082
+msgid "Could not refresh feed."
+msgstr ""
+
+#: feedapi.module:1150
+msgid "%new new item(s) were saved. %updated existing item(s) were updated."
+msgstr ""
+
+#: feedapi.module:1343
+msgid "No data yet"
+msgstr ""
+
+#: feedapi.module:1453
+msgid "Two enabled processors or parsers cannot have the same weight."
+msgstr ""
+
+#: feedapi.module:1459
+msgid "Using FeedAPI for this content-type requires at least one enabled parser."
+msgstr ""
+
+#: feedapi.module:1462
+msgid "Using FeedAPI for this content-type requires at least one enabled processor."
+msgstr ""
+
+#: feedapi.module:222
+msgid "administer feedapi"
+msgstr ""
+
+#: feedapi.module:222
+msgid "advanced feedapi options"
+msgstr ""
+
+#: feedapi.module:54
+msgid "Feeds"
+msgstr ""
+
+#: feedapi.module:55
+msgid "Overview which content your site aggregates from other sites and see detailed statistics about the feeds."
+msgstr ""
+
+#: feedapi.module:61
+msgid "List"
+msgstr ""
+
+#: feedapi.module:67
+msgid "Import OPML"
+msgstr ""
+
+#: feedapi.module:74
+msgid "Export all feeds as OPML"
+msgstr ""
+
+#: feedapi.module:80 feedapi.info:0
+msgid "FeedAPI"
+msgstr ""
+
+#: feedapi.module:81
+msgid "Configure advanced options for FeedAPI module."
+msgstr ""
+
+#: feedapi.module:89 feedapi.admin.inc:30
+msgid "Refresh"
+msgstr ""
+
+#: feedapi.module:97 feedapi.admin.inc:29
+msgid "Remove items"
+msgstr ""
+
+#: feedapi.module:0
+msgid "feedapi"
+msgstr ""
+
+#: feedapi.install:9
+msgid "Stores feed-related info for each feed"
+msgstr ""
+
+#: feedapi.install:12
+msgid "The primary identifier for the feed."
+msgstr ""
+
+#: feedapi.install:17;127
+msgid "The URL of the feed"
+msgstr ""
+
+#: feedapi.install:61
+msgid "Statistics values over the time about the feeds"
+msgstr ""
+
+#: feedapi.info:0
+msgid "Provides feed aggregation functionality, a feed management interface and an API. If you enable this module, enable at least one item processor (e. g. FeedAPI Node Item) and one parser (e. g. SimplePie parser)."
+msgstr ""
+
+#: feedapi.info:0
+msgid "FeedAPI Default"
+msgstr ""
+
+#: feedapi.opml.inc:15
+msgid "OPML File"
+msgstr ""
+
+#: feedapi.opml.inc:17
+msgid "Upload an OPML file containing a list of newsfeeds to be imported."
+msgstr ""
+
+#: feedapi.opml.inc:21 views/feedapi.views.inc:31
+msgid "Feed Type"
+msgstr ""
+
+#: feedapi.opml.inc:22
+msgid "The type of feed you would like to associate this import with."
+msgstr ""
+
+#: feedapi.opml.inc:28
+msgid "Use TITLE attribute of OPML entries as feed title"
+msgstr ""
+
+#: feedapi.opml.inc:29
+msgid "If checked feed title will be overriden with the information from OPML file"
+msgstr ""
+
+#: feedapi.opml.inc:33
+msgid "Use TEXT attribute of OPML entries as feed description"
+msgstr ""
+
+#: feedapi.opml.inc:34
+msgid "If checked feed description will be overriden with the information from OPML file"
+msgstr ""
+
+#: feedapi.opml.inc:54
+msgid "Data could not be retrieved, invalid or empty file."
+msgstr ""
+
+#: feedapi.opml.inc:141
+msgid "Importing feeds"
+msgstr ""
+
+#: feedapi.opml.inc:142
+msgid "Feed import process has encountered an error."
+msgstr ""
+
+#: feedapi.opml.inc:159
+msgid "Imported feed %title."
+msgstr ""
+
+#: feedapi.opml.inc:164
+msgid "Couldn't import feed %title."
+msgstr ""
+
+#: feedapi.opml.inc:170
+msgid "Feed %title exists."
+msgstr ""
+
+#: feedapi.opml.inc:179
+msgid "Finished with an error."
+msgstr ""
+
+#: feedapi.opml.inc:184
+msgid "One feed imported."
+msgid_plural "@count feeds imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: feedapi.opml.inc:189
+msgid "One feed couldn't be imported."
+msgid_plural "@count feeds couldn't be imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: feedapi.opml.inc:194
+msgid "One duplicate feed found."
+msgid_plural "@count duplicate feeds found."
+msgstr[0] ""
+msgstr[1] ""
+
+#: feedapi.admin.inc:14
+msgid "Title"
+msgstr ""
+
+#: feedapi.admin.inc:15 views/feedapi.views.inc:38
+msgid "Last refresh"
+msgstr ""
+
+#: feedapi.admin.inc:16
+msgid "New items added per update"
+msgstr ""
+
+#: feedapi.admin.inc:17
+msgid "Update rate"
+msgstr ""
+
+#: feedapi.admin.inc:18
+msgid "Number of items"
+msgstr ""
+
+#: feedapi.admin.inc:19
+msgid "Processing time"
+msgstr ""
+
+#: feedapi.admin.inc:20
+msgid "Commands"
+msgstr ""
+
+#: feedapi.admin.inc:28
+msgid "Delete"
+msgstr ""
+
+#: feedapi.admin.inc:31
+msgid "Edit"
+msgstr ""
+
+#: feedapi.admin.inc:41;52
+msgid "%time ago"
+msgstr ""
+
+#: feedapi.admin.inc:45
+msgid "ms"
+msgstr ""
+
+#: feedapi.admin.inc:53
+msgid "No enough data for statistics"
+msgstr ""
+
+#: feedapi.admin.inc:72
+msgid "Allowed HTML tags"
+msgstr ""
+
+#: feedapi.admin.inc:74
+msgid "The list of tags which are allowed in feeds, i.e., which will not be removed by Drupal."
+msgstr ""
+
+#: feedapi.admin.inc:77
+msgid "Allow all HTML tags"
+msgstr ""
+
+#: feedapi.admin.inc:79
+msgid "In this case the module does't filter any HTML elements from the incoming fields. This checkbox overrides the above list of allowed tags."
+msgstr ""
+
+#: feedapi.admin.inc:88
+msgid "Cron time for FeedAPI [%]"
+msgstr ""
+
+#: feedapi.admin.inc:91
+msgid "Percentage of maximal PHP execution time (currently !exec seconds). At current settings, the FeedAPI cron process can run for up to !now seconds."
+msgstr ""
+
+#: feedapi.admin.inc:59
+msgid "Average over the last day."
+msgid_plural "Averages over the last @count days."
+msgstr[0] ""
+msgstr[1] ""
+
+#: views/feedapi.views.inc:15
+msgid "FeedAPI Feed"
+msgstr ""
+
+#: views/feedapi.views.inc:24
+msgid "URL"
+msgstr ""
+
+#: views/feedapi.views.inc:25
+msgid "The source RSS/Atom/RDF feed URL."
+msgstr ""
+
+#: views/feedapi.views.inc:32
+msgid "The type of the feed."
+msgstr ""
+
+#: views/feedapi.views.inc:39
+msgid "The date when the feed was last refreshed."
+msgstr ""
+
+#: views/feedapi.views.inc:53
+msgid "Link"
+msgstr ""
+
+#: views/feedapi.views.inc:54
+msgid "The link to the site."
+msgstr ""
+
+#: views/feedapi.views.inc:61
+msgid "Unique URL"
+msgstr ""
+
+#: views/feedapi.views.inc:62
+msgid "The feed that generated this node"
+msgstr ""
+
+#: views/feedapi.views.inc:68
+msgid "Feed content type"
+msgstr ""
+
+#: views/feedapi.views.inc:69
+msgid "Whether or not the content type is used as FeedAPI feed."
+msgstr ""
+
+#: views/feedapi.views.inc:72
+msgid "Is feed content type"
+msgstr ""
+
+#: views/feedapi.views.inc:79
+msgid "Purge link"
+msgstr ""
+
+#: views/feedapi.views.inc:80
+msgid "Provide a simple link to purge the feed."
+msgstr ""
+
+#: views/feedapi.views.inc:86
+msgid "Refresh link"
+msgstr ""
+
+#: views/feedapi.views.inc:87
+msgid "Provide a simple link to refresh the feed."
+msgstr ""
+
+#: views/handlers/feedapi_handler_field_node_link_purge.inc:25
+msgid "purge"
+msgstr ""
+
+#: views/handlers/feedapi_handler_field_node_link_refresh.inc:25
+msgid "refresh"
+msgstr ""
+
+#: views/handlers/feedapi_handler_field_url.inc:29
+msgid "Display"
+msgstr ""
+
+#: views/handlers/feedapi_handler_field_url.inc:32
+msgid "Node title as link"
+msgstr ""
+
+#: views/handlers/feedapi_handler_field_url.inc:33
+msgid "URL as link"
+msgstr ""
+
+#: views/handlers/feedapi_handler_field_url.inc:34
+msgid "URL as plain text"
+msgstr ""
+

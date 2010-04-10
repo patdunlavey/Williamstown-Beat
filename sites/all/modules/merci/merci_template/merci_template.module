@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * Implementation of hook_node_info().
+ */
+function merci_template_node_info() {
+  return array(
+    // Reservation nodes.
+    'merci_reservation_template' => array(
+      'name' => t('Reservation Template'),
+      'module' => 'node',
+      'has_body' => TRUE,
+      'description' => t("A reservation template prepopulates MERCI with the items reserved in a previous reservation."),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function merci_template_form_alter(&$form, $form_state, $form_id) {
+
+   switch ($form_id) {
+
+    case 'merci_reservation_template_node_form':
+      unset($form['body_field']['format']);
+      $form['body_field']['body'] = array(
+        '#type' => 'select',
+        '#title' => t('Copy Recent Reservation'),
+        '#options' => merci_template_recent_reservations_options(),
+        '#default_value' => ''
+      );
+      break;
+    }  
+ }
+ 
+
+
+/**
+ * Get form API options for recent reservations
+ */
+
+function merci_template_recent_reservations_options() {
+
+	global $user;
+
+	$options = array();
+	
+	if (user_access('administer MERCI')) {
+		$reservations = db_query("SELECT n.title , n.nid FROM {content_type_merci_reservation} ctmr JOIN {merci_reservation_detail} mrd ON ctmr.nid = mrd.nid JOIN {merci_reservation} mr ON ctmr.nid = mr.nid JOIN {node} n ON n.nid = ctmr.nid ORDER BY n.changed DESC LIMIT 20");
+	    
+	} // if
+	else {
+	
+		$reservations = db_query("SELECT n.title , n.nid FROM {content_type_merci_reservation} ctmr JOIN {merci_reservation_detail} mrd ON ctmr.nid = mrd.nid JOIN {merci_reservation} mr ON ctmr.nid = mr.nid JOIN {node} n ON n.nid = ctmr.nid WHERE n.uid = %d ORDER BY n.created DESC LIMIT 20", $user->uid);
+		
+	}
+	
+	while ($reservation = db_fetch_object($reservations)) {
+
+		$items = array();
+		
+		$placeholders = db_query("SELECT n.type , mrd.item_nid , mnt.type_setting FROM {merci_reservation_detail} mrd JOIN {node} n ON n.nid = mrd.placeholder_nid JOIN {merci_node_type} mnt ON mnt.type = n.type WHERE mrd.nid = %d", $reservation->nid);
+	    while ($placeholder = db_fetch_object($placeholders)) {
+	    
+	    	if ($placeholder->type_setting=='bucket') {
+	    
+		    	$items[] = $placeholder->type;
+	    
+	    	} // if
+	    	else {
+	    	
+	    		$items[] = $placeholder->item_nid;
+	    	
+	    	} // else
+	    }
+
+		$options[implode(',', $items)] = $reservation->title . ' (#' . $reservation->nid . ')';
+
+	}
+	
+	// $options['value'] = 'display';
+	
+	return $options;
+
+} // merci_template_recent_reservations_options

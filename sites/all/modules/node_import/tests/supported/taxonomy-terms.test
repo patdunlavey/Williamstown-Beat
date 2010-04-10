@@ -1,0 +1,97 @@
+<?php
+// $Id: taxonomy-terms.test,v 1.1.2.1 2009/04/21 19:07:52 robrechtj Exp $
+
+/**
+ * @file
+ * Tests importing taxonomy terms.
+ */
+
+class NodeImportTaxonomyTermTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Core - Taxonomy terms (taxonomy)'),
+      'description' => t('Tests imports of taxonomy terms.'),
+      'group' => t('Node import'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('taxonomy', 'date_api', 'node_import');
+    module_load_include('inc', 'node_import');
+  }
+
+  function tearDown() {
+    parent::tearDown();
+  }
+
+  /**
+   * Tests importing taxonomy terms.
+   */
+  function testImportTaxonomyTerms() {
+    // Create vocabulary.
+    $vocabulary = array(
+      'name' => $this->randomName(32),
+      'multiple' => 0,
+      'tags' => 0,
+      'hierarchy' => 1,
+      'relations' => 1,
+    );
+    taxonomy_save_vocabulary($vocabulary);
+
+    // We create a parent and a related term first.
+    $parent = array(
+      'name' => 'parent_'. $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+    );
+    taxonomy_save_term($parent);
+
+    $related = array(
+      'name' => 'related_'. $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+    );
+    taxonomy_save_term($related);
+
+    // Check if we can import to this vocabulary.
+    $types = node_import_types(TRUE);
+    $type = 'term:'. $vocabulary['vid'];
+    $this->assertTrue(isset($types[$type]), t('Can import to vocabulary.'));
+
+    // Check if we can import a term.
+    $name = $this->randomName(32);
+    $parents = $parent['name'];
+    $synonyms = $this->randomName(32);
+    $weight = 5;
+    $relations = $related['name'];
+    $description = $this->randomName(32);
+
+    $data = array($name, $parents, $synonyms, $weight, $relations, $description);
+    $map = array('name' => 0, 'parent' => 1, 'synonyms' => 2, 'weight' => 3, 'relations' => 4, 'description' => 5);
+    $defaults = array();
+    $options = array();
+    $preview = FALSE;
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Term returned ID.'));
+    if (!is_array($result)) {
+      $term = taxonomy_get_term($result);
+      $this->assertTrue(is_object($term), t('Term object exists.'));
+      $this->assertTrue($vocabulary['vid'] == $term->vid, t('Terms belongs to correct vocabulary.'));
+      $this->assertTrue($name == $term->name, t('Term has correct name.'));
+      $this->assertTrue($description == $term->description, t('Term has correct description.'));
+      $this->assertTrue($weight == $term->weight, t('Term has correct weight.'));
+
+      $term->synonyms = taxonomy_get_synonyms($term->tid);
+      $this->assertTrue(count($term->synonyms) == 1, t('Term has one synonym.'));
+      $this->assertTrue(in_array($synonyms, $term->synonyms), t('Term has correct synonym.'));
+
+      $term->relations = taxonomy_get_related($term->tid);
+      $this->assertTrue(count($term->relations) == 1, t('Term has one related term.'));
+      $this->assertTrue(isset($term->relations[$related['tid']]), t('Term has correct related term.'));
+
+      $term->parents = taxonomy_get_parents($term->tid);
+      $this->assertTrue(count($term->parents) == 1, t('Term has one parent term.'));
+      $this->assertTrue(isset($term->parents[$parent['tid']]), t('Term has correct parent term.'));
+    }
+  }
+}
+

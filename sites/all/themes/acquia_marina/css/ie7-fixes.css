@@ -1,0 +1,82 @@
+/* $Id: ie7-fixes.css 6575 2010-02-25 01:34:35Z chris $ */
+
+/* Acquia Marina - IE7 Fixes */
+
+/*************/
+/* IE7 FIXES */
+/*************/
+
+.block {
+  position: relative;
+}
+
+/* Pager - current */
+.item-list ul.pager li.pager-current {
+  margin-right: 2px;
+  padding-right: 3px;
+}
+
+/* Marina - Icons */
+.block-icon {
+  left: 4px;
+  top: 2px;
+}
+
+/* Search */
+#secondary-menu,
+#search-box.block {
+  margin-bottom: -25px;
+}
+
+#search-box-inner {
+  float: left;
+  width: 262px;
+}
+
+.search-box-inner input.search-submit {
+  margin: 0 0 0 4px;
+  padding: 2px;
+}
+
+/* Header site info */
+#header-site-info.block {
+  width: 100%;
+}
+
+/* Primary menu */
+#primary-menu ul.menu li {
+  background-position: 0 1px;
+}
+
+#primary-menu ul.menu li a:link,
+#primary-menu ul.menu li a:visited {
+  background-position: 100% 2px;
+  padding-top: 6px;
+  margin-top: -1px;
+  padding: 5px 10px 3px 0;
+}
+
+/* Primary Menu - Second level - Hovers for parent menu item */
+#primary-menu ul.menu li a:hover,
+#primary-menu ul.menu li:hover a,
+#primary-menu ul.menu li.hover a,
+#primary-menu ul.menu li.active-trail a:link,
+#primary-menu ul.menu li.active-trail a:visited {
+  background-position: right -44px;
+}
+
+#primary-menu ul.menu li:hover,
+#primary-menu ul.menu li.hover,
+#primary-menu ul.menu li.active-trail {
+  background-position: left -40px;
+}
+
+/* Comments */
+#comments .marina-rounded-corners .corner-bottom {
+  margin-top: -2px;
+}
+
+/* Block content */
+.marina-rounded-corners .inner-wrapper .inner-inner {
+  padding-top: 0;  
+}

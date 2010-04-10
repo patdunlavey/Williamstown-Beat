@@ -1,0 +1,62 @@
+<?php
+// $Id: node.test,v 1.1.2.3 2009/04/21 15:31:20 robrechtj Exp $
+
+/**
+ * @file
+ * Tests ../supported/node.inc.
+ */
+
+class NodeImportNodeTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Core - Node (node)'),
+      'description' => t('Tests basic node imports (title, body, format, published, promoted, sticky, authored by and authored on).'),
+      'group' => t('Node import'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('node_import', 'date_api', 'node');
+    module_load_include('inc', 'node_import');
+  }
+
+  function tearDown() {
+    parent::tearDown();
+  }
+
+  /**
+   * Tests Title field.
+   */
+  function testTitle() {
+    $title = $this->randomName(32);
+
+    $type = 'node:story';
+    $data = array($title);
+    $map = array('title' => 0);
+    $defaults = array();
+    $options = array();
+    $preview = TRUE;
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(is_string($result), t('Preview is returned.'), t('Preview'));
+    $pos = strpos($result, $title);
+    $this->assertTrue($pos !== FALSE, t('Preview contains title.'), t('Preview'));
+
+    $preview = FALSE;
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Title set'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(is_object($node), t('Node exists.'), t('Title set'));
+      $this->assertEqual($node->type, 'story', t('Node is of correct type.'), t('Title set'));
+      $this->assertEqual($node->title, $title, t('Node has correct title.'), t('Title set'));
+    }
+
+    $title = '';
+    $data = array($title);
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(is_array($result), t('Errors are returned.'), t('Title empty'));
+    $this->assertTrue(in_array(t('Title field is required.'), $result), t('Errors include "Title field is required".'), t('Title empty'));
+  }
+}
+

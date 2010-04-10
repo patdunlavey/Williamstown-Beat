@@ -1,0 +1,5 @@
+name = og_my_mods
+description = alter og details block links
+dependencies[] = og
+package = Organic groups
+core = 6.x

@@ -1,0 +1,44 @@
+<?php
+// $Id$
+
+// Implement hook_og_links_alter
+function mydirtyfixes_og_links_alter(&$links, $node)
+{
+  // Using Drupal for Firebug to inspect stuff:
+  //firep( $node, "node");
+  //firep( $links, "links");
+
+  // don't do anything if user is not a member
+  if ( ! og_is_group_member($node) ) return;
+ 
+  // remove some links
+  unset($links["create_poll"]);
+  unset($links["create_image"]);
+  unset($links["create_forum"]);
+  unset($links['manager']);
+  unset($links['my_membership']);
+ 
+  // modify create project_issue link
+  // if there is a project associated with this group (there assumed to be only one)
+  if ( isset($node->field_project_node) ) {
+    $pid = $node->field_project_node[0]['nid'];
+    // some users can't create issues
+    if ( isset($links['create_project_issue']) )
+      $links['create_project_issue'] = l(t('Create Issue'), "node/add/project-issue/$pid",
+                                       array("query"=>array("gids[]"=>"$node->nid"))
+                                         );
+  } else {
+       unset($links['create_project_issue']);
+  }
+ 
+
+  // Add Trac link(s)
+  if ( isset($node->field_tracurl) && $node->field_tracurl[0]['url'] )
+    $links['trac'] = l(t('Trac'), $node->field_tracurl[0]['url'] );
+
+  // Add all posts link
+  $links['all_posts'] =  l(t('All posts'), "node/$node->nid/search");
+
+  // etc...
+}
+?>

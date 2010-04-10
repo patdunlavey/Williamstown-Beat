@@ -1,0 +1,38 @@
+<?php
+// $Id: linktocontent_node.theme,v 1.2 2007/10/08 15:18:09 stborchert Exp $
+
+/**
+ * @addtogroup themeable
+ * @{
+ */
+
+/**
+ * Format the display of the settings page
+ **/
+function theme_linktocontent_node_settings_page($form) {
+  // Table headers.
+  $header = array(t('Enabled'));
+  $header[] = t('Name');
+
+  $rows = array();
+  $types = node_get_types();
+  $types['term'] = '';
+  foreach ($types as $key => $info) {
+    $row = array();
+    $row[] = array('data' => drupal_render($form['status'][$key]), 'align' => 'left');
+    $row[] = drupal_render($form['name'][$key]);
+    $rows[] = $row;
+  }
+  $fieldset = array(
+    '#title' => t('Available content types'),
+    '#description' => t('Select which content type should be displayed in the node listing of the FCKeditor and TinyMCE plugin `linktonode`.'),
+    '#collapsible' => true,
+    '#collapsed' => false,
+    '#value' => theme('table', $header, $rows, array('summary' => 'node types')));
+  $output = theme('fieldset', $fieldset);
+
+  $output .= drupal_render($form);
+  return $output;
+}
+
+/** @} End of addtogroup themeable */

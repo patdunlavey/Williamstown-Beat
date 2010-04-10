@@ -1,0 +1,15 @@
+; $Id:$
+
+name = Ubercart Profile Integraion
+description = Adds a pane for pulling in the profile for a User
+dependencies[] = uc_store
+dependencies[] = profile
+dependencies[] = uc_cart
+package = Ubercart - extra
+core = 6.x
+; Information added by drupal.org packaging script on 2009-11-25
+version = "6.x-1.2"
+core = "6.x"
+project = "uc_profile"
+datestamp = "1259112070"
+

@@ -1,0 +1,28 @@
+<?php
+/***
+ * $Id: uc_ajax_cart.install,v 1.4.2.1 2009/02/02 12:51:24 erikseifert Exp $
+ *
+ *
+ */
+function uc_ajax_cart_install()
+{
+    variable_set('uc_ajax_cart_button_txt','Add product to cart...') ;
+    variable_set('uc_ajax_cart_button_class','disabled') ;
+    variable_set('uc_ajax_cart_button_c','') ;
+    variable_set('uc_ajax_cart_button_disable',1) ;
+    variable_set('uc_ajax_cart_rebuild',false) ;
+    variable_set('uc_ajax_cart_dragdrop',false) ;
+    variable_set('uc_ajax_cart_del_cache',false) ;
+    variable_set('uc_ajax_cart_effects',true) ;
+}
+function uc_ajax_cart_uninstall()
+{
+    variable_del('uc_ajax_cart_js_src') ;
+    variable_del('uc_ajax_cart_button_txt') ;
+    variable_del('uc_ajax_cart_button_c') ;
+    variable_del('uc_ajax_cart_button_class') ;
+    variable_del('uc_ajax_cart_rebuild') ;
+    variable_del('uc_ajax_cart_dragdrop') ;
+    variable_del('uc_ajax_cart_del_cache') ;
+    variable_del('uc_ajax_cart_effects') ;
+}

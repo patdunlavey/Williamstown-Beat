@@ -1,0 +1,10 @@
+; $Id: linktocontent.info,v 1.4 2007/10/08 15:18:09 stborchert Exp $
+name = "Linktocontent"
+description = "Provides a small 'API' for FCKeditor and TinyMCE plugins to work with drupal data and functionality."
+package = Content
+
+; Information added by drupal.org packaging script on 2008-03-06
+version = "6.x-2.x-dev"
+project = "linktocontent"
+datestamp = "1228469162"
+core = 6.x

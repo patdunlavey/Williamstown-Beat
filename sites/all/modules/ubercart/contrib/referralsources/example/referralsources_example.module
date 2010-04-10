@@ -1,0 +1,159 @@
+<?php
+// $Id: referralsources_example.module,v 1.1 2009/12/18 22:13:18 adamo Exp $
+
+/**
+ * @file
+ *
+ * Example module demonstrating how to embed the Referral Sources
+ * selection element in any Forms API form, for centralized tracking.
+ */
+
+/**
+ * Define referral source submission types.
+ *
+ * A "submission type" is just a way of keeping track of where a submission came from.
+ * The referral sources module defines submission types for Ubercart orders, user registration,
+ * webforms, and a generic type for FAPI forms of 3rd party modules.  Defining your own
+ * submission type is optional.  You can use the generic FAPI submission type and the form_id
+ * can be used to keep track of where submissions are coming from.
+ *
+ * The strings defined here will become the IDs of your submission types.  The submission type
+ * ID is stored in the rstid column of the referralsources_submissions table when a referral
+ * source selection is submitted.  Always prefix your submission types with your module name
+ * to avoid conflicts with other modules.  If your module will have only one submission type,
+ * you can simple use your module name, as we do here:
+ */
+define('RS_EXAMPLE_SUBMISSION_TYPE', 'rs_example');
+
+/**
+ * Implementation of hook_referralsource_submission_type().
+ *
+ * This hook tells the Referral Sources module what submission types this module provides, and
+ * supplies titles and descriptions to be displayed on the Statistics page.  You can also set
+ * the weight.  The core types all have a weight less than 0.
+ */
+function referralsources_example_referralsource_submission_type() {
+  $types = array();
+  $types[RS_EXAMPLE_SUBMISSION_TYPE] = array(
+    'title' => t('Referral Sources Example Module'),
+    'description' => t('Submissions collected from the example referral sources form.'),
+    'weight' => 0,
+  );
+  return $types;
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ * This creates a "Referral Source" menu item.
+ * The URI will be such as "http://example.com/referralsource".
+ *
+ * You can specify a referralsources_example_id, and the specified record will be loaded
+ * from the DB for editing.
+ */
+function referralsources_example_menu() {
+  $items = array();
+  $items['referralsource'] = array(
+    'title' => t('Referral source'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('referralsources_example_select_form', 1),
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Callback function for example referral sources select form.
+ *
+ * As an example, here is a very basic form that asks the user for their name and referral source,
+ * and stores the information in the DB.
+ */
+function referralsources_example_select_form(&$form_state, $referralsources_example_id = NULL) {
+  /**
+   * Start out by building your FAPI form like any other.
+   *
+   * This form just contains a Full Name field and a Submit button.
+   * It will store the Full Name value submitted in the referralsources_fapi_example table,
+   * along with the ID of the referral source selection record.
+   */
+  if (!empty($referralsources_example_id)) {
+    // Load existing data from DB
+    $data = db_fetch_array(db_query("SELECT * FROM {referralsources_example} WHERE referralsources_example_id = %d", $referralsources_example_id));
+    // This is the ID of the referral source selection record:
+    $referralsources_rsid = $data['rsid'];
+  }
+
+  $form = array();
+  $form['referralsources_example_id'] = array(
+    '#type' => 'value',
+    '#value' => check_plain($referralsources_example_id),
+  );
+  $form['fullname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Full Name'),
+    '#size' => 50,
+    '#maxlength' => 50,
+    '#required' => TRUE,
+    '#weight' => 0,
+    '#default_value' => (isset($data['fullname']) ? check_plain($data['fullname']) : ''),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#weight' => 99,
+  );
+
+  /**
+  * Build referral sources piece of the form.
+  *
+  * The referralsources_select_form is defined in referralsources.module.
+  * In this case, we are specifying FALSE for the $submit_button parameter,
+  * TRUE for the $fieldset parameter, 1 for the $weight parameter, and
+  * RS_EXAMPLE_SUBMISSION_TYPE for the $rstid parameter.
+  *
+  * This will give us a referral source selection dialog wrapped in it's own fieldset,
+  * with the fieldset's weight set to 1, and it will not add a submit button to the form.
+  *
+  * We will use the submission type we defined earlier in this module to separate this
+  * module's submissions from generic form submissions.  If we had left out the referral
+  * source submission type id ($rstid), the generic FAPI form submission type would have
+  * been used.
+  *
+  * If $referralsources_fapi_id is not empty it will load that referral source selection
+  * record from the DB and set the appropriate default values on the form.
+  */
+  $form_referralsources = referralsources_select_form($form_state, $referralsources_rsid, FALSE, TRUE, 1, RS_EXAMPLE_SUBMISSION_TYPE);
+
+  // Merge referralsources dialog with rest of form.
+  $form = array_merge($form, $form_referralsources);
+
+  /**
+  * The submit callback that handles saving the referral source selection will already be
+  * defined on the form at this point.  Now we add our own submit callback to handle saving
+  * the rest of the form data (Full Name, and the ID of the referral sources selection record).
+  * This needs to be executed AFTER the referral source selection callback is executed, so the
+  * referral source selection ID will be available.
+  */
+  $form['#submit'][] = 'referralsources_example_select_submit';
+
+  return $form;
+}
+
+/**
+ * Submit callback for referralsources_example_select_form.
+ * Save fullname and ID of referral source selection to DB.
+ */
+function referralsources_example_select_submit($form, &$form_state) {
+  db_query("UPDATE {referralsources_example} SET fullname = '%s', rsid = %d WHERE referralsources_example_id = %d",
+    $form_state['values']['fullname'], $form_state['values']['referralsources_rsid'], $form_state['values']['referralsources_example_id']);
+  if (db_affected_rows() == 0) {
+    db_query("INSERT INTO {referralsources_example} (fullname, rsid) VALUES ('%s', %d)",
+      $form_state['values']['fullname'], $form_state['values']['referralsources_rsid']);
+    // Get ID of new record for redirection
+    $form_state['values']['referralsources_example_id'] = db_last_insert_id("{referralsources_fapi_example}", 'referralsources_example_id');
+  }
+  drupal_set_message(t('Record saved.'));
+  $form_state['redirect'] = 'referralsource/'. $form_state['values']['referralsources_example_id'];
+}
+

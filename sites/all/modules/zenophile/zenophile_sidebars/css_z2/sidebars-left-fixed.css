@@ -1,0 +1,50 @@
+/* $Id: sidebars-left-fixed.css,v 1.1.2.1 2009/12/11 00:24:57 garrettalbright Exp $ */
+
+/* Fixed layout; both sidebars on left */
+
+#page, body.no-sidebars #content {
+  width: PAGEpx;
+}
+
+div.region-sidebar-first {
+  width: LSB-SBpx;
+  margin-right: -LSB-SBpx;
+}
+
+div.region-sidebar-second {
+  width: RSB-SBpx;
+}
+
+body.two-sidebars div.region-sidebar-second {
+  margin-left: RSB-SBpx;
+  margin-right: -BOTHSB-SBpx;
+}
+
+body.sidebar-second div.region-sidebar-second {
+  margin-left: 0px;
+  margin-right: -RSB-SBpx;
+}
+
+div.region-sidebar-second div.section {
+  margin-left: 0px;
+  margin-right: 20px;
+}
+
+body.no-sidebars #content, body.one-sidebar #content, body.two-sidebars #content {
+  margin-right: -PAGEpx;
+}
+
+div.region-sidebar-first div.section {
+  margin-left: LSB-SBpx;
+  width: LSB-CONTENTpx;
+}
+
+div.region-sidebar-second div.section {
+  margin-left: RSB-SBpx;
+  width: RSB-CONTENTpx;
+}
+
+div.two-sidebars #content {
+  margin-left: BOTHSB-CONTENTpx;
+  width: BOTHSB-CONTENTpx;
+}

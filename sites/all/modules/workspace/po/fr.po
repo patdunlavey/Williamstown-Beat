@@ -1,0 +1,158 @@
+# $Id: fr.po,v 1.2 2005/10/02 00:51:15 uwe Exp $
+# by Ludovic Dias
+msgid ""
+msgstr ""
+"Project-Id-Version: Drupal Module Workspace v4.6.0 French Translation\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2005-09-17 18:23+0100\n"
+"Last-Translator: Ludovic Dias http://www.flashtranslation.com <admin@flashtranslation.com>\n"
+"Language-Team: flashtranslation.com <admin@flashtranslation.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: French\n"
+
+#: workspace.module:14
+msgid "For individual users to manage their workspace"
+msgstr "Permettre aux utilisateurs individuels d'organizer leur propre espace de travail"
+
+#: workspace.module:32
+msgid "my workspace"
+msgstr "Mon espace personnel"
+
+#: workspace.module:38
+msgid "list"
+msgstr "liste"
+
+#: workspace.module:44
+msgid "configure"
+msgstr "configuer"
+
+#: workspace.module:51
+#: ;213;232
+msgid "delete"
+msgstr "détruire"
+
+#: workspace.module:83
+#: ;308
+msgid "Select..."
+msgstr "Sélectionnez..."
+
+#: workspace.module:88
+#: ;317
+msgid "Add new item"
+msgstr "Ajoutez un nouvel élément"
+
+#: workspace.module:97
+#: ;0
+msgid "workspace"
+msgstr "Espace de travail personnel"
+
+#: workspace.module:109
+#: ;287
+msgid "Save configuration"
+msgstr "Confirmez la configuration"
+
+#: workspace.module:112
+msgid "Your workspace settings were saved."
+msgstr "Les paramètres de votre espace personnel ont été confirmées."
+
+#: workspace.module:118
+msgid "workspace : %username"
+msgstr "Espace personnel : %username"
+
+#: workspace.module:169
+#: ;253
+msgid "Type"
+msgstr "Nature"
+
+#: workspace.module:170
+msgid "Title"
+msgstr "Nom"
+
+#: workspace.module:171
+msgid "Owner"
+msgstr "Propriétaire"
+
+#: workspace.module:172
+msgid "Published"
+msgstr "Publié"
+
+#: workspace.module:173
+msgid "Modified"
+msgstr "Modifié"
+
+#: workspace.module:174
+msgid "Replies"
+msgstr "Réponses"
+
+#: workspace.module:175
+msgid "Operations"
+msgstr "Opérations"
+
+#: workspace.module:180
+msgid "yes"
+msgstr "oui"
+
+#: workspace.module:181
+msgid "no"
+msgstr "non"
+
+#: workspace.module:212
+#: ;224;228
+msgid "edit"
+msgstr "éditer"
+
+#: workspace.module:235
+msgid "comment"
+msgstr "commentaire"
+
+#: workspace.module:247
+msgid "Your workspace is currently empty."
+msgstr "Votre espace personnel est vide pour l'instant."
+
+#: workspace.module:254
+msgid "Filename"
+msgstr "Nom de fichier"
+
+#: workspace.module:255
+msgid "Size"
+msgstr "Taille"
+
+#: workspace.module:265
+msgid "Files"
+msgstr "Fichiers"
+
+#: workspace.module:284
+msgid "Number of items"
+msgstr "Nombre d'éléments"
+
+#: workspace.module:284
+msgid "Maximum number of items to display in your workspace."
+msgstr "Nombre maximal d'éléments à afficher dans votre espace de travail."
+
+#: workspace.module:286
+msgid "Number of files"
+msgstr "Nombre de fichiers"
+
+#: workspace.module:286
+msgid "Maximum number of filenames to display in your workspace."
+msgstr "Nombre maximal de fichiers à afficher dans votre espace personnel."
+
+#: workspace.module:307
+msgid "Choose what kind of content you would like to add."
+msgstr "Choisir la nature du contenu que vous voulez ajouter."
+
+#: workspace.module:316
+msgid "Add content"
+msgstr "Ajouter du contenu"
+
+#: workspace.module:328
+#: ;331
+msgid "Please enter a numeric value."
+msgstr "Merci d'entrer seulement un chiffre"
+
+#: workspace.module:64
+msgid "administer own workspace"
+msgstr "Administer votre propre espace de travail personnel"
+

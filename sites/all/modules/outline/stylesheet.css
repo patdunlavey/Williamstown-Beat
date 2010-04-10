@@ -1,0 +1,37 @@
+/* $Id: stylesheet.css,v 1.2 2009/04/04 02:06:04 augustin Exp $ */
+
+.outline-navigation > ul {
+  border-top: 1px solid #888;
+}
+
+.outline-navigation .menu {
+  padding: 0;
+}
+.outline-navigation .page-links {
+  border-top: 1px solid #888;
+  border-bottom: 1px solid #888;
+  text-align: center;
+  padding: 0.5em;
+}
+.outline-navigation .page-previous {
+  text-align: left;
+  width: 42%;
+  display: block;
+  float: left; /* LTR */
+}
+.outline-navigation .page-up {
+  margin: 0 5%;
+  width: 4%;
+  display: block;
+  float: left; /* LTR */
+}
+.outline-navigation .page-next {
+  text-align: right;
+  width: 42%;
+  display: block;
+  float: right;
+}
+
+#outline-admin-overview  .book-title {
+  padding-left: 3em;
+}

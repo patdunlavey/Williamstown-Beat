@@ -1,0 +1,21 @@
+<?php
+// $Id: linktocontent_category.install,v 1.3 2007/10/08 15:18:09 stborchert Exp $
+/*
+* @file
+* Linktocontent Category Module for Drupal 6.x (patched for FCKeditor)
+*/
+
+module_load_include("inc", "linktocontent", "linktocontent_util");
+
+function linktocontent_category_install() {
+  linktocontent_register('linktocontent_category');
+  // Register for 'linktocontent_node' because we want to modify its data.
+  linktocontent_register('linktocontent_category', 'linktocontent_node');
+  drupal_set_message(t('Linktocontent Category has been successfully installed.'));
+}
+
+function linktocontent_category_uninstall() {
+  // unregister all registered functions
+  linktocontent_unregister('linktocontent_category');
+  drupal_set_message(t('Linktocontent Category has been successfully uninstalled.'));
+}

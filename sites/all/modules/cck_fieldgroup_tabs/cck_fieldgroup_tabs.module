@@ -1,0 +1,199 @@
+<?php
+// $Id: cck_fieldgroup_tabs.module,v 1.35 2010/01/18 07:08:46 nedjo Exp $
+
+/**
+ * @file
+ * Add tabs display option for CCK fieldgroups.
+ */
+
+/*
+ * Implementation of hook_form_alter().
+ */
+function cck_fieldgroup_tabs_form_alter(&$form, $form_state, $form_id) {
+  if (isset($form['type']) && isset($form['type']['#value']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    if (!isset($form['#pre_render'])) {
+      $form['#pre_render'] = array();
+    }
+    // Register a process callback.
+    $form['#pre_render'][] = 'cck_fieldgroup_tabs_pre_render';
+  }
+  else if ($form_id == 'content_display_overview_form') {
+    if (isset($form['#groups']) && $form['#groups']) {
+      $contexts = content_build_modes($form['#contexts']);
+      foreach ($form['#groups'] as $name) {
+        foreach (array_keys($contexts) as $key) {
+          $form[$name][$key]['format']['#options']['tabs'] = t('tabs');
+        }
+      }
+    }
+  }
+  else if ($form_id == 'fieldgroup_group_edit_form') {
+    $form['settings']['form']['style']['#options']['tabs'] = t('tabs');
+  }
+  elseif ($form_id == 'node_type_form' && $form['#node_type']->type && !$form['#programmed']) {
+    $form += cck_fieldgroup_tabs_node_type_form($form['#node_type']->type);
+  }  
+}
+
+/*
+ * Implementation of hook_content_extra_fields().
+ */
+function cck_fieldgroup_tabs_content_extra_fields($type_name) {
+  if ($title = variable_get('cck_fieldgroup_tabs_residual_title_' . $type_name, '')) {
+    $extra = array();
+    $extra['cck_fieldgroup_tabs_residual'] = array(
+      'label' => t('@title field', array('@title' => $title)),
+      'description' => t('CCK fieldgroup tabs Basics tab.'),
+      'weight' => -20,
+    );
+    return $extra;
+  }
+}
+
+/*
+ * Settings for content type forms.
+ */
+function cck_fieldgroup_tabs_node_type_form($node_type) {
+  $form = array();
+  $form['cck_fieldgroup_tabs'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('CCK Fieldgroup Tabs'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('CCK Fieldgroup Tabs with residual fields not in fieldgroup tabs in a Basics Tab.'),
+  );
+  $form['cck_fieldgroup_tabs']['cck_fieldgroup_tabs_residual_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name of default basic tab'),
+    '#description' => t('Leave blank to keep top level form elements like title and body outside of a Basic Tabs.'),
+    '#default_value' => variable_get('cck_fieldgroup_tabs_residual_title_' . $node_type, ''),
+  );
+  $form['cck_fieldgroup_tabs']['cck_fieldgroup_tabs_description'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Description'),
+    '#description' => t('Text to display above the tabset on content display.'),
+    '#default_value' => variable_get('cck_fieldgroup_tabs_description_' . $node_type, ''),
+  );
+  return $form;
+}
+
+/*
+ * Form pre-render callback.
+ *
+ * Convert fieldset elements to tabs.
+ */
+function cck_fieldgroup_tabs_pre_render($form) {
+  if (!isset($form['fieldgroup_tabs'])) {
+    foreach (fieldgroup_groups($form['type']['#value']) as $group_name => $group) {
+      if (isset($form[$group_name]) && $group['settings']['form']['style'] == 'tabs' && (!isset($form[$group_name]['#access']) || $form[$group_name]['#access'])) {
+        // Add a tabset if not already added.
+        if (!isset($form['fieldgroup_tabs'])) {
+          $form['fieldgroup_tabs'] = array(
+            '#type' => 'tabset',
+            '#weight' => $group['weight'],
+          );
+        }
+        // Otherwise, reset the weight if lower than what's already set.
+        // This ensures the tabset has the weight of the lowest fieldgroup
+        // it includes.
+        else if ($group['weight'] < $form['fieldgroup_tabs']['#weight']) {
+          $form['fieldgroup_tabs']['#weight'] = $group['weight'];
+        }
+        $element = $form[$group_name];
+        $element['#type'] = 'tabpage';
+        $element['#weight'] = $group['weight'];
+        unset($element['#collapsible'], $element['#collapsed']);
+        $form['fieldgroup_tabs'][$group_name] = $element;
+        unset($form[$group_name]);
+      }
+    }
+    $node_type = $form['type']['#value'];
+    if (isset($form['fieldgroup_tabs']) && variable_get('cck_fieldgroup_tabs_residual_title_'. $node_type, FALSE)) {
+      // Add residual content to a tab if desired.
+      $residual = array(
+        '#type' => 'tabpage',
+        // Pass the value through t() if needed.
+        '#title' =>  t(variable_get('cck_fieldgroup_tabs_residual_title_'. $node_type, '')),
+        '#weight' => content_extra_field_weight($node_type, 'cck_fieldgroup_tabs_residual'),
+      );
+      foreach (element_children($form) as $key) {
+        // Skip the buttons so that they are below the tabset. Don't process
+        // hidden or value fields.
+        if ($key != 'fieldgroup_tabs' && $key != 'buttons' && (!isset($form[$key]['#type']) || !in_array($form[$key]['#type'], array('hidden', 'value')))) {
+          $residual[$key] = $form[$key];
+          unset($form[$key]);
+        }
+      }
+      $form['fieldgroup_tabs']['fieldgroup_tabs_basic'] = $residual;
+    }
+  }
+  return $form;
+}
+
+/*
+ * Implementation of hook_nodeapi().
+ */
+function cck_fieldgroup_tabs_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+    case 'view':
+      // NODE_BUILD_NORMAL is 0, and ('whatever' == 0) is TRUE, so we need a ===.
+      if ($node->build_mode === NODE_BUILD_NORMAL || $node->build_mode == NODE_BUILD_PREVIEW) {
+        $context = $teaser ? 'teaser' : 'full';
+      }
+      else {
+        $context = $node->build_mode;
+      }
+      foreach (fieldgroup_groups($node->type) as $group_name => $group) {
+        // $node->content[$group_name] will be set only if there was visible content.
+        if (isset($node->content[$group_name]) && $group['settings']['display'][$context]['format'] == 'tabs') {
+          // Add a tabset if not already added.
+          if (!isset($node->content['fieldgroup_tabs'])) {
+            $node->content['fieldgroup_tabs'] = array(
+              '#type' => 'tabset',
+              '#weight' => $group['weight'],
+            );
+            if ($description = variable_get('cck_fieldgroup_tabs_description_' . $node->type, '')) {
+              $node->content['fieldgroup_tabs']['#description'] = filter_xss_admin($description);
+            }
+          }
+          // Otherwise, reset the weight if lower than what's already set.
+          // This ensures the tabset has the weight of the lowest fieldgroup
+          // it includes.
+          else if ($group['weight'] < $node->content['fieldgroup_tabs']['#weight']) {
+            $node->content['fieldgroup_tabs']['#weight'] = $group['weight'];
+          }
+          $element = $node->content[$group_name]['group'];
+          $element['#type'] = 'tabpage';
+          $element['#weight'] = $group['weight'];
+          $node->content['fieldgroup_tabs'][$group_name] = $element;
+          unset($node->content[$group_name]);
+        }
+      }
+      if (isset($node->content['fieldgroup_tabs'])) {
+        // Add residual content to a tab if desired.
+        if (variable_get('cck_fieldgroup_tabs_residual_title_'. $node->type, FALSE)) {
+          $residual = array(
+            '#type' => 'tabpage',
+            '#title' =>  t(variable_get('cck_fieldgroup_tabs_residual_title_'. $node->type, '')),
+            '#weight' => content_extra_field_weight($node->type, 'cck_fieldgroup_tabs_residual'),
+          );
+          foreach (element_children($node->content) as $key) {
+            if ($key != 'fieldgroup_tabs') {
+              $residual[$key] = $node->content[$key];
+              unset($node->content[$key]);
+            }
+          }
+          // Move all #content_extra_fields into the residual tab in order to allow tabs to render them correctly.
+          // #pre-render with alter_extra_weights in the tab is needed to correctly sort the elements.
+          $residual['#content_extra_fields'] = $node->content['#content_extra_fields'];
+          $residual['#pre_render'] = array('content_alter_extra_weights');
+          $key = array_search('content_alter_extra_weights', $node->content['#pre_render']);
+          unset($node->content['#content_extra_fields'], $node->content['#pre_render'][$key]);
+
+          $node->content['fieldgroup_tabs']['fieldgroup_tabs_basic'] = $residual;
+        }
+      }
+      break;
+  }
+}
+

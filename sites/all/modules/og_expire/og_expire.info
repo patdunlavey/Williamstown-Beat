@@ -1,0 +1,13 @@
+name = "Organic Groups Membership Expiration"
+description = "Allows to set expiration date for OG membership."
+package = "Organic groups"
+dependencies[] = og
+dependencies[] = views
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-04-15
+version = "6.x-1.0-rc1"
+core = "6.x"
+project = "og_expire"
+datestamp = "1239790894"
+

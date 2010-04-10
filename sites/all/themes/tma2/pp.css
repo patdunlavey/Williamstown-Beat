@@ -1,0 +1,169 @@
+/****  Undo pp_ed.css default  ****/
+.teaser-image-img {
+  float: none;
+  margin: 0;
+  padding: 0;
+}
+
+/****    Source    ****/
+
+.node-type-source .content .group-photo {
+  float: left;
+  margin: 0 1em 1em 0;
+}
+
+/****    Edition    ****/
+.node-type-edition .field-field-eid {
+  color: #555;
+  margin-bottom: 1em;
+  font-size: 1.1em;
+}
+
+.block .node-type-edition .field-field-eid {
+  font-size: 1em;
+}
+
+.node-type-edition .field-field-stories {
+  font-size: 1.1em;
+}
+
+.node-type-edition .field-field-stories .field-label {
+  font-weight: normal;
+}
+
+.node-teaser .field-field-headlines {
+  font-size: 1.1em;
+}
+
+/* Editions in blocks, lists in channel blocks  */
+
+.block .node-teaser {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.block .node-type-edition ul, .block-pp_ch ul {
+  list-style: none;
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
+
+.block .node-type-edition li, .block-pp_ch li {
+  padding:3px 7px 0pt 12px;
+  background:transparent url(images/arrow.png) no-repeat scroll left 0.5em;
+}
+
+/* Story listings in blocks */
+
+.block-pp_ch .item-list ul
+{
+  margin: 0;
+}
+
+.block-pp_ch .item-list ul li
+{
+  padding:0px 7px 0pt 0px;
+}
+
+.block-pp_ch .item-list ul li a
+{
+  color: #224970;
+  text-decoration: none;
+  background: transparent none;
+  border-bottom: 0px;
+  border-left: 0px;
+  font-size: 1.1em;
+  font-weight: normal;
+  text-transform: none;
+  height: auto;
+  padding: 3px 0px 0 12px;
+  background:transparent url(images/arrow.png) no-repeat scroll left 0.5em;
+}
+
+#sidebar-wrapper .block-pp_ch .item-list ul li a {
+  font-size: 1.2em;
+}
+
+.block-pp_ch .item-list ul li a:hover
+{
+  text-decoration: underline;
+  color: #000;
+  background:transparent url(images/arrow.png) no-repeat scroll left 0.5em;
+}
+
+/****    Story    ****/
+
+.node-type-story .field-field-subtitle {
+  font-size: 1.5em;
+}
+
+.node-teaser .field-field-subtitle {
+  font-size: 1.0em;
+}
+
+.node-type-story .field-field-source {
+  color: #333;
+  font-size: 0.70em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+}
+
+.node-type-story .field-field-source a {
+  color: #333;
+}
+
+.node-type-story .field-field-source a:hover, .node-type-story .field-field-source a:focus {
+  color: #000;
+}
+
+.node-type-story .field-field-date {
+  color: #555;
+}
+
+.node-teaser.node-type-story .title {
+  display: inline;
+  font-size: 1.33em;
+}
+
+.node-type-story .teaser-image {
+  margin-right: 1em;
+  float: left;
+}
+
+/* Don't wrap title around teaser image for some three column composite layouts */
+.composite-threecol-25-50-25 .composite-column-first .node-type-story .teaser-image,
+.composite-threecol-25-50-25 .composite-column-last .node-type-story .teaser-image,
+.composite-threecol-flexigrid-25-50-25 .composite-column-first .node-type-story .teaser-image,
+.composite-threecol-flexigrid-25-50-25 .composite-column-last .node-type-story .teaser-image
+{ float: none; }
+
+
+/****    Editions Manager date widget    ****/
+.container-inline-date .form-item .form-item {
+  float: none;
+}
+
+.container-inline-date .form-item div {
+  display: inline;
+}
+
+/* Image galleries */
+
+.pp_image_gallery .galleries {
+  border: 1px solid #dadada;
+  background: #f1f1f1;
+  margin: 1em 0 1em 0;
+}
+
+.pp_image_gallery .galleries h3 {
+  margin-top: 0;
+}
+
+.pp_image_gallery table, .pp_image_gallery tbody, .pp_image_gallery td, .pp_image_gallery th {
+  border-width: 0;
+}
+
+.pp_image_gallery td, .pp_image_gallery th {
+  padding: 1em 1em 1em 0;
+}

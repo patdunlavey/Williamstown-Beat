@@ -1,0 +1,568 @@
+<?php
+// $Id: outline.install,v 1.20 2008/11/30 01:49:19 augustin Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function outline_install() {
+  // Create tables.
+  drupal_install_schema('outline');
+
+  // Import data from book.module:
+  $result = db_query('SELECT b.*, n.vid, n.uid FROM {book} b JOIN {node} n ON n.nid = b.nid WHERE b.nid = b.bid');
+  while ($book = db_fetch_object($result)) {
+    db_query("INSERT INTO {outline_book} (bid, book_vid, uid) VALUES (%d, %d, %d)", 
+      $book->bid, $book->vid, $book->uid);
+  }
+  $result = db_query('SELECT b.*, n.vid, n2.vid AS book_vid FROM {book} b JOIN {node} n on n.nid = b.nid 
+    JOIN {node} n2 ON n2.nid = b.bid');
+  while ($page = db_fetch_object($result)) {
+    db_query("INSERT INTO {outline_node} (mlid, nid, vid, bid, book_vid) 
+      VALUES (%d, %d, %d, %d, %d)", 
+      $page ->mlid, $page->nid, $page->vid, $page->bid, $page->book_vid);
+  }
+}
+
+/**
+ * Implementation of hook_enable().
+ *
+ * Check if more nodes have been outlined by book.module after the last time outline.module was enabled.
+ */
+function outline_enable() {
+  // 1- Import data from book.module where we don't have a corresponding outline entry:
+  $result = db_query('SELECT b.*, n.vid, n.uid, o.bid AS o_bid FROM {book} b JOIN {node} n ON n.nid = b.nid 
+    LEFT JOIN {outline_book} o ON o.bid = b.bid AND o.book_vid = n.vid WHERE b.nid = b.bid AND o.bid IS NULL');
+  while ($book = db_fetch_object($result)) {
+    db_query("INSERT INTO {outline_book} (bid, book_vid, uid) VALUES (%d, %d, %d)", 
+      $book->bid, $book->vid, $book->uid);
+  }
+  $result = db_query('SELECT b.*, n.vid, n2.vid AS book_vid, o.nid AS o_nid FROM {book} b JOIN {node} n on n.nid = b.nid 
+    JOIN {node} n2 ON n2.nid = b.bid LEFT JOIN {outline_node} o ON o.nid = n.nid AND o.is_default = 1 AND o.vid = n.vid
+    WHERE o.nid IS NULL');
+  while ($page = db_fetch_object($result)) {
+    db_query("INSERT INTO {outline_node} (mlid, nid, vid, bid, book_vid) 
+      VALUES (%d, %d, %d, %d, %d)", 
+      $page ->mlid, $page->nid, $page->vid, $page->bid, $page->book_vid);
+  }
+  
+  // 2- Update data where the vid, the place in the outline has changed, where nodes have been removed, etc...
+  // TODO.
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function outline_schema() {
+
+  $schema['outline_book'] = array(
+    'description' => t('Table to hold some per-book settings.'),
+    'fields' => array(
+      'bid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'book_vid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'uid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'default_child_type' => array(
+        'description' => t("The child type for the book's children: either: <default> (i.e. site default), or any valid node type."),
+        'type' => 'varchar', 
+        'length' => '255', 
+        'default' => '<default>',
+        'not null' => TRUE
+        ),
+      'default_toc_depth' => array(
+        'description' => t("How many levels shall we show in the TOC? Values can be -1 for the site default, or 0~9 for custom setting."),
+        'type' => 'int', 
+        'unsigned' => FALSE, 
+        'not null' => TRUE, 
+        'default' => -1
+        ),
+      'book_role_perm' => array(
+        'description' => t('Bool. If TRUE, then check {outline_perm} for permissions per role. If FALSE, behave like book.module.'),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'book_user_perm' => array(
+        'description' => t('Bool. If TRUE, then do extra DB lookups to see which additional users have extra permissions.'),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'restricted_types' => array(
+        'description' => t('Not currently used.'),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        )
+     ),
+    'primary key' => array('book_vid'),
+    'indexes' => array(
+      'bid' => array('bid'), 
+      'book_role_perm' => array('book_role_perm'), 
+      'book_user_perm' => array('book_user_perm') 
+      ),
+  );
+
+  $schema['outline_node'] = array(
+    'description' => t(''),
+    'fields' => array(
+      'mlid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'nid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'vid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'bid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'book_vid' => array(
+        'description' => t('The $vid of the book cover node related to this page. 
+                            This is always the latest $vid of the book cover, regardless of the version the book was
+                            when the page was last edited.
+                            The field is added here to make for easier JOINs between {outline_node} and {outline_book}'),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'is_default' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 1
+        ),
+      'child_type' => array(
+        'description' => t("The child type for the node's children: either: <default> (i.e. book default), or any valid node type."),
+        'type' => 'varchar', 
+        'length' => '255', 
+        'default' => '<default>',
+        'not null' => TRUE
+        ),
+      'toc_depth' => array(
+        'description' => t("How many levels shall we show in the TOC? Values can be -1 for the book default, or 0~9 for custom setting."),
+        'type' => 'int', 
+        'unsigned' => FALSE, 
+        'not null' => TRUE, 
+        'default' => -1
+        )
+      ),
+    'primary key' => array('vid'),
+    'indexes' => array(
+      'mlid' => array('mlid'),
+      'nid' => array('nid'),
+      'bid' => array('bid'),
+      'book_vid' => array('book_vid'),
+      'is_default' => array('is_default')
+      ),
+  );
+
+  $schema['outline_perm'] = array(
+    'description' => t(''),
+    'fields' => array(
+      'bid' => array(
+        'description' => t('The bid in {outline_book}.'),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'perm' => array(
+        'description' => t('The permission name as defined in admin/content/book/$bid/permission'),
+        'type' => 'varchar', 
+        'length' => '255', 
+        'not null' => TRUE
+        ),
+      'type' => array(
+        'description' => t('Either "role" or "user".'),
+        'type' => 'varchar', 
+        'length' => '255', 
+        'not null' => TRUE
+        ),
+      'type_id' => array(
+        'description' => t('The ID of the role or of the user according to "type".'),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        )
+      ),
+    'indexes' => array(
+      'bid' => array('bid'),
+      'type' => array('type'),
+      'perm' => array('perm')
+      ),
+  );
+
+  $schema['outline_types'] = array(
+    'description' => t(''),
+    'fields' => array(
+      'bid' => array(
+        'description' => t(''),
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'node_type' => array(
+        'description' => t(''),
+        'type' => 'varchar', 
+        'length' => '255', 
+        'not null' => TRUE
+        )
+      ),
+    'indexes' => array(
+      'bid' => array('bid'),
+      'node_type' => array('node_type')
+      ),
+  );
+
+  
+  return $schema;
+}
+
+ 
+/**
+ * Import the data from the D5 tables into the new D6 tables. 
+ */
+function outline_update_6000() {
+  $ret = array();
+  if (!module_exists('book')) {
+    module_enable(array('book'));
+    if (!db_table_exists('book')) {
+      drupal_install_modules(array('book'));
+    }
+  }
+
+  db_rename_table($ret, 'outline_volume', 'outline_volume_D5');
+
+  // Repeat the whole starting schema here, because using drupal_install_schema() is not safe.
+  // See Updating tables #2: Don't use hook_schema! http://drupal.org/node/150220
+  $schema['outline_book'] = array(
+    'fields' => array(
+      'bid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'book_vid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'uid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'default_child_type' => array(
+        'type' => 'varchar', 
+        'length' => '255', 
+        'default' => '<default>',
+        'not null' => TRUE
+        ),
+      'default_toc_depth' => array(
+        'type' => 'int', 
+        'unsigned' => FALSE, 
+        'not null' => TRUE, 
+        'default' => -1
+        ),
+      'book_role_perm' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'book_user_perm' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'restricted_types' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        )
+     ),
+    'primary key' => array('book_vid'),
+    'indexes' => array(
+      'bid' => array('bid'), 
+      'book_role_perm' => array('book_role_perm'), 
+      'book_user_perm' => array('book_user_perm') 
+      ),
+  );
+
+  $schema['outline_node'] = array(
+    'fields' => array(
+      'mlid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'nid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'vid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'bid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'book_vid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'is_default' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 1
+        ),
+      'child_type' => array(
+        'type' => 'varchar', 
+        'length' => '255', 
+        'default' => '<default>',
+        'not null' => TRUE
+        ),
+      'toc_depth' => array(
+        'type' => 'int', 
+        'unsigned' => FALSE, 
+        'not null' => TRUE, 
+        'default' => -1
+        )
+      ),
+    'primary key' => array('vid'),
+    'indexes' => array(
+      'mlid' => array('mlid'),
+      'nid' => array('nid'),
+      'bid' => array('bid'),
+      'book_vid' => array('book_vid'),
+      'is_default' => array('is_default')
+      ),
+  );
+
+  $schema['outline_perm'] = array(
+    'fields' => array(
+      'bid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'perm' => array(
+        'type' => 'varchar', 
+        'length' => '255', 
+        'not null' => TRUE
+        ),
+      'type' => array(
+        'type' => 'varchar', 
+        'length' => '255', 
+        'not null' => TRUE
+        ),
+      'type_id' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        )
+      ),
+    'indexes' => array(
+      'bid' => array('bid'),
+      'type' => array('type'),
+      'perm' => array('perm')
+      ),
+  );
+
+  $schema['outline_types'] = array(
+    'fields' => array(
+      'bid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+        ),
+      'node_type' => array(
+        'type' => 'varchar', 
+        'length' => '255', 
+        'not null' => TRUE
+        )
+      ),
+    'indexes' => array(
+      'bid' => array('bid'),
+      'node_type' => array('node_type')
+      ),
+  );
+  db_create_table($ret, 'outline_book', $schema['outline_book']);
+  db_create_table($ret, 'outline_node', $schema['outline_node']);
+  db_create_table($ret, 'outline_perm', $schema['outline_perm']);
+  db_create_table($ret, 'outline_types', $schema['outline_types']);
+  
+  $book = array(); // store the mlid for each node.
+  $result = db_query('SELECT o.*, v.*, n.title, n.vid, n.uid 
+    FROM {outline_nodes} o 
+    JOIN {outline_volume_D5} v ON v.volume_id = o.volume_id
+    JOIN {node} n ON n.nid = o.nid 
+    {ORDER BY o.volume_id, parent');
+  while ($item = db_fetch_object($result)) {
+    if ($item->parent == 0) {
+      // create a new book.
+      db_query("INSERT INTO {menu_links} (menu_name, plid, link_path, router_path, link_title, module, options, depth) 
+        VALUES ('%s', 0, '%s', '%s', '%s', 'book', '%s', 1)",
+        'book-toc-'. $item->nid, 'node/'. $item->nid, 'node/%', $item->title, 'a:0:{}' );
+      $mlid = db_last_insert_id('menu_links', 'mlid');
+      db_query('UPDATE {menu_links} SET p1 = %d WHERE mlid = %d', $mlid, $mlid);
+      db_query('INSERT INTO {book} (mlid, nid, bid) VALUES (%d, %d, %d)', $mlid, $item->nid, $item->nid);
+      // Update own tables:
+      db_query("INSERT INTO {outline_book} (bid, book_vid, uid, default_child_type, default_toc_depth, book_role_perm, book_user_perm) 
+        VALUES (%d, %d, %d, '%s', '%s', %d, %d)", 
+        $item->nid, $item->vid, $item->uid, $item->default_child_type, $item->default_toc_depth, 0, 0);
+      db_query("INSERT INTO {outline_node} (mlid, nid, vid, bid, book_vid, is_default, child_type, toc_depth)
+        VALUES (%d, %d, %d, %d, %d, 1, '%s', %d)", 
+        $mlid, $item->nid, $item->vid, $item->nid, $item->vid, $item->child_type, $item->toc_depth);
+      $book[$item->nid] = $mlid;
+    }
+    else {
+      _outline_update_6000($item, $book);    
+    }
+  }
+    
+  db_drop_table($ret, 'outline_volume_D5');
+  db_drop_table($ret, 'outline_nodes');
+  return $ret;
+}
+
+/**
+ * Helper function
+ * @param $item: object from {outline_nodes}
+ * @param $book: array of nodes => mlid.
+ */
+function _outline_update_6000($item, &$book) {
+  // check it hasn't been inserted yet.
+  if (!isset($book[$item->nid])) {
+    // Check if the parent has been inserted.
+    if(!isset($book[$item->parent])) {
+      // get the parent item from {outline_nodes}
+      $parent = db_fetch_object(db_query('SELECT * FROM {outline_nodes} WHERE nid = %d', $item->parent)); 
+      _outline_update_6000($parent, $book);
+    }
+
+    $parent = db_fetch_object(db_query('SELECT * FROM {menu_links} WHERE mlid = %d', $book[$item->parent]));
+    // Set the values for p1 to p9
+    $p = array(1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0, 9 => 0);
+    $d = $parent->depth;
+    for ($i = 1; $i <= $d; $i++) {
+      $key = 'p'. $i;
+      $p[$i] = $parent->$key;
+    }
+    db_query("INSERT INTO {menu_links} 
+      (menu_name, plid, link_path, router_path, link_title, module, options, depth, p1, p2, p3, p4, p5, p6, p7, p8, p9) 
+      VALUES ('%s', %d, '%s', '%s', '%s', 'book', '%s', %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
+      $parent->menu_name, $parent->mlid, 'node/'. $item->nid, 'node/%', $item->title, 'a:0:{}', $parent->depth + 1, 
+      $p[1], $p[2], $p[3], $p[4], $p[5], $p[6], $p[7], $p[8], $p[9]);
+    $mlid = db_last_insert_id('menu_links', 'mlid');
+    $bid = db_result(db_query('SELECT bid FROM {book} WHERE mlid = %d', $parent->mlid));
+    db_query('INSERT INTO {book} (mlid, nid, bid) VALUES (%d, %d, %d)', $mlid, $item->nid, $bid);
+    $book[$item->nid] = $mlid;
+    
+    // Tell the parent that it has a child :)
+    db_query('UPDATE {menu_links} SET has_children = 1 WHERE mlid = %d', $parent->mlid);
+    $p[$i] = $mlid;
+    db_query('UPDATE {menu_links} SET p%d = %d WHERE mlid = %d', $i, $mlid, $mlid);
+    $d = $parent->depth +1;
+
+    // Update own tables:
+    $book_vid = db_result(db_query('SELECT vid FROM {node} WHERE nid = %d', $bid));
+    db_query("INSERT INTO {outline_node} (mlid, nid, vid, bid, book_vid, is_default, child_type, toc_depth)
+      VALUES (%d, %d, %d, %d, %d, 1, '%s', %d)", 
+      $mlid, $item->nid, $item->vid, $bid, $book_vid, $item->child_type, $item->toc_depth);
+  }
+  // else it has already been inserted. move on. 
+}
+
+
+/**
+ * Delete obsolete variable. 
+ */
+function outline_update_6001() {
+  $ret = array();
+  variable_del('outline_supported');
+  return $ret;
+}
+
+/**
+ * Clean menu cache because of updated outline_menu(). 
+ */
+function outline_update_6002() {
+  $ret = array();
+  menu_cache_clear_all();
+  $ret[] = array('success' => TRUE, 'query' => 'The menu cache has been cleared. Check the new permission settings at admin > Content management > Books > edit permissions. Thank you for supporting charitable web sites. :)');
+  return $ret;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function outline_uninstall() {
+  db_query('DROP TABLE {outline_book}');
+  db_query('DROP TABLE {outline_node}');
+  db_query('DROP TABLE {outline_perm}');
+  db_query('DROP TABLE {outline_types}');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'outline_%%'");
+}
+
+

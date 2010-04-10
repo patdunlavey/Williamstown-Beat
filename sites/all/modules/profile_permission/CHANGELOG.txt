@@ -1,0 +1,16 @@
+// $Id: CHANGELOG.txt,v 1.5 2009/02/08 05:15:43 boombatower Exp $
+
+Profile permission 6.x-1.2, xxxx-xx-xx (development version)
+--------------------------------------
+- Changes:
+   * #368161: Add edit|view own profile_field_name field permission.
+
+Profile permission 6.x-1.1, 2009-01-21
+--------------------------------------
+- Changes:
+   * #360586: support restriction on field access permission.
+   * Add test description.
+
+Profile permission 6.x-1.0, 2008-12-04
+--------------------------------------
+- This is the first fully featured release.

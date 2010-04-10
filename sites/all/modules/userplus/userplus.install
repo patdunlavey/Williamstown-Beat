@@ -1,0 +1,48 @@
+<?php
+// $Id: userplus.install,v 1.1.2.1 2009/03/17 18:10:41 marcp Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function userplus_uninstall() {
+  $variables = array(
+    'userplus_add_multiple_roles',
+    'userplus_assign_roles',
+    'userplus_max_add_users',
+    'userplus_max_show_user_roles',
+    'userplus_show_required_profile_fields',
+  );
+
+  foreach ($variables as $var) {
+    variable_del($var);
+  }
+}
+
+/**
+ * Set it up so that all roles appear on the add multiple users
+ * form as well as the the role assignment form to provide backwards
+ * compatibility.
+ */
+function userplus_update_6200() {
+  $ret = array();
+
+  // Get the list of roles, excluding AUTHENTICATED and ANONYMOUS...
+  $roles = user_roles(1);
+  unset($roles[DRUPAL_AUTHENTICATED_RID]);
+
+  foreach ($roles as $rid => $name) {
+    $roles[$rid] = $rid;
+  }
+
+  $v = variable_get('userplus_add_multiple_roles', FALSE);
+  if ($v === FALSE) {
+    variable_set('userplus_add_multiple_roles', $roles);
+  }
+  
+  $v = variable_get('userplus_assign_roles', FALSE);
+  if ($v === FALSE) {
+    variable_set('userplus_assign_roles', $roles);
+  }
+  
+  return $ret;
+}

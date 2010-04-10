@@ -1,0 +1,41 @@
+// $Id: CHANGELOG.txt,v 1.4 2009/01/12 13:00:38 sun Exp $
+
+Link to content x.x-x.x, xxxx-xx-xx
+-----------------------------------
+
+
+Link to content 6.x-2.x, xxxx-xx-xx
+-----------------------------------
+#227538 by Docc, sun: Added TinyMCE 3 / Wysiwyg API support.
+#322731 by sun: Fixed improper use of t() in module install file.
+#241091 by komilo: Fixed French translation.
+
+
+Link to content 5.x-1.7, 2007-10-04
+-----------------------------------
+#174918: Fixed bug in linktocontent_menu and extended installing instructions.
+#171150: Added Dutch translation.
+
+
+Link to content 5.x-1.6, 2007-07-04
+-----------------------------------
+#151671: Added missing pluginname_src.js for each plugin and compressed the
+  other JS to work with TinyMCE Compressor.
+#156768: Added hebrew language files.
+#146842: External JS not included by IE with jQuery < 1.1.x.
+
+
+Link to content 5.x-1.5, 2007-06-19
+-----------------------------------
+#152308: Removed node_load to handle a large number of nodes.
+
+
+Link to content 5.x-1.0, 2007-03-12
+-----------------------------------
+Ported Link to content for Drupal 5.x.
+
+
+Link to content 4.7.x-1.x, 2006-08-21
+-------------------------------------
+Initial release of Link to content.
+

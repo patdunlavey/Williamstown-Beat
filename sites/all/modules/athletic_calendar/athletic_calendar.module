@@ -1,0 +1,3 @@
+<?php
+
+include_once('athletic_calendar.features.inc');

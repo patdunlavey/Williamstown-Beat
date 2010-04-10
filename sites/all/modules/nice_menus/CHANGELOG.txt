@@ -1,0 +1,12 @@
+// $Id: CHANGELOG.txt,v 1.16 2009/03/25 12:57:50 add1sun Exp $
+
+=== DRUPAL 6.x-2.x ===
+6.x-2.x
+- FEATURE #300628: Add support for i18n module menu translations.
+- FEATURE #322962: Add configurable JS with Superfish
+- FEATURE #135771: Choose starting and ending menu depth
+- FEATURE #219804: Set active menu trail CSS selectors
+- FEATURE #340105: Added theme function for secondary links menu
+- TASK #340103: Renamed theme functions to module name and created legacy
+  wrappers which will be removed in Drupal 7.
+- FEATURE #181446: Added RTL language support.

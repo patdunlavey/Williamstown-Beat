@@ -1,0 +1,50 @@
+<?php
+// $Id: referralsources_example.install,v 1.1 2009/12/18 22:13:18 adamo Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+ function referralsources_example_install() {
+   drupal_install_schema('referralsources_example');
+ }
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function referralsources_example_uninstall() {
+  drupal_uninstall_schema('referralsources_example');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function referralsources_example_schema() {
+  $schema['referralsources_example'] = array(
+    'description' => t('Example of table relating to referralsources_example table.'),
+    'fields' => array(
+      'referralsources_example_id' => array(
+        'description' => t('Primary key of example table.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'fullname' => array(
+        'description' => t("Stores submitting user's full name."),
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'rsid' => array(
+        'description' => t('Referral source submission ID, from referralsources_submissions table.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('referralsources_example_id'),
+    'indexes' => array(
+      'rsid' => array('rsid')
+    ),
+  );
+  return $schema;
+}

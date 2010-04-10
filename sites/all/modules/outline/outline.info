@@ -1,0 +1,14 @@
+; $Id: outline.info,v 1.6 2008/11/26 03:07:51 augustin Exp $
+name = Outline
+description = Allows content to be organized into hierarchical outlines
+dependencies[] = help
+dependencies[] = book
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2009-05-05
+version = "6.x-0.x-dev"
+core = "6.x"
+project = "outline"
+datestamp = "1241482956"
+

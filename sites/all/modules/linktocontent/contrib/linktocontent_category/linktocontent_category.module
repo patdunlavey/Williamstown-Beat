@@ -1,0 +1,210 @@
+<?php
+// $Id: linktocontent_category.module,v 1.3 2007/10/08 15:18:09 stborchert Exp $
+/*
+* @file
+* Linktocontent Category Module for Drupal 6.x (patched for FCKeditor)
+*/
+
+include(drupal_get_path('module', 'linktocontent_category') .'/linktocontent_category.theme');
+
+/**
+ * Implementation of hook_menu()
+ *
+ * @ingroup linktocontent_category_core
+ */
+function linktocontent_category_menu() {
+  $items = array();
+  $items['admin/settings/linktocontent/linktocontent_category'] = array(
+    'title' => 'Link to category',
+    'description' => 'Configure relevant settings for Link to category.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('linktocontent_category_settings_page'),
+    'access arguments' => array('administer linktocontent'),
+    'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+
+/**
+ * Menu callback; Prints the settings page under admin/settings/linktocontent
+ *
+ * @ingroup linktocontent_category_callback
+ */
+function linktocontent_category_settings_page() {
+  $status = variable_get('linktocontent_category_content_types', array());
+  $types = _linktocontent_category_get_types();
+  $options = array();
+  foreach ($types as $key => $name) {
+    $options[$key] = '';
+    $form['name'][$key] = array('#value' => $name);
+  }
+
+  $form['status'] = array(
+    '#type' => 'checkboxes',
+    '#default_value' => $status,
+    '#options' => $options);
+  $form['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+  return $form;
+}
+
+/**
+ * Submit callback; handles form submission.
+ */
+function linktocontent_category_settings_page_submit($form, &$form_state) {
+  $types = variable_get('linktocontent_category_content_types', array());
+  foreach ($form_state['values']['status'] as $key => $choice) {
+    $types[$key] = $choice;
+  }
+  variable_set('linktocontent_category_content_types', $types);
+  drupal_set_message(t('The configuration has been saved.'));
+}
+
+/**
+ * Collect some info about the plugin.
+ *
+ * @ingroup linktocontent_category_core
+ * @return Object with plugin infos (status, title, description)
+ **/
+function linktocontent_category_get_info() {
+  $obj = new StdClass;
+  $obj->info = array('title' => 'Link to category',
+    'description' => 'Configure settings for Link to category.',
+    'plugin' => 'linktonode');
+  return $obj;
+}
+
+/**
+ * Get the plugin description.
+ *
+ * @ingroup linktocontent_category_core
+ * @return Plugin description
+ **/
+function linktocontent_category_get_description() {
+  return t('Extends linktocontent_node.module to use it if !category is enabled.',
+    array('!category' => l(t('Category'), 'http://drupal.org/project/category')));
+}
+
+/**
+ * Validate the given arguments.
+ *
+ * @ingroup linktocontent_category_core
+ * @return boolean Whether the arguments are valid or not.
+ **/
+function linktocontent_category_validate_args($args) {
+  if (!isset($args['ltc-vocab-id']) || !is_numeric(check_plain($args['ltc-vocab-id']))) {
+    return t('No valid vocabulary id given.');
+  }
+  return TRUE;
+}
+
+/**
+ * Return TRUE because there aren't any files to check
+ * (linktocontent_node.module does this for us).
+ *
+ * @ingroup linktoconent_category_core
+ * @return
+ **/
+function linktocontent_category_check_files() {
+  return TRUE;
+}
+
+/**
+ * Get the data depending on the given arguments.
+ *
+ * @ingroup linktocontent_category_core
+ * @return Javascript array with all the data the tinymce plugin needs.
+ **/
+function linktocontent_category_get_data($args, $data = array()) {
+  $vid = check_plain($args['ltc-vocab-id']);
+  $tid = ((isset($args['ltc-term-id']) && is_numeric(check_plain($args['ltc-term-id'])))
+    ? check_plain($args['ltc-term-id'])
+    : 0);
+
+  $data['categories'] = _linktocontent_category_get_categories($vid, $tid, TRUE);
+  $data['nodes'] = _linktocontent_category_get_nodes($vid, $tid, $data['nodes']);
+  return $data;
+}
+
+/**
+ * Find all subcategories of $parent in $container.
+ *
+ * @param $container The vocabulary/container to find terms/categories in.
+ * @param $parent The parent term/category of the terms/categories to find.
+ * @param $refresh Whether to get the data from the database or from the static variable.
+ *
+ * @ingroup linktocontent_category_core
+ */
+function _linktocontent_category_get_categories($container = -1, $parent = 0, $refresh = FALSE) {
+  static $results = array();
+  if (!$refresh && (count($results) > 0)) {
+    return $results;
+  }
+
+  $top = FALSE;
+  if ($container <= 0) {
+    $container = 0;
+    $top = TRUE;
+  }
+
+  $cid = $container;
+  $containers = array();
+  $obj = NULL;
+
+  if ($parent > 0)
+    $cid = $parent;
+
+  $sql = db_rewrite_sql('SELECT c.cid, c.*, h.parent, n.title FROM {category} c INNER JOIN {category_hierarchy} h ON c.cid = h.cid INNER JOIN {node} n ON c.cid = n.nid LEFT JOIN {category} c2 ON h.parent = c2.cid WHERE h.parent = %d AND n.status = 1 AND n.moderate = 0 ORDER BY c.weight, n.title', 'n', 'nid');
+  $result = db_query($sql, $cid);
+  while ($category = db_fetch_object($result)) {
+    $obj = new StdClass;
+    $obj->cid = $category->cid;
+    $obj->cnid = $category->cnid;
+    $obj->vid = ($category->cnid == 0) ? $category->cid : $category->cnid;
+    $obj->tid = ($top ? $obj->vid : $category->cid);
+    $obj->title = trim($category->title);
+    $results[] = $obj;
+  }
+  return $results;
+}
+
+/**
+ * Find all nodes in $parent in $container and replace existing items in $data.
+ *
+ * @ingroup linktocontent_category_core
+ */
+function _linktocontent_category_get_nodes($container, $parent = -1, $data = array()) {
+  $results = $data;
+  $types = variable_get('linktocontent_category_content_types', array());
+  $categories = _linktocontent_category_get_categories($container, $parent);
+  $obj = NULL;
+  $type = '';
+  $node = NULL;
+  foreach ($categories as $category) {
+    // choose type
+    $type = 'category-cat';
+    if ($category->cnid == 0)
+      $type = 'category-cont';
+    if (!isset($types[$type]) || ($types[$type] !== $type))
+      continue;
+
+    $node = module_invoke('node', 'load', $category->cid);
+    $obj = new StdClass;
+    $obj->nid = $node->nid;
+    $obj->title = $node->title;
+    $obj->date = format_date($node->changed, 'small');
+    $obj->author = $node->name;
+    $obj->type = $type;
+    $obj->href = url('node/'. $node->nid);
+    $obj->orig_href = 'taxonomy/'. ($type == 'category-cat' ? 'term/' : 'vocabulary/') . $obj->nid; // used to remove duplicate entries
+    $results[$obj->orig_href] = $obj;
+  }
+  return $results;
+}
+
+function _linktocontent_category_get_types() {
+  return array('category-cont' => t('Container'),
+    'category-cat' => t('Category'));
+}

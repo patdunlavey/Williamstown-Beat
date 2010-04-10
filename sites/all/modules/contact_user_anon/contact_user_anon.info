@@ -1,0 +1,5 @@
+; $Id$
+name = Contact User Anonymous
+description = Allows anonymous users to access users' personal contact forms.
+core = 6.x
+dependencies[] = contact

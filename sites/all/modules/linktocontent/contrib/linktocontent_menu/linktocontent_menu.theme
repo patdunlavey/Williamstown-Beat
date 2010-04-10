@@ -1,0 +1,32 @@
+<?php
+// $Id: linktocontent_menu.theme,v 1.3 2007/10/08 15:18:09 stborchert Exp $
+
+/**
+ * @addtogroup themeable
+ * @{
+ */
+
+/**
+ * Format the display of the settings page
+ **/
+function theme_linktocontent_menu_settings_page($form) {
+  // Table headers.
+  $header = array(t('Enabled'));
+  $header[] = t('Name');
+
+  $rows = array();
+
+  foreach (linktocontent_menu_root() as $key => $menu) {
+    $row = array();
+    $row[] = array('data' => drupal_render($form['status'][$key]), 'align' => 'left');
+    $row[] = drupal_render($form['name'][$key]);
+    $rows[] = $row;
+  }
+
+  $output = t('Please select which menus do you want to be browsable by this plugin.');
+  $output .= theme('table', $header, $rows, array('summary' => 'menus'));
+  $output .= drupal_render($form);
+  return $output;
+}
+
+/** @} End of addtogroup themeable */

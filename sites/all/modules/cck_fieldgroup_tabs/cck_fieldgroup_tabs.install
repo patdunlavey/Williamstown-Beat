@@ -1,0 +1,86 @@
+<?php
+// $Id: cck_fieldgroup_tabs.install,v 1.4 2010/01/27 14:12:14 nedjo Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function cck_fieldgroup_tabs_install() {
+  // Set weight higher than that of fieldgroup, since the form_alter must come after fieldgroup's.
+  $weight = db_result(db_query("SELECT weight FROM {system} WHERE type = 'module' AND name = 'fieldgroup'"));
+  db_query("UPDATE {system} SET weight = %d WHERE type = 'module' AND name = 'cck_fieldgroup_tabs'", ($weight ? $weight : 0) + 10);
+}
+
+/**
+ * Implementation of hook_update_x().
+ */
+function cck_fieldgroup_tabs_update_1() {
+  menu_rebuild();
+  return array();
+}
+
+/**
+ * Implementation of hook_update_x().
+ *
+ * Configuration is now per node type.
+ */
+function cck_fieldgroup_tabs_update_6001() {
+  $ret = array();
+
+  $residual_enabled = variable_get('cck_fieldset_tabs_residual', 0);
+  $residual_weight = variable_get('cck_fieldset_tabs_residual_weight', -20);
+
+  foreach (array_keys(node_get_types('names')) as $type_name) {
+    // Set weight value if it is custom.
+    if ($residual_enabled && $residual_weight != -20) {
+      $weights = variable_get('content_extra_weights_'. $type_name, array());
+      $weights['cck_fieldgroup_tabs_residual'] = $residual_weight;
+      variable_set('content_extra_weights_'. $type_name, $weights);
+    }
+    // Set existing titles if enabled. This will enable the basics tab for all content types,
+    // retaining the previous behavior.
+    if ($residual_enabled) {
+      $title = variable_get('cck_fieldset_tabs_residual_title_'. $type_name, t('Basics'));
+      variable_set('cck_fieldgroup_tabs_residual_title_'. $type_name, $title);
+    }
+    // Previously misnamed 'fieldset'. Delete.
+    variable_del('cck_fieldset_tabs_residual_title_'. $type_name);
+  }
+  variable_del('cck_fieldset_tabs_residual');
+  variable_del('cck_fieldset_tabs_residual_weight');
+
+  return $ret;  
+}
+
+/**
+ * Implementation of hook_update_x().
+ *
+ * Update and clean up data left by a now-fixed bug in the previous update.
+ */
+function cck_fieldgroup_tabs_update_6002() {
+  $ret = array();
+
+  foreach (array_keys(node_get_types('names')) as $type_name) {
+    // Even in the broken version of the previous update, the residual weight was deleted and so
+    // can't be used to determine if we should set titles for all node types. Instead, here, we set
+    // titles only if they were custom.
+    if (($title = variable_get('cck_fieldset_tabs_residual_title_'. $type_name, t('Basics'))) != t('Basics')) {
+      variable_set('cck_fieldgroup_tabs_residual_title_'. $type_name, $title);
+    }
+    // Previously misnamed 'fieldset'. Delete.
+    variable_del('cck_fieldset_tabs_residual_title_'. $type_name);
+  }
+
+  return $ret;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function cck_fieldgroup_tabs_uninstall() {
+
+  $settings = db_query("SELECT name FROM {variable} WHERE name LIKE 'cck\_fieldgroup\_tabs%'");
+  while ($variable = db_result($settings)) {
+    variable_del($variable);
+  }
+}
+

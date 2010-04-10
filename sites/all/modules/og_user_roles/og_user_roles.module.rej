@@ -1,0 +1,72 @@
+*************** function og_user_roles_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+*** 1911,1918 ****
+          $gids = $_GET['gids'];
+          $gid = $gids[0];
+          $subgroup = $node->nid;
+-         $sql = 'INSERT INTO {og_ancestry} (nid,group_nid,is_public) VALUES (%d,%d,0)';
+          db_query($sql, $subgroup, $gid);
+          // This table no longer supported in og_subgroups 6.x.
+          // if (module_exists('og_subgroups')) db_query('INSERT INTO {og_subgroups} (gid, parent) VALUES (%d, %d)', $subgroup, $gid);
+        }
+--- 1911,1921 ----
+          $gids = $_GET['gids'];
+          $gid = $gids[0];
+          $subgroup = $node->nid;
++         $sql = 'INSERT INTO {og_ancestry} (nid,group_nid) VALUES (%d,%d)';
+          db_query($sql, $subgroup, $gid);
++         if (module_exists('og_access')) {
++           db_query('INSERT INTO {og_access_post} (nid, og_public) VALUES (%d, 0)', $subgroup);
++         }
+          // This table no longer supported in og_subgroups 6.x.
+          // if (module_exists('og_subgroups')) db_query('INSERT INTO {og_subgroups} (gid, parent) VALUES (%d, %d)', $subgroup, $gid);
+        }
+*************** function og_user_roles_getgid($nid, $uid) {
+*** 2770,2776 ****
+    // select og_ancestry.group_nid FROM og_ancestry WHERE og_ancestry.nid = 130 AND og_ancestry.is_public = 1
+    //
+    if ($gid == 0) {
+-     $result = db_query("SELECT oga.group_nid FROM {og_ancestry} oga WHERE oga.nid = %d AND oga.is_public = 1", $nid);
+      while ($t = db_fetch_object($result)) {
+        $gid = $t->group_nid;
+      }
+--- 2773,2784 ----
+    // select og_ancestry.group_nid FROM og_ancestry WHERE og_ancestry.nid = 130 AND og_ancestry.is_public = 1
+    //
+    if ($gid == 0) {
++     if (module_exists('og_access')) {
++       $result = db_query('SELECT oga.group_nid FROM {og_ancestry} oga INNER JOIN {og_access_post} ogap ON ogap.nid=oga.nid WHERE oga.nid = %d AND ogap.og_public=1', $nid);
++     } 
++     else {
++       $result = db_query("SELECT oga.group_nid FROM {og_ancestry} oga WHERE oga.nid = %d", $nid);
++     }
+      while ($t = db_fetch_object($result)) {
+        $gid = $t->group_nid;
+      }
+*************** function og_user_roles_cron() {
+*** 4143,4149 ****
+          $count = db_result(db_query("SELECT COUNT(nid) FROM {og_ancestry} WHERE nid = %d AND group_nid = %d", $nodelist_item, $row->nid));
+          // Insert if it doesn't already belong.
+          if ($count == 0) {
+-           db_query('INSERT INTO {og_ancestry} (nid,group_nid,is_public) VALUES (%d,%d,0)', $nodelist_item, $row->nid);
+            watchdog('og_user_roles', t('Inserted nid: %nid into group: %gid.', array('%nid' => $nodelist_item, '%gid' => $row->nid)));
+  	    }
+        } // end foreach
+--- 4151,4158 ----
+          $count = db_result(db_query("SELECT COUNT(nid) FROM {og_ancestry} WHERE nid = %d AND group_nid = %d", $nodelist_item, $row->nid));
+          // Insert if it doesn't already belong.
+          if ($count == 0) {
++           db_query('INSERT INTO {og_ancestry} (nid,group_nid) VALUES (%d,%d)', $nodelist_item, $row->nid);
++           db_query('INSERT INTO {og_access_post} (nid,og_public) VALUES (%d,0)', $nodelist_item);
+            watchdog('og_user_roles', t('Inserted nid: %nid into group: %gid.', array('%nid' => $nodelist_item, '%gid' => $row->nid)));
+  	    }
+        } // end foreach
+*************** function og_user_roles_list_users_sql($min_is_active = 1, $min_is_admin = 0, $or
+*** 4215,4218 ****
+    return "SELECT u.uid, u.name, u.mail, u.picture, ou.* FROM {og_uid} ou INNER JOIN {users} u ON ou.uid = u.uid WHERE ou.nid = %d AND u.status > 0 AND ou.is_active >= $min_is_active AND ou.is_admin >= $min_is_admin ORDER BY $orderby";
+  }
+  
+- ?>--- 4224,4227 ----
+    return "SELECT u.uid, u.name, u.mail, u.picture, ou.* FROM {og_uid} ou INNER JOIN {users} u ON ou.uid = u.uid WHERE ou.nid = %d AND u.status > 0 AND ou.is_active >= $min_is_active AND ou.is_admin >= $min_is_admin ORDER BY $orderby";
+  }
+  
++ ?>

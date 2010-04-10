@@ -1,0 +1,17 @@
+<?php
+// $Id: workspace.install,v 1.1 2008/07/24 20:45:11 jvandyk Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function workspace_uninstall() {
+  variable_del('workspace_user_profile_link');
+  $roles = user_roles();
+  foreach ($roles as $rid => $name) {
+    variable_del('workspace_user_profile_'. $rid);
+  }
+  
+  // Currently uninstalling leaves per-user workspace data
+  // inside the data field of the user table. A nice batch
+  // API to remove that data should go here.
+}

@@ -1,0 +1,3 @@
+name = FeedAPI Garbage Collector
+description = This FeedAPI processor unpublishes feed item nodes that are not present on the feed.
+core = 6.x

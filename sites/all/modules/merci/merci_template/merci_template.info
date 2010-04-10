@@ -1,0 +1,15 @@
+name = MERCI Template
+package = MERCI
+description = "Allows the resuse of previous reservation to prepopulate MERCI"
+
+core = 6.x
+
+dependencies[] = merci
+
+
+; Information added by drupal.org packaging script on 2009-10-07
+version = "6.x-1.0"
+core = "6.x"
+project = "merci"
+datestamp = "1254943259"
+

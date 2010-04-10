@@ -1,0 +1,156 @@
+<?php
+
+/**
+ * @file
+ * A FileField extension to allow referencing of existing files.
+ *
+ * The "hooks" in this file are not true hooks, they're called individually
+ * from the main filefield_sources.module in the corresponding hook by the
+ * same name. Any of these hooks could be broken out into a separate module.
+ */
+
+/** 
+ * Set your file attach location relative to your base path. Only files in this 
+ * path will be selectable in the attach dropdown. You can set a path static path 
+ * EG: 'sites/default/files/file_attach' or use file_directory_path() to get file directory.
+ */
+define('FILEFIELD_SOURCE_ATTACH_PATH', file_directory_path() . '/common/files');
+
+define('FILEFIELD_SOURCE_ATTACH_HINT_TEXT', '0');
+
+/**
+ * Implementation of hook_filefield_source_info().
+ */
+function filefield_source_attach_info() {
+  $source = array();
+  $source['attach'] = array(
+    'name' => t('Attach select'),
+    'label' => t('File Attach'),
+    'description' => t('Select a file from a local file location on the server.'),
+    'process' => 'filefield_source_attach_process',
+    'value' => 'filefield_source_attach_value',
+  );
+  return $source;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function filefield_source_attach_theme() {
+  return array(
+    'filefield_source_attach_element' => array(
+      'arguments' => array('element' => NULL),
+      'file' => 'sources/attach.inc',
+    ),
+ );
+}
+
+/**
+ * Implementation of hook_filefield_source_settings().
+ */
+function filefield_source_attach_settings($op, $field) {
+  return array();
+}
+
+/**
+ * A #process callback to extend the filefield_widget element type.
+ */
+function filefield_source_attach_process($element, $edit, &$form_state, $form) {
+
+  $element['filefield_attach'] = array(
+    '#theme' => 'filefield_source_attach_element',
+    '#weight' => 100.5,
+    '#access' => empty($element['fid']['#value']),
+    '#filefield_sources_hint_text' => FILEFIELD_SOURCE_ATTACH_HINT_TEXT,
+  );
+
+  $allowed_extensions = implode('|', $element['#upload_validators']['filefield_validate_extensions']);
+  $path = FILEFIELD_SOURCE_ATTACH_PATH;
+  $options = _filefield_source_attach_get($path, $allowed_extensions);
+  $element['filefield_attach']['path'] = array(
+    '#type' => 'select',
+    // '#title' => t('Select attachment'),
+    '#description' => t('Select available files to attach. If a file is larger than the max upload site please use this method to add files. To add files to this select list you need to upload files using FTP.'),
+    '#options' => $options,
+  );
+
+  $element['filefield_attach']['transfer'] = array(
+    '#type' => 'submit',
+    '#value' => t('Transfer'),
+    '#submit' => array('node_form_submit_build_node'),
+    '#ahah' => array(
+       'path' => 'filefield/ahah/'. $element['#type_name'] .'/'. $element['#field_name'] .'/'. $element['#delta'],
+       'wrapper' => $element['#id'] .'-ahah-wrapper',
+       'method' => 'replace',
+       'effect' => 'fade',
+    ),
+  );
+
+  return $element;
+}
+
+function _filefield_source_attach_get($path, $allowed_extensions = '.*', $existing = array()) {
+  $file_exists = array();
+  $file_attach_options = array('');  
+  $file_attach = file_scan_directory($path, '.*', array('.', '..', 'CVS'), 0, TRUE, $key = 'filename', 0, 0);
+
+  if (count($file_attach)) {
+    foreach ($existing as $file_exist) {
+      if (!in_array(basename($file_exist['filepath']), $file_exists)) {
+        $file_exists[] = basename($file_exist['filepath']);
+      }
+    }
+    foreach ($file_attach as $filename => $fileinfo) {
+      $is_attached = '';
+      if (in_array($filename, $file_exists)) {
+        $is_attached = '(A)';
+      }
+      $filepath = str_replace(FILEFIELD_SOURCE_ATTACH_PATH, '', $filename);
+      $filepath = trim($filepath, '/');
+      $file_attach_options[$filepath] = $is_attached . ' ' . $filepath;
+    }
+  }
+  return $file_attach_options;
+}
+
+/**
+ * A #filefield_value_callback function.
+ */
+function filefield_source_attach_value($element, &$item) {
+  if (isset($item['filefield_attach']['path']) && $item['filefield_attach']['path'] !== '0') {
+    $field = content_fields($element['#field_name'], $element['#type_name']);
+    $filename = FILEFIELD_SOURCE_ATTACH_PATH . '/' . $item['filefield_attach']['path'];
+
+    $temp = file_directory_temp();
+
+    if (!file_copy($filename, $temp)) {
+      form_error($element, t('File attach copy error'));
+      return;
+    }
+
+    $filepath = $temp . '/' . basename($filename);
+
+    // Perform basic extension check on the file before trying to transfer.
+    $extensions = $field['widget']['file_extensions'];
+    $regex = '/\.('. ereg_replace(' +', '|', preg_quote($extensions)) .')$/i';
+    if (!empty($extensions) && !preg_match($regex, $filename)) {
+      form_error($element, t('Only files with the following extensions are allowed: %files-allowed.', array('%files-allowed' => $extensions)));
+      return;
+    }
+
+    if ($file = field_file_save_file($filepath, array(), filefield_widget_file_path($field))) {
+      $item = array_merge($item, $file);
+    }
+
+    // Delete the temporary file.
+    @unlink($filepath);
+  }
+  $item['filefield_attach']['path'] = '';
+}
+
+/**
+ * Theme the output of the autocomplete field.
+ */
+function theme_filefield_source_attach_element($element) {
+  return '<div class="filefield-source filefield-source-attach clear-block">' . theme('select', $element['path']) . theme('submit', $element['transfer']) . '</div>';
+}

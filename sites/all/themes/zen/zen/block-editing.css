@@ -1,0 +1,26 @@
+/*
+ * Rollover edit links for blocks
+ */
+
+  div.block
+  {
+    position: relative;
+  }
+
+  div.block div.edit
+  {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 40;
+    border: 1px solid #eee;
+    padding: 0 2px;
+    font-size: 9px;
+    background-color: #fff;
+  }
+
+  div.block:hover div.edit
+  {
+    display: block;
+  }

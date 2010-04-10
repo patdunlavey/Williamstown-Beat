@@ -1,0 +1,122 @@
+<?php
+
+// $Id:$
+
+/**
+ * @file
+ *  Integration the User Profile with Ubercart
+ */
+
+
+
+/**
+ * Ubercart Hooks
+ */
+
+/**
+ * Implementation of hook_checkout_pane().
+ */
+function uc_profile_checkout_pane() {
+  $panes[] = array(
+    'id' => 'uc_profile',
+    'callback' => 'uc_checkout_pane_profile',
+    'title' => t('Profile'),
+    'desc' => t("Display the fields from the profile module."),
+    'weight' => 3,
+    'process' => TRUE,
+    'collapsible' => TRUE,
+    'enabled' => FALSE,
+  );
+  return $panes;
+}
+
+/**
+ * Callback for checkout pane
+ */
+function uc_checkout_pane_profile($op, &$arg1, $arg2) {
+  global $user;
+
+  switch ($op) {
+    case 'view':
+      $contents = array();
+      //get the profile
+
+      $profile->uid = $user->uid;
+      profile_load_profile($user);
+      //cycle through user object and pulls out the profile field values
+      $edit = get_object_vars($user);
+      $profile_form = profile_form_profile($edit, $user, 'ubercart');
+      //$extra = _user_forms($null, $user, 'ubercart', 'register');
+      if (!empty($profile_form)) {
+        $contents =  $profile_form['ubercart'];
+        $contents['#title'] = t(variable_get('uc_profile_title', 'Profile'));
+      }
+
+      return array('contents' => $contents);
+
+    case 'process':
+      $arg1->data['profile'] = $arg2;
+      return TRUE;
+
+    case 'settings':
+      $form['uc_profile_title'] = array(
+        '#title' => t('Profile Pane Title'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        '#description' => t('This will display as the title of the pane on the checkout page'),
+        '#default_value' => variable_get('uc_profile_title', t('Profile')),
+      );
+      return $form;
+
+    case 'review':
+      $output = array();
+      $result = _profile_get_fields('ubercart');
+      $profile_value = (object)$arg1->data['profile'];
+      while ($field = db_fetch_object($result)) {
+        $field->page = TRUE;
+        $value = strip_tags(profile_view_field($profile_value, $field));
+        $output[] = array(
+          'title' => $field->title,
+          'data' => $value,
+        );
+      }
+      return $output;
+  }
+}
+
+/**
+  * Implementation of hook_profile_alter().
+  *  Used to change the title of the ubercart profile page.
+ */
+function uc_profile_profile_alter(&$account) {
+  $account->content['ubercart']['#title'] = t(variable_get('uc_profile_title', 'Cart Profile'));
+}
+
+/**
+  * Implementation of hook_form_alter().
+  *  Used to change the title of the ubercart profile page.
+ */
+function uc_profile_form_alter(&$form, $form_state, $form_id) {
+  if (in_array($form_id, array('user_register', 'user_profile_form')) AND isset($form['ubercart'])) {
+    $form['ubercart']['#title'] = t(variable_get('uc_profile_title', 'Cart Profile'));
+  }
+}
+
+/**
+  * Implementation of hook_menu_alter().
+  *  Used to change the title of the ubercart profile page.
+ */
+function uc_profile_menu_alter(&$items) {
+  if (isset($items['user/%user_category/edit/ubercart'])) {
+    $items['user/%user_category/edit/ubercart']['title arguments'][0] = t(variable_get('uc_profile_title', 'Cart Profile'));
+  }
+}
+
+/**
+ * Implementation of hook_uc_checkout_complete().
+ *  Updates the user profile
+ */
+function uc_profile_uc_checkout_complete($order, $account) {
+  $edit = $order->data['profile'];
+  profile_save_profile($edit, $account, 'ubercart');
+}

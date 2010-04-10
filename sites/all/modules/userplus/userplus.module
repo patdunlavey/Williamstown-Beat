@@ -1,0 +1,811 @@
+<?php
+// $Id: userplus.module,v 1.8.2.9 2009/03/17 18:10:41 marcp Exp $
+
+/**
+ * @file
+ * Enhances user administration by allowing operations on multiple
+ * users at one time.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function userplus_help($path, $arg) {
+  switch ($path) {
+    case 'admin/user/userplus':
+      return t('<p>This web page allows you to register new users and assign their roles.  Note that you may not have a user where either the e-mail address or the username match another user in the system. Leave any surplus rows blank if you are only adding a few users.</p><p>It may take several runs through this page if you need to add a lot of users, however you may change the number of rows that appear on this page on the !settings page.</p>', array('!settings' => l('userplus settings', 'admin/settings/userplus')));
+    case 'admin/user/userplus/userperms':
+      return t('<p>This web page allows you to set role membership for all users at once.  You may change the number of rows that appear on this page on the !settings page.</p>', array('!settings' => l('userplus settings', 'admin/settings/userplus')));
+    case 'admin/user/userplus/config':
+      return t('<p>This web page allows you to set configuration options for the "Userplus" module.</p>');
+  }
+}
+
+/**
+ * If the user has 'administer users' permissions, then they can
+ * do what they want in userplus.  Otherwise, they'll need one of
+ * this module's specialized permissions.
+ *
+ * @param $perm
+ *   The permission to check for if the user does not have
+ *   'administer users' rights.
+ */
+function userplus_access($perm) {
+  return user_access('administer users') || user_access($perm);
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function userplus_menu() {
+  $items = array();
+
+  $items['admin/settings/userplus'] = array(
+    'title' => 'Userplus settings',
+    'description' => 'Settings for the userplus module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('userplus_admin_settings'),
+    'access callback' => 'userplus_access',
+    'access arguments' => array('administer userplus settings'),
+    'type' => MENU_NORMAL_ITEM
+  );
+
+  $items['admin/user/userplus'] = array(
+    'title' => 'Userplus administration',
+    'description' => 'Add multiple users; assign roles to multiple users.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('userplus_add_users'),
+    'access callback' => 'userplus_access',
+    'access arguments' => array('add users via userplus')
+  );
+
+  $items['admin/user/userplus/addmultiple'] = array(
+    'title' => 'add multiple users',
+    'access callback' => 'userplus_access',
+    'access arguments' => array('add users via userplus'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -2
+  );
+
+  $items['admin/user/userplus/userperms'] = array(
+    'title' => 'assign user roles',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('userplus_admin_userperms'),
+    'access callback' => 'userplus_access',
+    'access arguments' => array('assign roles via userplus'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0
+  );
+
+  if (module_exists('og')) {
+    $items['admin/user/userplus/usergroups'] = array(
+      'title' => 'assign user groups',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('userplus_admin_usergroups'),
+      'access callback' => 'userplus_access',
+      'access arguments' => array('assign groups via userplus'),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1
+    );
+  }
+
+  return $items;
+}
+
+function userplus_add_users() {
+  $form['role_names'] = array('#tree' => TRUE);
+
+  // Get the list of roles, excluding AUTHENTICATED and ANONYMOUS...
+  $roles = user_roles(1);
+  unset($roles[DRUPAL_AUTHENTICATED_RID]);
+
+  // Get the list of role ids that has been configured to appear
+  // on this form (from admin/settings/userplus)
+  $allowable_roles = variable_get('userplus_add_multiple_roles', array());
+
+  foreach ($roles as $rid => $name) {
+    if (array_key_exists($rid, $allowable_roles)) {
+      $form['role_names'][$rid] = array(
+        '#type' => 'value',
+        '#value' => $name
+      );
+    }
+  }
+
+  $form['user'] = array('#tree' => TRUE);
+  $form['role'] = array('#tree' => TRUE);
+  $form['profile'] = array('#tree' => TRUE);
+
+  // Add in the required profile fields from core profile module
+  $profile_fields = array();
+  $profile_categories = array();
+  $profile_field_map = array();
+  
+  if (module_exists('profile') && (variable_get('userplus_show_required_profile_fields', 0))) {
+    $result = db_query('SELECT * FROM {profile_fields} WHERE required = %d ORDER BY category, weight', 1);
+
+    while ($record = db_fetch_object($result)) {
+      $profile_fields[$record->name] = array(
+        '#type' => $record->type == 'url' ? 'textfield' : $record->type,
+        '#size' => 16,
+        '#maxlength' => 64, 
+        '#default_value' => '',
+      );
+      
+      $profile_categories[$record->category][] = $record;
+  	  $profile_field_map[$record->name] = $record->category;
+    }
+
+    $form['profile_categories'] = array(
+      '#type' => 'value',
+      '#value' => $profile_categories
+    );
+
+    $form['profile_field_map'] = array(
+      '#type' => 'value',
+      '#value' => $profile_field_map
+    );
+  }
+
+  $max_add_users = variable_get('userplus_max_add_users', 12);
+
+  for ($i = 0; $i < $max_add_users; $i++) {
+    $form['user'][$i]['name'] =
+      array('#type' => 'textfield',
+            '#default_value' => '',
+            '#size' => 16,
+            '#maxlength' => 60);
+    $form['user'][$i]['mail'] =
+      array('#type' => 'textfield',
+            '#default_value' => '',
+            '#size' => 28,
+            '#maxlength' => 64);
+    $form['user'][$i]['pass'] =
+      array('#type' => 'password',
+            '#default_value' => '',
+            '#size' => 16,
+            '#maxlength' => 32);
+            
+    if (!empty($profile_fields)) {
+      foreach ($profile_fields as $pf_name => $pf) {
+        $form['profile'][$i][$pf_name] = $pf;
+      }
+    }
+
+    foreach ($roles as $role_rid => $role_name) {
+      if (array_key_exists($role_rid, $allowable_roles)) {
+        $form['role'][$i][$role_rid] =
+          array('#type' => 'checkbox',
+                '#default_value' => FALSE);
+      }
+    }
+  }
+
+  $form['notify'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Notify users of new account'),
+     '#default_value' => FALSE,
+  );
+
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Create accounts'));
+  return $form;
+}
+
+function userplus_add_users_submit($form, &$form_state) {
+  $good_edits = array();
+  $bad_edits = array();
+
+  if ($form_state['values']) {
+    foreach ($form_state['values']['user'] as $i => $u) {
+      // Only deal with it if the name and email address are set...
+      if ($u['name'] && $u['mail']) {
+        // Always put the user in 'authenticated user' role...
+        $u['roles'] = array(DRUPAL_AUTHENTICATED_RID => DRUPAL_AUTHENTICATED_RID);
+
+        if ($form_state['values']['role']) {
+          foreach ($form_state['values']['role'][$i] as $role_rid => $role_checked) {
+            if ($role_checked) {
+              $u['roles'][$role_rid] = $role_rid;
+            }
+          }
+        }
+        
+        if (array_key_exists('profile', $form_state['values']) &&
+            array_key_exists('profile_categories', $form_state['values']) &&
+			array_key_exists('profile_field_map', $form_state['values'])) {
+          foreach ($form_state['values']['profile'][$i] as $pf_name => $pf_value) {
+		    $pf_category = $form_state['values']['profile_field_map'][$pf_name];
+            $u['profile'][$pf_category][$pf_name] = $pf_value;
+          }
+        }
+
+        // HACK - We're going to need a unique id for any form errors, so use this index...
+        //
+        // Note that when the errors show up on the page, there won't be any information
+        // highlighted on the form because we go through with the submission anyway...
+        $error_index = 0;
+
+        // NOTE - We would rather call user_module_invoke('validate', ...) here,
+        // but it doesn't return any useful information and relies on the modules'
+        // hook_user('validate', ...) to call form_set_error()...
+        //
+        // So, instead, we do our own simple validation...
+        if (($val = _userplus_validate_user($u['name'], $u['mail'])) === TRUE) {
+          $good_edits[] = $u;
+        }
+        else {
+          $bad_edits[] = $u;
+
+          if ($val['name']) {
+            form_set_error('name'. $error_index++, $val['name']);
+          }
+          else if ($val['mail']) {
+            form_set_error('mail'. $error_index++, $val['mail']);
+          }
+          else {
+            // This should never happen...
+            form_set_error('name'. $error_index++, t('Invalid name/e-mail address combo (%name, %email).', array('%email' => $u['mail'], '%name' => $u['name'])));
+          }
+        }
+      }
+    }
+
+    // Keep track of user names and email addresses that we are adding
+    // so we can check for duplicates...
+    $users_added = array();
+    $mails_added = array();
+
+    // Handle the good ones...
+    $message = '';
+    foreach ($good_edits as $u) {
+      // Check to see if either the user name or email is already listed
+      // on this current submission form -- if so, then we bounce the
+      // later one...
+      if (in_array($u['name'], $users_added)) {
+        form_set_error('name'. $error_index++, t('The name %name is already taken.', array('%name' => $u['name'])));
+        $bad_edits[] = $u;
+        continue;
+      }
+      else if (in_array($u['mail'], $mails_added)) {
+        form_set_error('mail'. $error_index++, t('The e-mail address %email, which was entered for user %name, is already taken.', array('%email' => $u['mail'], '%name' => $u['name'])));
+        $bad_edits[] = $u;
+        continue;
+      }
+      else {
+        $users_added[] = $u['name'];
+        $mails_added[] = $u['mail'];
+      }
+
+      watchdog('user', 'New user: %name %email.',
+               array('%name' => $u['name'],
+                     '%email' => '<'. $u['mail'] .'>'));
+      
+      $account = user_save('',
+        array(
+          'name' => $u['name'],
+          'pass' => $u['pass'],
+          'init' => $u['mail'],
+          'mail' => $u['mail'],
+          'roles' => $u['roles'],
+          'status' => 1
+        )
+      );
+      if (is_array($u['profile'])) {
+	    foreach ($u['profile'] as $category => $fields) {
+          profile_save_profile($fields, $account, $category);
+		}
+      }
+      
+      // Send mail to user, liberally copied from user_register_submit
+      if ($form_state['values']['notify']) {
+        // Add plain text password into user account to generate mail tokens.
+        $account->password = $u['pass'];
+        _user_mail_notify('register_admin_created', $account);
+        drupal_set_message(t('Password and further instructions have been e-mailed to the new user %user.', array('%user' => $u['name'])));
+      }
+      else {      
+        drupal_set_message(t('Created new user account %name.', array('%name' => $u['name'])));
+      }
+    }
+    
+    drupal_set_message(format_plural(sizeof($users_added), '1 user was added.', '@count users were added.'));
+    
+    // What about the bad ones?  Perhaps we'd like them to show up pre-populated
+    // on this page when it gets reloaded...
+    foreach ($bad_edits as $u) {
+      // For now we aren't doing anything here...
+    }
+  }
+}
+
+function theme_userplus_add_users($form) {
+  $profile_header = array();
+  
+  if (array_key_exists('profile_categories', $form) && is_array($form['profile_categories']['#value'])) {
+    foreach ($form['profile_categories']['#value'] as $profile_category => $category_fields) {
+      foreach ($category_fields as $field) {
+        $profile_header[] = $field->title;
+      }
+    }
+  }
+  
+  $header = array_merge(array('', 'username', 'e-mail address', 'password'), $profile_header);
+  
+  foreach (element_children($form['role_names']) as $rid) {
+    $header[] = $form['role_names'][$rid]['#value'];
+  }
+
+  foreach (element_children($form['user']) as $i) {
+    $user = $form['user'][$i];   
+           
+    unset($row);
+    
+    $row[] = array('data' => ''. ($i + 1) .'&nbsp', 'class' => 'form-index');
+    $row[] = drupal_render($user['name']);
+    $row[] = drupal_render($user['mail']);
+    $row[] = drupal_render($user['pass']);
+    
+    if (is_array($form['profile'])) {    
+      foreach (element_children($form['profile'][$i]) as $pf_name) {
+        $row[] = drupal_render($form['profile'][$i][$pf_name]);
+      }
+    }
+       
+    foreach (element_children($form['role'][$i]) as $role_rid) {
+      $row[] = drupal_render($form['role'][$i][$role_rid]);
+    }
+    
+    $rows[] = $row;
+  }
+
+  $output = theme('table', $header, $rows, array('id' => 'multi-users'));
+  $output .= drupal_render($form['notify']);
+  $output .= drupal_render($form['submit']);
+  
+  // Don't forget the dreaded form_id -- http://drupal.org/node/38926 -- or
+  // the values won't be there when you get to your _submit handler...
+  $output .= drupal_render($form['form_id']); 
+
+  // Form_token is necessary to pass validation -- see
+  // http://drupal.org/node/89999 for more information.
+  $output .= drupal_render($form['form_token']);
+    
+  return $output;
+}
+
+/**
+ * Callback for array_filter below that returns
+ * TRUE if passed in the value  1...
+ */
+function _userplus_is_role_set($var) {
+  return ($var == 1); 
+}
+
+function userplus_admin_userperms_submit($form, &$form_state) {
+  // Get the list of role ids that has been configured to appear
+  // on this form (from admin/settings/userplus).  Users may belong
+  // to roles that are not in this list -- membership in those roles
+  // should be maintained, even though that information does not appear
+  // on the form.
+  $allowable_roles = variable_get('userplus_assign_roles', array());
+
+  // Figure out all the users who are on this page so we can load
+  // their user object and replace the old roles with the new
+  // roles and then save the user object.
+  $users = $form_state['values']['user'];
+  
+  foreach ($users as $uid => $values) {
+    $user = user_load(array('uid' => $uid));
+    if ($user) {
+      // Get all the checked roles for this user.
+      $new_roles = array_filter($users[$uid], '_userplus_is_role_set');
+      
+      // Add in any additional roles that the user belongs to that
+      // do not appear on this form.
+      $old_roles = $user->roles;
+      
+      foreach ($old_roles as $old_rid => $role_name) {
+        if (!array_key_exists($old_rid, $allowable_roles)) {
+          $new_roles[$old_rid] = 1;
+        }
+      }
+
+      // Pass to user_save() the roles as an associative array where
+      // the key is role id -- doesn't matter what is pointed to, so
+      // we're always just passing in the number 1...
+      $user = user_save($user, array('roles' => $new_roles));
+    }
+  }
+  
+  drupal_set_message(t('The changes have been saved.'));
+  
+  // Clear the cached pages and menus:
+  cache_clear_all();
+  menu_rebuild();
+}
+
+function userplus_admin_userperms() {
+  // Compile user/role array:
+  $result = pager_query('SELECT u.uid, u.name FROM {users} u WHERE u.uid > 0 ORDER BY u.name', variable_get('userplus_max_show_user_roles', 25));
+  $users = array();
+  while ($user = db_fetch_object($result)) {
+    $users[$user->uid] = $user->name;
+  }
+  
+  $users_roles = array();
+  $result = db_query('SELECT ur.uid, ur.rid FROM {users_roles} ur WHERE ur.uid > 0 ORDER BY ur.uid');
+  while ($user_role = db_fetch_object($result)) {
+    $users_roles[$user_role->uid][] = $user_role->rid;
+  }
+  
+  // get the list of roles, excluding AUTHENTICATED and ANONYMOUS...
+  $roles = user_roles(1);
+  unset($roles[DRUPAL_AUTHENTICATED_RID]);
+
+  // Get the list of role ids that has been configured to appear
+  // on this form (from admin/settings/userplus)
+  $allowable_roles = variable_get('userplus_assign_roles', array());
+
+  // Fix the allowable roles array so that it contains role ids mapping to role names
+  foreach ($roles as $rid => $role_name) {
+    if (array_key_exists($rid, $allowable_roles)) {
+      $allowable_roles[$rid] = $role_name;
+    }
+  }
+  
+  $form['user'] = array('#tree' => TRUE);
+  
+  $weight = 1;
+  foreach ($users as $uid => $user_name) {
+    foreach ($allowable_roles as $rid => $role_name) {
+      $checked = array_key_exists($uid, $users_roles) && is_array($users_roles[$uid]) ? in_array($rid, $users_roles[$uid]) : FALSE;
+      $form['user'][$uid][$rid] = array('#type' => 'checkbox', '#title' => $role_name, '#default_value' => $checked, '#weight' => $weight++);
+    }
+  }
+  
+  // Stick the role names in the form so we can use them in the theme function...
+  $form['roles'] = array('#type' => 'value', '#value' => $allowable_roles);
+  // Stick the user names in the form so we can use them in the theme function...
+  $form['usernames'] = array('#type' => 'value', '#value' => $users);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save permissions'));
+  
+  return $form;
+}
+
+function theme_userplus_admin_userperms($form) {
+  $rows = array();
+  
+  // Render role/permission overview:
+  $header = array_merge(array(t('User')), $form['roles']['#value']);
+
+  foreach (element_children($form['user']) as $uid) {
+    unset($row);
+    $row[] = array('data' => l($form['usernames']['#value'][$uid], "user/$uid/edit"), 'class' => 'username');
+    foreach (element_children($form['user'][$uid]) as $rid) {
+      unset($form['user'][$uid][$rid]['#title']);
+      $row[] = drupal_render($form['user'][$uid][$rid]);
+    }
+    
+    $rows[] = $row;
+  }
+  
+  $output = theme('table', $header, $rows, array('id' => 'users-roles'));
+  $output .= '<br \>';
+  $output .= drupal_render($form['submit']);
+  $output .= theme('pager', NULL, variable_get('userplus_max_show_user_roles', 25));
+  
+  // Don't forget the dreaded form_id -- http://drupal.org/node/38926 -- or
+  // the values won't be there when you get to your _submit handler...
+  $output .= drupal_render($form['form_id']); 
+
+  // Form_token is necessary to pass validation -- see
+  // http://drupal.org/node/89999 for more information.
+  $output .= drupal_render($form['form_token']);
+
+  return $output;
+}
+
+function userplus_admin_usergroups_submit($form, &$form_state) {
+  // Get the original group membership data from when
+  // the form was initially loaded...
+  $users_groups = unserialize($form_state['values']['usersgroups']);
+
+  // Remove subscriptions for only those users that have been
+  // unsubscribed, and create subscriptions for only those users
+  // who are newly subscribed...
+  if (isset($form_state['values']['user']) && is_array($form_state['values']['user'])) {
+    foreach ($form_state['values']['user'] as $uid => $groups) {
+      foreach ($groups as $nid => $state) {
+        // If the user is an admin, don't do anything because the state
+        // is going to be incorrect due to the checkbox being disabled...
+        $is_admin = array_key_exists($uid, $users_groups) && array_key_exists($nid, $users_groups[$uid]) && ($users_groups[$uid][$nid] == 1);
+        if (!$is_admin) {
+          if ($state == 0) {
+            if (array_key_exists($uid, $users_groups) && array_key_exists($nid, $users_groups[$uid])) {
+              og_delete_subscription($nid, $uid);
+            }
+          }
+          else {
+            if (!array_key_exists($uid, $users_groups) || !array_key_exists($nid, $users_groups[$uid])) {
+              og_save_subscription($nid, $uid, array('is_active' => 1, 'is_admin' => 0));
+            }
+          }
+        }
+      }  
+    }
+  }  
+  
+  drupal_set_message(t('The changes have been saved.'));
+  
+  // Clear the cached pages and menus:
+  cache_clear_all();
+  menu_rebuild();
+  
+  drupal_goto($_GET['q'], drupal_get_destination());
+}
+
+function userplus_admin_usergroups() {
+  // Compile user/group array:
+  $result = pager_query('SELECT u.uid, u.name 
+                         FROM {users} u 
+                         WHERE u.uid > 0 
+                         ORDER BY u.name', 
+                         variable_get('userplus_max_show_user_groups', 25)
+                         );
+  $users = array();
+  while ($user = db_fetch_object($result)) {
+    $users[$user->uid] = $user->name;
+  }
+  
+  $result = db_query('SELECT ug.uid, ug.nid, ug.is_active 
+                      FROM {og_uid} ug 
+                      WHERE ug.nid > 0 
+                      ORDER BY ug.uid'
+                      );
+
+  // Keep track of the initial group memberships, along with their
+  // admin status (1 = admin, 0 = not admin) so we can minimize the
+  // work done in the submit handler...
+  $users_groups = array();
+  while ($user_group = db_fetch_object($result)) {
+    $users_groups[$user_group->uid][$user_group->nid] = 0;
+  }
+  
+  $result = db_query('SELECT ug.nid AS nid, n.title AS title, n.uid AS uid
+                      FROM {og} ug
+                      INNER JOIN {node} n
+                      ON ug.nid = n.nid 
+                      ORDER BY n.title');
+  $group_names = array();
+  while ($group = db_fetch_object($result)) {
+    $group_names[$group->nid] = $group->title;
+    $group_owners[$group->nid] = $group->uid;
+  }
+
+  $form['user'] = array('#tree' => TRUE);
+  
+  $weight = 1;
+  foreach ($users as $uid => $user_name) {
+    foreach ($group_names as $nid => $group_name) {
+      $checked = array_key_exists($uid, $users_groups) ? array_key_exists($nid, $users_groups[$uid]) : FALSE;
+      $disabled = $group_owners[$nid] == $uid;
+      // Save off the admin status of this user/group combo...
+      if ($disabled && $checked) {
+        $users_groups[$uid][$nid] = 1;
+      }
+      $form['user'][$uid][$nid] = array('#type' => 'checkbox', '#title' => $group_name, '#default_value' => $checked, '#weight' => $weight++, '#disabled' => $disabled);
+    }
+  }
+  
+  // Stick the role names in the form so we can use them in the theme function...
+  $form['groups'] = array('#value' => $group_names);
+  // Stick the user names in the form so we can use them in the theme function...
+  $form['usernames'] = array('#value' => $users);
+  // Stick the initial user-group mappings in there so we can use them in the submit handler...
+  $form['usersgroups'] = array('#type' => 'hidden', '#value' => serialize($users_groups));
+    
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save groups'));
+
+  return $form;
+}
+
+function theme_userplus_admin_usergroups($form) {
+  $rows = array();
+  
+  // Render group overview:
+  $header = array(t('User'));
+  foreach ($form['groups']['#value'] as $nid => $name) {
+    $header[] = l($name, 'node/'. $nid);
+  }
+
+  foreach (element_children($form['user']) as $uid) {
+    unset($row);
+    $row[] = array('data' => l($form['usernames']['#value'][$uid], "user/$uid/edit"), 'class' => 'username');
+    foreach (element_children($form['user'][$uid]) as $nid) {
+      unset($form['user'][$uid][$nid]['#title']);
+      $row[] = drupal_render($form['user'][$uid][$nid]);
+    }
+    
+    $rows[] = $row;
+  }
+  
+  $output = theme('table', $header, $rows, array('id' => 'users-groups'));
+  $output .= '<br \>';
+  $output .= drupal_render($form['submit']);
+  $output .= theme('pager', NULL, variable_get('userplus_max_show_user_groups', 25));
+
+  $output .= drupal_render($form['usersgroups']);
+  
+  // Don't forget the dreaded form_id -- http://drupal.org/node/38926 -- or
+  // the values won't be there when you get to your _submit handler...
+  $output .= drupal_render($form['form_id']); 
+
+  // Form_token is necessary to pass validation -- see
+  // http://drupal.org/node/89999 for more information.
+  $output .= drupal_render($form['form_token']);
+
+  return $output;
+}
+
+function userplus_admin_settings() {
+  // "add multiple users" settings
+  $form['add-multiple-users'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#title' => t('"add multiple users" settings'),
+    '#description' => t('These settings affect the operation of the !page page.', array('!page' => l('add multiple users', 'admin/user/userplus/addmultiple'))),
+  );
+  $form['add-multiple-users']['userplus_max_add_users'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum number of users that can be added at once'),
+    '#default_value' => variable_get('userplus_max_add_users', '12'),
+    '#size' => 4,
+    '#maxlength' => 6,
+    '#description' => t('The number of rows that will appear on the page.'),
+  );
+  
+  // Get all the roles, excluding anonymous and authenticated...
+  $roles = user_roles(TRUE);
+  unset($roles[DRUPAL_AUTHENTICATED_RID]);
+  
+  $form['add-multiple-users']['userplus_add_multiple_roles'] = array(
+    '#type' => 'select',
+    '#title' => t('Select the roles that should appear on the form'),
+    '#default_value' => variable_get('userplus_add_multiple_roles', array()),
+    '#multiple' => TRUE,
+    '#options' => $roles,
+    '#description' => t('When adding new users with userplus, only these roles should be available.  Administrators may always add additional roles to users at a later time.'),
+  );
+  
+  if (module_exists('profile')) {
+    $form['add-multiple-users']['userplus_show_required_profile_fields'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show required profile fields'),
+      '#default_value' => variable_get('userplus_show_required_profile_fields', 0),
+      '#description' => t('Enable the user to enter any required profile fields on the page.'),
+     );
+  }
+  
+  // "assign user roles" settings
+  $form['assign-user-roles'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#title' => t('"assign user roles" settings'),
+    '#description' => t('These settings affect the operation of the !page page.', array('!page' => l('assign user roles', 'admin/user/userplus/userperms'))),
+  );
+  $form['assign-user-roles']['userplus_max_show_user_roles'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of users to show per page'),
+    '#default_value' => variable_get('userplus_max_show_user_roles', '25'),
+    '#size' => 4,
+    '#maxlength' => 6,
+    '#description' => t('The number of users that will appear per page.'),
+  );
+  
+  $form['assign-user-roles']['userplus_assign_roles'] = array(
+    '#type' => 'select',
+    '#title' => t('Select the roles that should appear on the form'),
+    '#default_value' => variable_get('userplus_assign_roles', array()),
+    '#multiple' => TRUE,
+    '#options' => $roles,
+    '#description' => t('When assigning roles with userplus, only these roles should be available.'),
+  );
+
+  if (module_exists('og')) {
+    // "assign user group" settings
+    $form['assign-user-groups'] = array(
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#title' => t('"assign user groups" settings'),
+      '#description' => t('These settings affect the operation of the !page page.', array('!page' => l('assign user groups', 'admin/user/userplus/usergroups'))),
+    );
+    $form['assign-user-groups']['userplus_max_show_user_groups'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of users to show per page'),
+      '#default_value' => variable_get('userplus_max_show_user_groups', '25'),
+      '#size' => 4,
+      '#maxlength' => 6,
+      '#description' => t('The number of users that will appear per page.'),
+    );
+  }
+    
+  return system_settings_form($form);
+}
+
+/*
+ * _userplus_validate_user() is based on _user_edit_validate().  it would be nice to
+ * be able to call something in user.module that validates what's passed in against
+ * the users in the database without doing anything to affect the user interface.
+ *
+ * ideally we would like to call:
+ *
+ *   user_module_invoke('validate', $u, $u, 'account');
+ *
+ * because this would invoke any other modules' validation for the user.  unfortunately,
+ * hook_user('validate', ...) is expected to call form_set_error() when validation fails.
+ * this is a problem because multiple form_set_error('name', ...) or form_set_error('mail', ...)
+ * calls do not accumulate -- only the first one sets an error.
+ *
+ * note also that we don't bother passing in $uid since we are never going to get in
+ * here in an UPDATE situation.
+ *
+ */
+function _userplus_validate_user($name = NULL, $mail = NULL) {
+  if ($name) {
+    // Validate the username:
+    if ($error = user_validate_name($name)) {
+      return array('name' => $error);
+    }
+    else if (db_result(db_query('SELECT COUNT(*) FROM {users} WHERE LOWER(name) = LOWER("%s")', $name)) > 0) {
+      return array('name' => t('The name %name is already taken.', array('%name' => $name)));
+    }
+    else if (drupal_is_denied('user', $name)) {
+      return array('name' => t('The name %name has been denied access.', array('%name' => $name)));
+    }
+  }
+  
+  if ($mail) {
+    // Validate the e-mail address:
+    if ($error = user_validate_mail($mail)) {
+      return array('mail' => $error);
+    }
+    else if (db_result(db_query('SELECT COUNT(*) FROM {users} WHERE LOWER(mail) = LOWER("%s")', $mail)) > 0) {
+      return array('mail' => t('The e-mail address %email is already taken.', array('%email' => $mail)));
+    }
+    else if (drupal_is_denied('mail', $mail)) {
+      return array('mail' => t('The e-mail address %email has been denied access.', array('%email' => $mail)));
+    }
+  }
+  
+  return TRUE;
+}
+
+/**
+ * Implementation of hook_theme()...
+ */
+function userplus_theme() {
+  return array(
+    'userplus_add_users' => array(
+      'arguments' => array('edit')
+    ),
+    'userplus_admin_usergroups' => array(
+      'arguments' => array('edit')
+    ),
+    'userplus_admin_userperms' => array(
+      'arguments' => array('edit')
+    )
+  );
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function userplus_perm() {
+  return array(
+    'administer userplus settings',
+    'add users via userplus',
+    'assign roles via userplus',
+    'assign groups via userplus'
+  );
+}

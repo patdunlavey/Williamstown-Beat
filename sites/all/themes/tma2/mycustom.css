@@ -1,0 +1,222 @@
+#content {
+font-size:1.0em;
+}
+
+body {
+line-height:1.25em;
+font-family:arial;
+}
+#site-name a:link, #site-name a:visited {
+font-family:Georgia;
+}
+h1 { font-size:1.5em; font-family:Georgia;}
+h2,  a.article_title { font-family:Georgia;}
+h2,  a.article_title, .views-field-title a { font-size:1.2em; line-height:1.1em;}
+
+
+#site-name a:hover
+ {
+   color: #888; background: none;
+ }
+
+td.j div {
+	float:left;
+}
+
+div.feeds-container.active-container{
+float:left;
+}
+/*div.item-list span.field-content>a {*/
+	div.item-list li .field-content {
+	display:block;
+	overflow:hidden;
+	white-space:nowrap;
+	/*width:170px;*/
+	height:1.4em;
+	text-transform:none;
+	}
+div.item-list li span {
+	display:inline;
+}
+div.item-list li.rpx-link {
+/*height:1.4em;*/
+height:inherit;
+}
+
+div.item-list li a { 
+	overflow:inherit;
+}	
+div.item-list li a.rpxnow { 
+		height:inherit;
+		position:relative;
+		bottom:0;
+	}
+div.item-list >h3 {
+font-size:100%;
+color:#888;
+margin:0px;
+height:1em;
+}
+div.item-list ul {
+margin-top:.5em;
+margin-bottom:0;
+}
+
+#content, .two-sidebars #content {
+float:left;
+margin-left:0;
+margin-right:-600px;
+padding:0;
+width:360px;
+}
+#sidebar-wrapper, .two-sidebars #sidebar-wrapper {
+display:inline;
+float:left;
+margin-left:360px;
+margin-right:-960px;
+margin-top:1.5em;
+padding:0;
+width:600px;
+}
+
+#sidebar-left {
+float:left;
+margin-left:0;
+margin-right:-300px;
+padding:0;
+width:280px;
+}
+
+.two-sidebars #sidebar-right {
+float:left;
+margin-left:320px;
+margin-right:-600px;
+padding:0;
+width:280px;
+}
+#sidebar-right {
+float:left;
+margin-left:0;
+margin-right:-300px;
+padding:0;
+width:300px;
+}
+#sidebar-right-inner  {
+margin:0 0 0 0;
+padding:0;
+}
+
+.sidebar-right #sidebar-wrapper {
+margin-left:660px;
+width:300px;
+}
+
+.sidebar-right #content {
+margin-left:0;
+margin-right:-660px;
+width:640px;
+}
+
+div.view-og-ghp-cm-ron div.views-row,
+div.view-cm-frontpage div.views-row {
+	margin-bottom:10px;
+	margin-top:10px;
+	padding:5px 5px 1.5em 5px;
+	border:solid #cccccc 1px;
+	clear:both;
+}
+
+div.view-og-ghp-cm-ron div.views-field-title,
+div.view-cm-frontpage div.views-field-title {
+	font-size:1.2em;
+}
+.views-field-comments-link, .views-field-url {
+}
+
+.links a, .links li, .meta, .meta a, .views-field-created, .views-field-changed, .views-field-url {
+	font-size:10px;
+}
+
+span.views-field-url a.offsite-link {
+	text-decoration:none;
+	height:inherit;
+	width:inherit;
+	background-image: url('images/linkicon.png');
+	background-repeat: no-repeat;
+	background-position: 0px 2px;
+	display:inherit;
+}
+span.views-field-url a.offsite-link:hover, span.views-field-url a.offsite-link:active {
+	background-image:url("images/linkicon-active.png");
+	text-decoration:inherit;
+}
+
+span.views-field-url span.field-content {
+	display:inline-block;
+	height:12px;
+	width:16px;
+}
+
+div.item-list li.views-row {
+	position:relative;
+}
+	
+ul.menu li a, li.expanded a, li.collapsed a, li.leaf a, .block .item-list ul li a {
+background:none;
+/*border-bottom:1px solid #DADADA;
+border-left:3px solid #DADADA;
+color:#000000;
+display:block;
+font-size:0.8em;
+font-weight:bold;
+height:19px;
+margin:0;
+padding:3px 12px 0 7px;
+text-transform:uppercase;
+*/
+}
+ul.menu li a:hover, li.expanded a:hover, li.collapsed a:hover, li.leaf a:hover, .block .item-list ul li a:hover
+{
+  background: none; 
+  background-color: #f1f1f1; 
+}
+
+div.item-list li span.item-fadeout {
+background:url("images/mask.png") no-repeat scroll right top transparent;
+height:inherit;
+padding:12px 5px 4px;
+position:absolute;
+right:0;
+top:0;
+width:50px;
+}
+
+ul.quicktabs_tabs li {
+padding:2px 6px 4px;
+}
+
+ul.quicktabs_tabs li.active {
+	background:#eee;
+}
+
+#block-menu-secondary-links, #block-block-2 {
+	float: left;
+	margin-right:20px;
+}
+
+span#welcomeuser {
+	font-weight:bold;
+	font-style:italic;
+}
+
+div.views-field-field-image-fid  {
+background-color:#FFFFFF;
+border:1px solid #CCCCCC;
+float:left;
+margin-right:10px;
+padding:4px;
+}
+
+.breadcrumb {float:none;}
+
+#edit-comment { height:8em;}

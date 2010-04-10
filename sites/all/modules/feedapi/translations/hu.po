@@ -1,0 +1,981 @@
+# Hungarian translation of feedapi (6.x-1.6)
+# Copyright (c) 2009 by the Hungarian translation team
+# Generated from files:
+#  feedapi.module,v 1.23.2.119.2.36 2009/02/03 12:02:03 aronnovak
+#  feedapi_node.views.inc,v 1.1.2.4 2009/01/23 13:47:10 alexb
+#  feedapi.views.inc,v 1.1.2.4 2009/01/23 13:47:10 alexb
+#  feedapi_node.install,v 1.1.2.13.2.9 2009/02/03 11:04:29 aronnovak
+#  feedapi_node.module,v 1.1.2.18.2.22 2008/12/30 10:23:06 aronnovak
+#  feedapi_handler_field_url.inc,v 1.1.2.1 2009/01/23 13:47:11 alexb
+#  feedapi.install,v 1.5.2.21.2.11 2008/10/10 09:58:24 aronnovak
+#  parser_common_syndication.install,v 1.1.2.4.2.6 2008/09/10 08:27:51 aronnovak
+#  feedapi.info,v 1.1.2.3.2.2 2008/04/11 19:42:50 aronnovak
+#  feedapi_node.info,v 1.1.2.1.2.2 2008/04/11 19:42:51 aronnovak
+#  parser_simplepie.info,v 1.1.2.5.2.4 2008/09/16 12:46:32 aronnovak
+#  feedapi_inherit.module,v 1.1.2.14.2.3 2008/08/22 16:26:54 aronnovak
+#  feedapi_inherit.info,v 1.1.2.5.2.2 2008/04/11 19:42:51 aronnovak
+#  parser_common_syndication.info,v 1.1.2.3.2.2 2008/04/11 19:42:51 aronnovak
+#  feedapi_node.views_default.inc,v 1.1.2.2 2009/01/23 13:47:10 alexb
+#  parser_common_syndication.module,v 1.6.2.23.2.32 2009/01/23 10:31:53 aronnovak
+#  parser_simplepie.module,v 1.6.2.20.2.12 2008/12/04 21:35:21 aronnovak
+#  parser_simplepie.install,v 1.1.2.6.2.6 2008/09/10 08:27:52 aronnovak
+#  feedapi_handler_field_node_link_purge.inc,v 1.1.2.1 2009/01/23 13:47:11 alexb
+#  feedapi_handler_field_node_link_refresh.inc,v 1.1.2.1 2009/01/23 13:47:11 alexb
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: feedapi (6.x-1.6)\n"
+"POT-Creation-Date: 2009-05-16 15:42+0200\n"
+"PO-Revision-Date: 2009-05-15 08:27+0200\n"
+"Last-Translator: Balogh Zoltán\n"
+"Language-Team: Hungarian http://forditas.mindworks.hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: feedapi.module:432,470
+msgid "Weight"
+msgstr "Súly"
+
+#: feedapi.module:705
+msgid "Delete"
+msgstr "Törlés"
+
+#: feedapi.module:691
+msgid "Title"
+msgstr "Cím"
+
+#: feedapi_node/views/feedapi_node.views.inc:23; views/feedapi.views.inc:24
+msgid "URL"
+msgstr "URL"
+
+#: feedapi.module:706,92
+msgid "Remove items"
+msgstr "Elemek törlése"
+
+#: feedapi.module:812
+msgid "Allowed HTML tags"
+msgstr "Engedélyezett HTML elemek"
+
+#: feedapi.module:60
+msgid "List"
+msgstr "Lista"
+
+#: feedapi_node/feedapi_node.install:20
+msgid "Link to the feed item."
+msgstr "Hivatkozás a hírcsatrona elemre."
+
+#: feedapi_node/feedapi_node.install:37
+msgid "Unique identifier for the feed item."
+msgstr "A hírcsatorna elem egyedi azonosítója."
+
+#: feedapi_node/feedapi_node.module:517
+msgid "content"
+msgstr "tartalom"
+
+#: feedapi.module:275
+msgid "Yes"
+msgstr "Igen"
+
+#: feedapi.module:275
+msgid "No"
+msgstr "Nem"
+
+#: feedapi_node/views/feedapi_node.views.inc:33
+msgid "Date"
+msgstr "Dátum"
+
+#: feedapi.module:708
+msgid "Edit"
+msgstr "Szerkesztés"
+
+#: feedapi_node/feedapi_node.module:518
+msgid "@type %title has been deleted."
+msgstr "%title @type törölve."
+
+#: feedapi_node/feedapi_node.module:517
+msgid "@type: deleted %title."
+msgstr "@type: %title törölve."
+
+#: feedapi.module:762
+msgid "Add"
+msgstr "Hozzáadás"
+
+#: feedapi.module:424,462
+msgid "Enable"
+msgstr "Engedélyezés"
+
+#: feedapi.module:620,718,729
+msgid "Never"
+msgstr "Soha"
+
+#: feedapi.module:493; feedapi_node/feedapi_node.install:99
+msgid "Feed"
+msgstr "Hírcsatorna"
+
+#: feedapi.module:399,438,476
+msgid "Default settings"
+msgstr "Alapértelmezett beállítások"
+
+#: feedapi.module:54
+msgid "Feeds"
+msgstr "Hírcsatornák"
+
+#: feedapi.module:718,729
+msgid "%time ago"
+msgstr "%time óta"
+
+#: views/handlers/feedapi_handler_field_url.inc:29
+msgid "Display"
+msgstr "Megjelenítés"
+
+#: views/feedapi.views.inc:53
+msgid "Link"
+msgstr "Hivatkozás"
+
+#: feedapi.module:695
+msgid "Number of items"
+msgstr "Elemek száma"
+
+#: feedapi.module:707,84
+msgid "Refresh"
+msgstr "Frissítés"
+
+#: feedapi.module:385
+msgid "Feed API"
+msgstr "FeedAPI"
+
+#: feedapi.module:25
+msgid ""
+"Provides feed management interface and handles underlying processors "
+"and parsers for any type of feeds."
+msgstr ""
+"A hírcsatornák kezelőfelületét biztosítja és kezeli az "
+"almodulokat."
+
+#: feedapi.module:26
+msgid ""
+"Feeds are based on content types. Default content types are created on "
+"install. You can create new content types on the <a "
+"href=\"@content-types\">add content types</a> page. To do that, enable "
+"the \"Is a feed content type\" checkbox under the Feed API group on "
+"the content type edit form. Then choose the processors and parsers "
+"that you would like to use. At least one parser and one processor must "
+"be enabled."
+msgstr ""
+"A hírcsatornák a tartalomtípusokon alapulnak. Az alapértelmezett "
+"tartalomtípusokat telepítéskor létrehozza a modul. Új "
+"tartalomtípust <a href=\"@content-types\">ezen az oldalon</a> lehet "
+"létrehozni. Új tartalomtípus létrehozása esetén engedélyezni "
+"kell az „Ez egy hírcsatorna tartalomtípus” opciót a "
+"<em>FeedAPI</em> beállításoknál. Ezután engedélyezni kell a "
+"feldolgozó és megjelenítő almodulokat is."
+
+#: feedapi.module:29
+msgid ""
+"Current feeds are listed below. For each FeedAPI-enabled content type, "
+"the <em>Quick create</em> block may be enabled at the <a "
+"href=\"@block\">blocks administration page</a>."
+msgstr ""
+"A már létező hírcsatornák láthatók alul. Minden "
+"<em>FeedAPI</em> tartalomtípushoz engedélyezni lehet egy <em>Gyors "
+"létrehozás</em> blokkot, amit a <a href=\"@block\">blokk "
+"adminisztrációs oldalon</a> lehet elvégezni."
+
+#: feedapi.module:31
+msgid ""
+"Feeds can be imported from a valid OPML file. You can check your OPML "
+"file at <a href=\"@validator\">OPML Validator</a>."
+msgstr ""
+"Egy érvényes OPML fájlból lehet hírcsatornákat importálni. Az "
+"OPML fájl az <a href=\"@validator\">OPML Validator</a> "
+"segítségével ellenőrizhető."
+
+#: feedapi.module:33
+msgid ""
+"You can find more configuration options on the content type edit form "
+"of FeedAPI-enabled <a href=\"@content-types\">content types</a>."
+msgstr ""
+"További beállítási lehetőségek vannak a hírcsatona-típusként "
+"megjelölt <a href=\"@content-types\">tartalomtípusok</a> "
+"beállítási oldalán."
+
+#: feedapi.module:178
+msgid "FeedAPI: Quick create !preset"
+msgstr "FeedAPI: !preset gyors létrehozás"
+
+#: feedapi.module:184
+msgid "Create !preset"
+msgstr "!preset létrehozása"
+
+#: feedapi.module:206
+msgid "Link to site"
+msgstr "Hivatkozás a webhelyre"
+
+#: feedapi.module:272
+msgid "Delete all the feed items from !name"
+msgstr "Összes elem törlése innen: !name"
+
+#: feedapi.module:274
+msgid "Are you sure you want to delete all the feed items from !name?"
+msgstr ""
+"Biztos, hogy törölhető az összes hírcsatorna-elem ebből a "
+"csatornából: !name?"
+
+#: feedapi.module:296
+msgid "OPML File"
+msgstr "OPML fájl"
+
+#: feedapi.module:298
+msgid "Upload an OPML file containing a list of newsfeeds to be imported."
+msgstr ""
+"Fel lehet tölteni egy OPML fájlt, ami az importálandó "
+"hírcsatornákat tartalmazza."
+
+#: feedapi.module:302; views/feedapi.views.inc:31
+msgid "Feed Type"
+msgstr "Hírcsatorna-típus"
+
+#: feedapi.module:303
+msgid "The type of feed you would like to associate this import with."
+msgstr "Az a tartalomtípus, amivel a hírcsatorna létre lesz hozva."
+
+#: feedapi.module:309
+msgid "Use TITLE attribute of OPML entries as feed title"
+msgstr "A TITLE OPML tulajdonság használata az importált csatornákhoz"
+
+#: feedapi.module:310
+msgid ""
+"If checked feed title will be overriden with the information from OPML "
+"file"
+msgstr ""
+"Ha be van kapcsolva, akkor a hírcsatorna címe felül lesz írva az "
+"OPML fájlból származó információval."
+
+#: feedapi.module:314
+msgid "Use TEXT attribute of OPML entries as feed description"
+msgstr "A TEXT OPML információ használata az importált csatornákhoz"
+
+#: feedapi.module:315
+msgid ""
+"If checked feed description will be overriden with the information "
+"from OPML file"
+msgstr ""
+"Ha be van kapcsolva, akkor a hírcsatorna leírása felül lesz írva "
+"az OPML fájlból származó információval."
+
+#: feedapi.module:334
+msgid "Successfuly imported %count feeds from OPML"
+msgstr "%count hírcsatorna sikeresen importálva az OPML fájlból."
+
+#: feedapi.module:337
+msgid ""
+"Feed list could not be imported. Please check that this is a valid "
+"OPML file."
+msgstr ""
+"A hírcsatornák listáját nem lehet importálni. Ellenőrizni kell, "
+"hogy az OPML fájl érvényes-e."
+
+#: feedapi.module:341
+msgid "Data could not be retrieved, invalid or empty file."
+msgstr "A beolvasás nem sikerült, üres vagy érvénytelen fájl."
+
+#: feedapi.module:392
+msgid "Is a feed content type"
+msgstr "Ez egy hírcsatorna tartalomtípus"
+
+#: feedapi.module:393
+msgid ""
+"Check if you want to use this content type for downloading feeds to "
+"your site."
+msgstr ""
+"Ha be van jelölve, akkor ez a tartalomtípus hírcsatornák "
+"letöltéséhez lesz felhasználva a webhelyen."
+
+#: feedapi.module:406
+msgid "Parser settings"
+msgstr "Feldolgozó beállítások"
+
+#: feedapi.module:407
+msgid ""
+"Parsers turn a feed into an object ready for processing. Choose at "
+"least one."
+msgstr ""
+"A feldolgozók a hírcsatornát egy kötött formátumú objektummá "
+"alakítják. Mindenképpen ki kell választani legalább egyet!"
+
+#: feedapi.module:425
+msgid "Check this box if you want to enable the @name parser on this feed."
+msgstr "@name feldolgozó engedélyezéséhez be kell jelölni."
+
+#: feedapi.module:433
+msgid ""
+"Control the execution order. Parsers with lower weights are called "
+"before parsers with higher weights."
+msgstr ""
+"Vezérli a végrehajtás sorrendjét. Az alacsonyabb súlyú "
+"feldolgozókat később hívja meg a <em>FeedAPI</em>."
+
+#: feedapi.module:444
+msgid "Processor settings"
+msgstr "Megjelenítő beállítások"
+
+#: feedapi.module:445
+msgid ""
+"Processors are any kind of add on modules that hook into the feed "
+"handling process on download time - you can decide here what should "
+"happen to feed items once they are downloaded and parsed."
+msgstr ""
+"A megjelenítő egy olyan modul, amit a <em>FeedAPI</em> a feldolgozó "
+"után hív meg és valamilyen módon reagál a beérkezett "
+"hírcsatorna elemre, például megjelenítheti azt egy tartalom "
+"formájában."
+
+#: feedapi.module:463
+msgid "Check this box if you want to enable the @name processor on this feed."
+msgstr "@name megjelenítő engedélyezéséhez be kell jelölni."
+
+#: feedapi.module:471
+msgid ""
+"Control the execution order. Processors with lower weights are called "
+"before processors with higher weights."
+msgstr ""
+"Vezérli a végrehajtás sorrendjét. Az alacsonyabb súlyú "
+"feldolgozókat később hívja meg a <em>FeedAPI</em>."
+
+#: feedapi.module:489
+msgid ""
+"This field will be populated with the feed title. You can override by "
+"filling in this field."
+msgstr ""
+"Ezt a mezőt a <em>FeedAPI</em> kitölti a hírcsatorna címe "
+"alapján. Ha a mező ki van töltve, akkor azt nem írja felül."
+
+#: feedapi.module:490
+msgid ""
+"This field will be populated with the feed description. You can "
+"override by filling in this field."
+msgstr ""
+"Ezt a mezőt a <em>FeedAPI</em> kitölti a hírcsatorna leírása "
+"alapján. Ha a mező ki van töltve, akkor azt nem írja felül."
+
+#: feedapi.module:507,754
+msgid "Feed URL"
+msgstr "Hírcsatorna webcím"
+
+#: feedapi.module:508
+msgid "Enter feed URL."
+msgstr "Meg kell adni hírcsatorna webcímét."
+
+#: feedapi.module:527
+msgid "Parsers"
+msgstr "Feldolgozók"
+
+#: feedapi.module:528
+msgid "Processors"
+msgstr "Feldolgozók"
+
+#: feedapi.module:583
+msgid "Title could not be retrieved from feed."
+msgstr "A címet nem sikerült kinyerni a hírcsatornából"
+
+#: feedapi.module:603
+msgid "Refresh feed on creation"
+msgstr "A hírcsatorna frissítése létrehozáskor"
+
+#: feedapi.module:604
+msgid ""
+"If checked, feed items will be processed immediately after a feed is "
+"created."
+msgstr ""
+"Ha be van jelölve, akkor a hírcsatorna létrehozásakor a benne "
+"lévő elemek is létrejönnek."
+
+#: feedapi.module:609
+msgid "Update existing feed items"
+msgstr "Meglévő hírcsatorna elemek frissítése"
+
+#: feedapi.module:610
+msgid ""
+"If checked, existing feed items will be updated when feed is "
+"refreshed."
+msgstr ""
+"Ha be van jelölve, egy már meglévő hírcsatorna elem módosulása "
+"esetén az elemet frissítjük."
+
+#: feedapi.module:615
+msgid "Pause automatic feed update"
+msgstr "A hírcsatorna automatikus frissítésének felfüggesztése"
+
+#: feedapi.module:616
+msgid "If checked, feed will not be updated automatically on cron."
+msgstr ""
+"Ha be van jelölve, akkor az időzítő végrehajtása nem "
+"eredményezi a hírcsatorna frissítését."
+
+#: feedapi.module:623
+msgid "Delete news items older than"
+msgstr "Ennél régebbi elemek törlése"
+
+#: feedapi.module:692; views/feedapi.views.inc:38
+msgid "Last refresh"
+msgstr "Legutóbbi frissítés"
+
+#: feedapi.module:693
+msgid "New items added per update"
+msgstr "Új elemek száma frissítésenként"
+
+#: feedapi.module:694
+msgid "Update rate"
+msgstr "Frissítési gyakoriság"
+
+#: feedapi.module:696
+msgid "Processing time"
+msgstr "Feldolgozáshoz szükséges idő"
+
+#: feedapi.module:697
+msgid "Commands"
+msgstr "Parancsok"
+
+#: feedapi.module:722
+msgid "ms"
+msgstr "ms"
+
+#: feedapi.module:730
+msgid "No enough data for statistics"
+msgstr "Nincs elég adat a statisztikához"
+
+#: feedapi.module:780
+msgid "Feed successfully created."
+msgstr "A hírcsatorna sikeresen létrejött."
+
+#: feedapi.module:784
+msgid "Could not retrieve title from feed."
+msgstr "A címet nem sikerült kinyerni a hírcsatornából."
+
+#: feedapi.module:814
+msgid ""
+"The list of tags which are allowed in feeds, i.e., which will not be "
+"removed by Drupal."
+msgstr ""
+"Azon HTML címkék listája, ami egy hírcsatorna elemben "
+"előfordulhat, amit a Drupal nem fog kiszűrni."
+
+#: feedapi.module:817
+msgid "Allow all HTML tags"
+msgstr "Minden HTML címke engedélyezése"
+
+#: feedapi.module:819
+msgid ""
+"In this case the module does't filter any HTML elements from the "
+"incoming fields. This checkbox overrides the above list of allowed "
+"tags."
+msgstr ""
+"Ebben az esetben a modul nem fog HTML címke szűrést végezni. Ez a "
+"beállítás felülírja az engedélyezett címkék listáját."
+
+#: feedapi.module:828
+msgid "Cron time for FeedAPI [%]"
+msgstr "Időzítő idő a <em>FeedAPI</em> számára [%]"
+
+#: feedapi.module:831
+msgid ""
+"Percentage of maximal PHP execution time (currently !exec seconds). At "
+"current settings, the FeedAPI cron process can run for up to !now "
+"seconds."
+msgstr ""
+"A maximális PHP futtatási idő százalékában értendő. (ez "
+"jelenleg !exec másodperc) A jelenlegi beállítások mellett a "
+"<em>FeedAPI</em> modulnak !now másodperc jut az időzítő időben."
+
+#: feedapi.module:1158
+msgid "No processors specified for URL %url. Could not refresh."
+msgstr ""
+"%url webcímhez nincs megjelenítő definiálva. Nem lehet "
+"frissíteni."
+
+#: feedapi.module:1182,1250
+msgid "There are no new items in the feed."
+msgstr "Nincsenek új elemek a hírcsatornában."
+
+#: feedapi.module:1185
+msgid "Could not refresh feed."
+msgstr "Nem lehet frissíteni a hírcsatornát."
+
+#: feedapi.module:1253
+msgid "%new new item(s) were saved. %updated existing item(s) were updated."
+msgstr "%new új elem elmentve, %updated már létező frissítve."
+
+#: feedapi.module:1423
+msgid "No data yet"
+msgstr "Még nincs adat"
+
+#: feedapi.module:1603
+msgid "Two enabled processors or parsers cannot have the same weight."
+msgstr ""
+"Két engedélyezett megjelenítő vagy feldolgozó nem lehet azonos "
+"súlyú."
+
+#: feedapi.module:736
+msgid "Average over the last day."
+msgid_plural "Averages over the last @count days."
+msgstr[0] "A legutóbbi @count nap átlaga"
+msgstr[1] "A legutóbbi @count nap átlaga"
+
+#: feedapi.module:196
+msgid "administer feedapi"
+msgstr "feedapi adminisztrációja"
+
+#: feedapi.module:196
+msgid "advanced feedapi options"
+msgstr "haladó feedapi beállítások"
+
+#: feedapi.module:55
+msgid ""
+"Overview which content your site aggregates from other sites and see "
+"detailed statistics about the feeds."
+msgstr ""
+"Áttekinti, hogy mely tartalmakat gyűjtött a webhely más "
+"webhelyekről, és részletes statisztikát mutat a "
+"hírcsatornákról."
+
+#: feedapi.module:66
+msgid "Import OPML"
+msgstr "OPML importálása"
+
+#: feedapi.module:72
+msgid "Export all feeds as OPML"
+msgstr "Hírcsatornák exportálása OPML-be"
+
+#: feedapi.module:77
+msgid "FeedAPI settings"
+msgstr "FeedAPI beállítások"
+
+#: feedapi.module:0
+msgid "feedapi"
+msgstr "feedapi"
+
+#: feedapi.install:9
+msgid "Stores feed-related info for each feed"
+msgstr "Hírcsatornával kapcsolatos információkat tárol"
+
+#: feedapi.install:12
+msgid "The primary identifier for the feed."
+msgstr "A hírcsatorna elsődleges azonosítója."
+
+#: feedapi.install:17,127; parser_common_syndication/parser_common_syndication.install:11
+msgid "The URL of the feed"
+msgstr "A hírcsatorna webcíme"
+
+#: feedapi.install:61
+msgid "Statistics values over the time about the feeds"
+msgstr "Statisztikai adatok a hírcsatornákról"
+
+#: feedapi.info:0
+msgid "FeedAPI"
+msgstr "FeedAPI"
+
+#: feedapi.info:0
+msgid ""
+"Provides feed aggregation functionality, a feed management interface "
+"and an API. If you enable this module, enable at least one item "
+"processor (e. g. FeedAPI Node Item) and one parser (e. g. SimplePie "
+"parser)."
+msgstr ""
+"A modul a hírcsatornák összegyűjtését szolgálja, biztosít egy "
+"hírcsatorna-kezelő és egy programozói felületet is. Engedélyezni "
+"kell legalább egy megjelenítőt (pl.: <em>FeedAPI Node</em>) és egy "
+"feldolgozót (<em>SimplePie Parser</em>)."
+
+#: feedapi.info:0; feedapi_node/feedapi_node.info:0; parser_simplepie/parser_simplepie.info:0
+msgid "FeedAPI Default"
+msgstr "FeedAPI Default"
+
+#: feedapi_inherit/feedapi_inherit.module:21,23
+msgid ""
+"FeedAPI Inherit - pass on taxonomy and organic group information from "
+"feed to feed items."
+msgstr ""
+"<em>FeedAPI Inherit</em> - taxonómia és <em>Organic Group</em> "
+"adatokat örökít át a hírcsatornáról az elemekre."
+
+#: feedapi_inherit/feedapi_inherit.module:72
+msgid "Feed nodes inherit organic group settings from parent feed."
+msgstr ""
+"A hírcsatorna elemek megöröklik a szülők <em>Organic group</em> "
+"adatait."
+
+#: feedapi_inherit/feedapi_inherit.module:78
+msgid "Feed nodes inherit taxonomy settings from parent feed."
+msgstr "A hírcsatorna elemek megöröklik a szülők taxonómia adatait."
+
+#: feedapi_inherit/feedapi_inherit.module:0
+msgid "feedapi_inherit"
+msgstr "feedapi_inherit"
+
+#: feedapi_inherit/feedapi_inherit.info:0
+msgid "FeedAPI Inherit"
+msgstr "FeedAPI Inherit"
+
+#: feedapi_inherit/feedapi_inherit.info:0
+msgid ""
+"Passes on group and taxonomy information from feed to feed items. "
+"Requires FeedAPI Node processor."
+msgstr ""
+"Organic Group és taxonómia adatokat örökít át a "
+"hírcsatornáról az elemekre. A modulnak szüksége van a <em>FeedAPI "
+"Node</em> modulra."
+
+#: feedapi_inherit/feedapi_inherit.info:0; parser_common_syndication/parser_common_syndication.info:0
+msgid "FeedAPI Add On"
+msgstr "FeedAPI Add On"
+
+#: feedapi_node/feedapi_node.module:16
+msgid "Processor for FeedAPI, transforms items into nodes."
+msgstr ""
+"Megjelenítő a <em>FeedAPI</em> modulhoz. A hírcsatorna elemekből "
+"tartalom lesz."
+
+#: feedapi_node/feedapi_node.module:18
+msgid "FeedAPI Node - create nodes from feed items"
+msgstr "FeedAPI Node - tartalmat készít a hírcsatorna elemekből"
+
+#: feedapi_node/feedapi_node.module:91
+msgid "Feed items"
+msgstr "Hírcsatorna elemek"
+
+#: feedapi_node/feedapi_node.module:102
+msgid "Feed:"
+msgstr "Hírcsatorna:"
+
+#: feedapi_node/feedapi_node.module:108
+msgid "Original article"
+msgstr "Eredeti cikk"
+
+#: feedapi_node/feedapi_node.module:155
+msgid "Node type of feed items"
+msgstr "A hírcsatorna elemek tartalomtípusa"
+
+#: feedapi_node/feedapi_node.module:158
+msgid "Choose the node type for feed item nodes created by this feed."
+msgstr ""
+"Ki kell választani azt a tartalomtípust, ami a hírcsatorna elemek "
+"típusa lesz."
+
+#: feedapi_node/feedapi_node.module:162
+msgid "Created date of item nodes"
+msgstr "A tartalmak létrehozási ideje"
+
+#: feedapi_node/feedapi_node.module:163
+msgid "Retrieve from feed"
+msgstr "hírcsatornából"
+
+#: feedapi_node/feedapi_node.module:163
+msgid "Use time of download"
+msgstr "letöltés ideje"
+
+#: feedapi_node/feedapi_node.module:168
+msgid "Promoted items"
+msgstr "Közzétett elemek"
+
+#: feedapi_node/feedapi_node.module:169
+msgid ""
+"The newest N items per feed will be promoted to front page. Leave "
+"empty and FeedAPI does not alter the promote property of the feed "
+"items."
+msgstr ""
+"Az N legújabb elem a főoldalra kerül. Ha a mező üres, a "
+"<em>FeedAPI</em> nem befolyásolja az elemek főoldalra kerülését."
+
+#: feedapi_node/feedapi_node.module:174
+msgid "Duplicates"
+msgstr "Ismétlődő elemek"
+
+#: feedapi_node/feedapi_node.module:175
+msgid ""
+"If you choose \"check for duplicates on all feeds\", a feed item will "
+"not be created if it already exists on *ANY* feed. Instead, the "
+"existing feed item will be linked to the feed. If you are not sure, "
+"choose the first option."
+msgstr ""
+"Ha az „ismétlődések keresése minden hírcsatornán belül” "
+"lehetőség van kiválasztva, akkor a hírcsatorna elem csak akkor "
+"lesz létrehozva, ha még egyik hírcsatorna sem tartalmazza. "
+"Bizonytalanság esetén az első lehetőséget kell választani."
+
+#: feedapi_node/feedapi_node.module:176
+msgid "Check for duplicates only within feed"
+msgstr "ismétlődések keresése a hírcsatornán belül"
+
+#: feedapi_node/feedapi_node.module:176
+msgid "Check for duplicates on all feeds"
+msgstr "ismétlődések keresése minden hírcsatornán belül"
+
+#: feedapi_node/feedapi_node.module:306
+msgid "Please disable FeedAPI for !item content-type."
+msgstr "!item tartalomtípusról a <em>FeedAPI</em> modult le kell tiltani."
+
+#: feedapi_node/feedapi_node.module:385
+msgid "No nid on feed item to delete."
+msgstr "A tartalom-azonosító nincs megadva az elemhez, amit törölni kéne."
+
+#: feedapi_node/feedapi_node.module:408
+msgid ""
+"!deleted feed items of !total could be deleted before script time out "
+"- click <em>Remove items</em> again to delete more."
+msgstr ""
+"!total hírcsatorna elemből csak !deleted lett törölve, mielőtt a "
+"futási idő letelt. Ismét rá kell kattintani az <em>Elemek "
+"törlése</em> hivatkozásra a további elemek eltávolításához."
+
+#: feedapi_node/feedapi_node.module:416
+msgid "!count feed items have been deleted."
+msgstr "!count hírcsatorna elem törölve."
+
+#: feedapi_node/feedapi_node.module:419
+msgid "There where no feed items to delete"
+msgstr "Nincsenek törölhető hírcsatorna elemek"
+
+#: feedapi_node/feedapi_node.module:0
+msgid "feedapi_node"
+msgstr "feedapi_node"
+
+#: feedapi_node/feedapi_node.install:9
+msgid "Stores additional information about feed item nodes."
+msgstr "Kiegészítő információt tárol a hírcsatorna elem tartalmakról."
+
+#: feedapi_node/feedapi_node.install:15
+msgid "Primary Key: The feed item node's nid."
+msgstr "Elsődleges kulcs: az elem nid-je."
+
+#: feedapi_node/feedapi_node.install:26
+msgid "Post date of the feed item, as a Unix timestamp."
+msgstr "A közzététel dátuma Unix időbélyegként"
+
+#: feedapi_node/feedapi_node.install:32
+msgid "Import date of the feed item, as a Unix timestamp."
+msgstr "A beérkezés dátuma Unix időbélyegként"
+
+#: feedapi_node/feedapi_node.install:49
+msgid "Bridge table; maps feed items to feeds."
+msgstr "Összekötő tábla az elemek és a hírcsatornák között."
+
+#: feedapi_node/feedapi_node.install:55
+msgid "The {feedapi}.nid to which the feed item is being assigned."
+msgstr "A hírcsatorna nid-je, amihez az elem tartozik."
+
+#: feedapi_node/feedapi_node.install:61
+msgid "The feed item's {feedapi_node_item}.nid."
+msgstr "A hírcsatorna elem nid-je."
+
+#: feedapi_node/feedapi_node.install:101
+msgid "Items from these feeds will be turned into nodes."
+msgstr "Az elemek tartalmakká válnak ennél a típusnál."
+
+#: feedapi_node/feedapi_node.info:0
+msgid "FeedAPI Node"
+msgstr "FeedAPI Node"
+
+#: feedapi_node/feedapi_node.info:0
+msgid "Creates nodes from feed items."
+msgstr "Tartalmakat készít a a hírcsatorna elemekből."
+
+#: feedapi_node/views/feedapi_node.views.inc:15,62
+msgid "FeedAPI Item"
+msgstr "FeedAPI elem"
+
+#: feedapi_node/views/feedapi_node.views.inc:24
+msgid "The original URL of this feed item"
+msgstr "A hírcsatorna elem eredeti webcíme"
+
+#: feedapi_node/views/feedapi_node.views.inc:34
+msgid "The date of item publish"
+msgstr "Az elem közzétételének dátuma"
+
+#: feedapi_node/views/feedapi_node.views.inc:47
+msgid "Arrived"
+msgstr "Érkezett"
+
+#: feedapi_node/views/feedapi_node.views.inc:48
+msgid "The date the item was imported"
+msgstr "Az elem importálásnak dátuma"
+
+#: feedapi_node/views/feedapi_node.views.inc:71,74
+msgid "Parent feed"
+msgstr "Szülő hírcsatorna"
+
+#: feedapi_node/views/feedapi_node.views.inc:72; views/feedapi.views.inc:62
+msgid "The feed that generated this node"
+msgstr "A hírcsatorna, mely létrehozta ezt a tartalmat"
+
+#: feedapi_node/views/feedapi_node.views_default.inc:15
+msgid "Show a listing of all feed items for a feed"
+msgstr "Mutat egy listát a hírcsatorna összes elemével"
+
+#: parser_common_syndication/parser_common_syndication.module:16
+msgid ""
+"Provide a common syndication parser for FeedAPI-compatible modules. "
+"Only PHP5-compatible. Rather fast."
+msgstr ""
+"Egy feldolgozót biztosít a <em>FeedAPI</em> számára. PHP5 "
+"szükséges hozzá."
+
+#: parser_common_syndication/parser_common_syndication.module:18
+msgid "Parser Common Syndication - only for PHP5"
+msgstr "Parser Common Syndication - csak PHP5-höz"
+
+#: parser_common_syndication/parser_common_syndication.module:0
+msgid "parser_common_syndication"
+msgstr "parser_common_syndication"
+
+#: parser_common_syndication/parser_common_syndication.info:0
+msgid "Common syndication parser"
+msgstr "Common syndication parser"
+
+#: parser_common_syndication/parser_common_syndication.info:0
+msgid "Provides an XML parser for FeedAPI modules. Requires PHP5."
+msgstr ""
+"Egy XML feldolgozót biztosít a <em>FeedAPI</em> modulnak. PHP5-öt "
+"igényel."
+
+#: parser_simplepie/parser_simplepie.module:15
+msgid ""
+"Provide a common syndication parser for FeedAPI-compatible modules "
+"powered by SimplePie library."
+msgstr ""
+"Egy feldolgozót biztosít a <em>FeedAPI</em> számára, a "
+"<em>SimplePie</em> könyvtárat használja."
+
+#: parser_simplepie/parser_simplepie.module:17
+msgid "Parser SimplePie"
+msgstr "SimplePie feldolgozó"
+
+#: parser_simplepie/parser_simplepie.module:0
+msgid "parser_simplepie"
+msgstr "parser_simplepie"
+
+#: parser_simplepie/parser_simplepie.install:28
+msgid "The current installed version of SimplePie is !version"
+msgstr "Jelenleg a <em>SimplePie</em> !version verzió van telepítve."
+
+#: parser_simplepie/parser_simplepie.install:44
+msgid ""
+"To use SimplePie parser, obtain the !simplepie package and copy "
+"simplepie.inc to the parser_simplepie directory."
+msgstr ""
+"A <em>SimplePie</em> feldolgozó használatához be kell szerezni a "
+"!simplepie csomagot és be kell másolni a simplepie.inc fájlt a "
+"parser_simplepie könyvtárba."
+
+#: parser_simplepie/parser_simplepie.install:17
+msgid "FeedAPI SimplePie"
+msgstr "FeedAPI SimplePie"
+
+#: parser_simplepie/parser_simplepie.install:18
+msgid ""
+"Obtain the !simplepie package and copy simplepie.inc to the "
+"parser_simplepie directory."
+msgstr ""
+"Be kell szerezni a !simplepie csomagot és be kell másolni a "
+"simplepie.inc fájlt a parser_simplepie könyvtárba."
+
+#: parser_simplepie/parser_simplepie.install:21
+msgid "simplepie.inc file missing"
+msgstr "A simplepie.inc fájl hiányzik."
+
+#: parser_simplepie/parser_simplepie.install:27
+msgid "SimplePie Parser"
+msgstr "SimplePie feldolgozó"
+
+#: parser_simplepie/parser_simplepie.install:31
+msgid "Installed correctly"
+msgstr "Helyesen telepítve"
+
+#: parser_simplepie/parser_simplepie.info:0
+msgid "SimplePie parser"
+msgstr "SimplePie feldolgozó"
+
+#: parser_simplepie/parser_simplepie.info:0
+msgid ""
+"Provides an XML parser for FeedAPI modules. Uses SimplePie library. "
+"Requires SimplePie 1.01+."
+msgstr ""
+"Egy XML feldolgozót ad a <em>FeedAPI</em> moduloknak. A "
+"<em>SimplePie</em> könyvtárat használja. <em>SimplePie</em> 1.01+ "
+"szükséges."
+
+#: views/feedapi.views.inc:15
+msgid "FeedAPI Feed"
+msgstr "FeedAPI hírcsatorna"
+
+#: views/feedapi.views.inc:25
+msgid "The source RSS/Atom/RDF feed URL."
+msgstr "A forrás RSS/Atom/RDF hírcsatorna webcíme."
+
+#: views/feedapi.views.inc:32
+msgid "The type of the feed."
+msgstr "A hírcsatorna típusa."
+
+#: views/feedapi.views.inc:39
+msgid "The date when the feed was last refreshed."
+msgstr "Az a dátum, amikor a hírcsatorna utoljára lett frissítve."
+
+#: views/feedapi.views.inc:54
+msgid "The link to the site."
+msgstr "A hivatkozás a webhelyre."
+
+#: views/feedapi.views.inc:61
+msgid "Unique URL"
+msgstr "Egyedi webcím"
+
+#: views/feedapi.views.inc:68
+msgid "Feed content type"
+msgstr "Hírcsatorna tartalomtípus"
+
+#: views/feedapi.views.inc:69
+msgid "Whether or not the content type is used as FeedAPI feed."
+msgstr ""
+"A tartalomtípus <em>FeedAPI</em> hírcsatornaként használt, avagy "
+"nem."
+
+#: views/feedapi.views.inc:72
+msgid "Is feed content type"
+msgstr "Hírcsatorna tartalomtípus"
+
+#: views/feedapi.views.inc:79
+msgid "Purge link"
+msgstr "Tisztítási hivatkozás"
+
+#: views/feedapi.views.inc:80
+msgid "Provide a simple link to purge the feed."
+msgstr "Egy egyszerű hivatkozást ad a hírcsatorna tisztításához."
+
+#: views/feedapi.views.inc:86
+msgid "Refresh link"
+msgstr "Frissítési hivatkozás"
+
+#: views/feedapi.views.inc:87
+msgid "Provide a simple link to refresh the feed."
+msgstr "Egy egyszerű hivatkozást ad a hírcsatorna frissítéséhez."
+
+#: views/handlers/feedapi_handler_field_node_link_purge.inc:25
+msgid "purge"
+msgstr "tisztít"
+
+#: views/handlers/feedapi_handler_field_node_link_refresh.inc:25
+msgid "refresh"
+msgstr "frissít"
+
+#: views/handlers/feedapi_handler_field_url.inc:32
+msgid "Node title as link"
+msgstr "Tartalom címe, mint hivatkozás"
+
+#: views/handlers/feedapi_handler_field_url.inc:33
+msgid "URL as link"
+msgstr "Webcím, mint hivatkozás"
+
+#: views/handlers/feedapi_handler_field_url.inc:34
+msgid "URL as plain text"
+msgstr "Webcím, mint egyszerű szöveg"
+

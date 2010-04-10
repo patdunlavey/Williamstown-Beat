@@ -1,0 +1,18 @@
+/* $Id: zen_midnight_ubercart.css,v 1.1.2.1 2009/12/17 20:08:31 garrettalbright Exp $ */
+
+.uc-store-admin-table, .summary-overview, .order-pane-table thead th, .order-pane-table tr, .solid-border, #cart-form-products, #cart-form-buttons, .cart-review, #checkout-form-bottom {
+  border-color: #444; /* #bbb */
+}
+
+.uc-customer-table tr.odd:hover, .uc-customer-table tr.even:hover, .uc-cust-orders-table tr.odd:hover, .uc-cust-orders-table tr.even:hover, .summaryOnclick-processed:hover, .uc-orders-table tr.odd:hover, .uc-orders-table tr.even:hover, .order-pane thead, .order-pane-table thead th, .address-select-box, .customer-select-box, .product-select-box, .product-select-box2, .order-review-table .pane-title-row, .order-review-table .review-button-row {
+  background-color: #222; /* #ddd */
+}
+
+.address-select-box, .customer-select-box, .product-select-box, .product-select-box2, .order-review-table, .order-review-table .pane-title-row, .order-review-table .row-border-top, .order-review-table .row-border-bottom, .order-review-table .review-button-row {
+  border-color: #666; /* #999 */
+}
+
+/* CSS3 selector that many browsers won't support… */
+body[class*="page-admin-store-orders-"][class*="-invoice"] #content-area > table {
+  color: black;
+}

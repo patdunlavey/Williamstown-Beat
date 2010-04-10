@@ -1,0 +1,127 @@
+/* $Id: ie6-fixes.css 6575 2010-02-25 01:34:35Z chris $ */
+
+/* Acquia Marina - IE6 Fixes */
+
+/*************/
+/* IE6 FIXES */
+/*************/
+
+/* Pager - current */
+.item-list ul.pager li.pager-current {
+  margin-right: 2px;
+  padding-right: 3px;
+}
+
+/* Marina - Title - Rounded Blue/Green */
+.marina-title-rounded-blue h2.block-title,
+.marina-title-rounded-green h2.block-title {
+  margin: 0 -22px 8px 10px;
+  width: auto;
+}
+
+/* Marina - Icons */
+.block-icon {
+  left: 4px;
+  top: 2px;
+}
+
+/* Search */
+#search-box-inner {
+  width: 262px;
+}
+
+.search-box-inner input.search-submit {
+  margin: 0 0 0 4px;
+  padding: 2px;
+}
+
+/* Header site info inner */
+.header-site-info-inner {
+  padding: 0 0 20px 0;
+}
+
+/* Primary menu */
+#primary-menu {
+  float: right;
+}
+
+#primary-menu-inner ul.menu {
+  float: right;
+}
+
+#primary-menu ul.menu li {
+  background-position: 0 1px;
+}
+
+#primary-menu ul.menu li a:link,
+#primary-menu ul.menu li a:visited {
+  background-position: 100% 2px;
+  padding-top: 6px;
+  margin-top: -1px;
+  padding: 5px 10px 3px 0;
+}
+
+/* Primary Menu - Second level - Hovers for parent menu item */
+#primary-menu ul.menu li a:hover,
+#primary-menu ul.menu li:hover a,
+#primary-menu ul.menu li.hover a,
+#primary-menu ul.menu li.active-trail a:link,
+#primary-menu ul.menu li.active-trail a:visited {
+  background-position: right -44px;
+}
+
+#primary-menu ul.menu li:hover,
+#primary-menu ul.menu li.hover,
+#primary-menu ul.menu li.active-trail {
+  background-position: left -40px;
+}
+
+/* Preface top and Postscript bottom */
+.preface-top-wrapper,
+.postscript-bottom-wrapper {
+  height: 24px; /* Set heights rather than min-height as IE6 doesn't understand min-height */
+}
+
+/* Header */
+#search-box {
+  float: none;
+}
+
+#header-site-info.block {
+  margin-top: 20px;
+}
+
+/* Comments */
+#comments .marina-rounded-corners .corner-bottom {
+  margin-top: -2px;
+}
+
+
+/* Rounded corners
+/-------------------------------------------------------------- */
+div.corner-top-left, 
+div.corner-top-right, 
+div.corner-bottom-left, 
+div.corner-bottom-right { 
+  font-size: 2px;                                 /* IE div correction */
+  height: 8px;                                    /* height of an image corner */
+  position: relative;
+}
+
+.corner-top,
+.corner-bottom {
+  position: relative;
+  z-index: 100;
+}
+
+
+/* Fluid width
+/-------------------------------------------------------------- */
+.grid-type-fluid #header-top,
+.grid-type-fluid #header-group,
+.grid-type-fluid #preface-top,
+.grid-type-fluid #page-inner {
+  margin: 0 auto;
+  width: expression((document.body.clientWidth > 1141)? "1140px" : "auto");
+  max-width: 1140px;
+}

@@ -1,0 +1,66 @@
+<?php
+// $Id: og_expire.install,v 1.1.2.1 2009/04/15 09:34:49 meba Exp $
+
+/**
+  * @file
+  *  Installation file for OG Expire.
+  */
+
+/**
+ * Definition of hook_schema();
+ */
+function og_expire_schema() {
+  $schema = array();
+
+  $schema['og_expire'] = array(
+    'description'     => t('Group membership expirations'),
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => t("Group's {node}.nid."),
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'uid'             => array(
+        'description'     => t('The user for this membership. See {users}.uid.'),
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'expire'         => array(
+        'description'     => t('Time when this membership will expire.'),
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+        'default'         => 0,
+      ),
+      'notified'         => array(
+        'description'     => t('Last notification time.'),
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+        'default'         => 0,
+      ),
+
+    ),
+    'primary key'       => array('nid', 'uid'),
+  );
+
+  return $schema;
+}
+
+function og_expire_install() {
+  drupal_install_schema('og_expire');
+}
+
+function og_expire_uninstall() {
+  drupal_uninstall_schema('og_expire');
+
+  // Delete variables
+  $variables = array(
+    'og_expire_default_value',
+  );
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+}

@@ -1,0 +1,16 @@
+; $Id: editablefields.info,v 1.2.2.3.2.1 2009/09/10 09:24:07 janvandiepen Exp $
+name = Editablefields
+description = "Allows you to make some view fields editable"
+dependencies[] = content
+dependencies[] = ajax_load
+package = CCK
+version = "6.x-2.x-dev"
+
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-09-17
+version = "6.x-2.x-dev"
+core = "6.x"
+project = "editablefields"
+datestamp = "1253189697"
+

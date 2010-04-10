@@ -1,0 +1,19 @@
+/* $Id: sidebars-normal-liquid.css,v 1.1.2.1 2009/12/11 00:24:57 garrettalbright Exp $ */
+
+/* Liquid layout; standard sidebar placement */
+
+div.region-sidebar-first {
+  width: LSB-SBpx;
+}
+
+div.region-sidebar-second {
+  width: RSB-SBpx;
+}
+
+body.sidebar-first #content div.section, body.two-sidebars #content div.section {
+  padding-left: LSB-SBpx;
+}
+
+body.sidebar-second #content div.section, body.two-sidebars #content div.section {
+  padding-right: RSB-SBpx;
+}

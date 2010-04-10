@@ -1,0 +1,7 @@
+; $Id: views_uc_attribute.info,v 0.25 2008/03/30 22:00:00 thefreefood Exp $
+name = Attribute Views
+description = Provides Views integration for Ubercart Attribute model, along with optional Stock integration.
+core = 6.x
+package = "Ubercart - extra"
+dependencies[] = uc_attribute
+version = "6.x-0.3"

@@ -1,0 +1,104 @@
+<?php
+// $Id: buzzworthy.module,v 1.2.2.1 2009/03/13 16:40:32 robbiesternenberg Exp $
+
+/**
+ * Implementation of hook_menu()
+ */
+function buzzworthy_menu() {
+  $items = array();
+  
+  $items['admin/settings/buzzworthy'] = array(
+    'title' => 'Buzzworthy',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('buzzworthy_settings'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer buzzworthy'),
+  );
+  
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function buzzworthy_perm() {
+  return array('administer buzzworthy');
+}
+
+
+/**
+ * Implementation of hook_block().
+ */
+function buzzworthy_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $block[0]['info'] = t('Buzzworthy');
+    return $block;
+  }
+  else if ($op == 'view') {
+    $daysold = strtotime('-' . variable_get('buzzworthy_numdays', 14) . ' days');
+
+    $result = db_query_range("SELECT n.title, n.nid, nc.nid, nc.totalcount
+      FROM {node} n, {node_counter} nc
+      WHERE n.status = 1 AND n.type <> 'page' AND n.type <> 'book' AND (n.nid = nc.nid) AND (created > %d)
+      ORDER BY nc.totalcount
+      DESC", $daysold, 0, variable_get('buzzworthy_numlinks', 5));
+    $num_results = 0;
+    while ($node = db_fetch_object($result)) {
+      $output[] = l($node->title, 'node/' . $node->nid);
+      $num_results++;
+    }
+    
+    if ($num_results > 0) {
+      $block['subject'] = variable_get('buzzworthy_title', 'Buzzworthy');
+      $block['content'] = theme_item_list($output);
+    }
+
+    return $block;
+  }
+}
+
+
+/**
+ * Implementation of hook_settings().
+ */
+function buzzworthy_settings() {
+  // Only administrators can access this module
+  if (!user_access('administer buzzworthy')) {
+    drupal_access_denied();
+  }
+
+  $stats = variable_get('statistics_count_content_views', 0);
+  if ($stats == 0) {
+    drupal_set_message(t('You have not enabled content view counting. Please <a href="@counting_url">enable view counting</a> and return to this page.', array('@counting_url' => url('admin/reports/settings'))), 'error');  
+  }
+
+  $form['buzzworthy_title'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Title'), 
+    '#default_value' => variable_get('buzzworthy_title', 'Buzzworthy'), 
+    '#description' => t("Title displayed at the top of the block (200 chars max). Default: Buzzworthy."), 
+    '#maxlength' => '200', 
+    '#size' => '30' 
+    );
+
+  $form['buzzworthy_numlinks'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Number of links'), 
+    '#default_value' => variable_get('buzzworthy_numlinks', 5), 
+    '#description' => t("Number of links to display in the block. Default: 5."), 
+    '#maxlength' => '2', 
+    '#size' => '2' 
+    );
+
+  $form['buzzworthy_numdays'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Number of days'), 
+    '#default_value' => variable_get('buzzworthy_numdays', 14), 
+    '#description' => t("How recent the nodes should be. Default: 14 (i.e., two weeks)."), 
+    '#maxlength' => '2', 
+    '#size' => '2' 
+    );
+
+  return system_settings_form($form);
+}

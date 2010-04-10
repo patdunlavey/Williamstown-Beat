@@ -1,0 +1,12 @@
+; $Id: linktocontent_node.info,v 1.4 2007/10/08 15:18:09 stborchert Exp $
+name = "Linktocontent Node"
+description = "Add links to nodes via a FCKeditor and TinyMCE plugin"
+dependencies[] = linktocontent
+dependencies[] = taxonomy
+package = Content
+
+; Information added by drupal.org packaging script on 2008-03-06
+version = "6.x-2.x-dev"
+project = "linktocontent"
+datestamp = "1228469162"
+core = 6.x

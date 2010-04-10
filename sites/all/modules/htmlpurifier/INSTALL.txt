@@ -1,0 +1,16 @@
+* Place the htmlpurifier folder in your drupal modules directory.
+
+* Download HTML Purifier from http://htmlpurifier.org/ You will need
+  3.1.0rc1 or later.
+
+* Extract the "library" folder and place it inside your modules/htmlpurifier
+  directory.
+
+* Go to Administer > Site building > Modules and enable this module
+
+* You can now create a new input format or add the HTML Purifier to an 
+  existing input format. It is recommended that you place HTML Purifier as 
+  the last filter in the input format. Reorder the filters if necessary.
+
+WARNING: Due to HTML Purifier's caching mechanism, dynamic filters MUST NOT
+be placed before HTML Purifier.

@@ -1,0 +1,18 @@
+; $Id: userplus.info,v 1.2.2.3 2009/03/17 18:10:41 marcp Exp $
+name = Userplus
+description = The userplus module provides enhanced user administration features.
+core = 6.x
+
+; Information added by drupal.org packaging script on 2008-11-13
+version = "6.x-2.1"
+core = "6.x"
+project = "userplus"
+datestamp = "1226593530"
+
+
+; Information added by drupal.org packaging script on 2009-03-18
+version = "6.x-2.2"
+core = "6.x"
+project = "userplus"
+datestamp = "1237398374"
+

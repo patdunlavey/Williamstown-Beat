@@ -1,0 +1,187 @@
+<?php
+// $Id: og_calendar.module,v 1.10.2.10.2.3 2008/11/28 13:43:54 paulbooker Exp $
+
+
+/**
+ * Implementation of hook_link().
+ */
+function og_calendar_link($type, $node = NULL, $teaser = FALSE) {  
+  $links = array();
+
+  // If this is an event node contained in a group...
+  if ($type == 'node' && $node->type == 'event' && count($node->og_groups)) { 
+  	$nid = key($node->og_groups);
+    $group_node = node_load($nid); 
+    $links['og_calendar_calendar'] = array(
+      'title' => t('@name calendar', array('@name' => $group_node->title)),
+      'href' => "og_calendar/$group_node->nid",
+    );
+  }
+
+  return $links;
+}
+
+/**
+ * Implementation of hook_og_create_links().
+ */
+function og_calendar_og_create_links($group) {
+  $links = array();
+  $links[] = l(t('Group calendar'), "og_calendar/$group->nid");
+  return $links;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function og_calendar_menu() { 
+  $items = array();
+
+    $items['og_calendar/%node'] = array(
+      'title' => t('Group calendar'),
+      'page callback' => 'og_calendar_page',
+      'page arguments' => array(1),
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK
+    );
+  return $items;
+}
+/**
+ * Menu callback; displays either the main event calendar or a specific
+ * group's calendar.
+ *
+ * @param $gid
+ *   The group ID. First argument in the path.
+ * @param $year
+ *   The four-digit year. Second argument in the path.
+ * @param $month
+ *   The two-digit month. Third argument in the path.
+ * @param $day
+ *   The two-digit day. Fourth argument in the path.
+ * @return
+ *   If $gid is not specified, re-direct to the site-wide event page. If
+ *   there are events for the group and the user is permitted to see them,
+ *   display a calendar containing events for the requested month, or the
+ *   current month if none was specified. If the current month contains no
+ *   events, display events for a future month. If there are no future
+ *   events, display events for a past month. If $gid is specified but there
+ *   are no events for the group or the user is not permitted to see them,
+ *   display "Could not access any events."
+ */
+function og_calendar_page($group = NULL, $year = NULL, $month = NULL, $day = NULL) {  
+  if ($group && og_is_group_type($group->type)) {
+  	$gid = $group->nid;
+    og_set_group_context($group);
+    $bc[] = l(t('Home'), '');
+    $bc[] = l(t('Groups'), 'og');
+    $bc[] = l($group->title, "node/$gid");
+    drupal_set_breadcrumb($bc);
+
+    // Maintains group theme for OG calendar view.
+    og_set_theme($gid);
+
+    // Include event files.
+    event_include_files();
+
+    // Get local date value.
+    $now = _event_user_date();  
+
+    // Date values
+    $year = (isset($year) && is_numeric($year)) ? $year : $now['year'];
+    $month = (isset($month) && is_numeric($month)) ? $month : $now['month'];
+    $day = (isset($day) && is_numeric($day)) ? $day : $now['day'];
+
+    $date = $now;
+    $date['year'] = $year;
+    $date['month'] = $month;
+    $date['day'] = $day; //print_r($date);
+    $view = 'month';
+
+    $caption = event_format_date($date, 'custom', t('F Y')); 
+    //list($thead, $tbody) = event_calendar_month('page', $date); 
+    list($thead, $tbody) = event_calendar_month('page', $date, NULL, NULL, array('og_nid' => $gid));
+
+ 
+    $start_date = mktime(0, 0, 0, $month, 1, $year);
+    $end_date = mktime(0, 0, -1, $month + 1, 1, $year); 
+    $prev = _og_calendar_event_nav($start_date, 'prev', $gid);
+    $next = _og_calendar_event_nav($end_date, 'next', $gid);
+ 
+    // Set up calendar table header.
+    $caption = $prev .' '. $caption .' '. $next;
+    $node->event = array();
+    $node->event['start_exploded'] = array('year' => $year, 'month' => $month, 'day' => $day);
+    $links = array();
+    $output .= theme('event_links', array_merge(module_invoke_all('link', 'event_'. $view, $node, FALSE), $links), $view);
+
+    $output .= theme('event_calendar_'. $view, 'page', $thead, $tbody, array(), $caption);
+
+    // Add RSS feed and icon to events page.
+    drupal_add_feed(url('event/feed', array('absolute' => TRUE)), t('Events at %site', array('%site' => variable_get('site_name', 'drupal'))));
+
+    drupal_set_title(t('!name calendar', array('!name' => $group->title)));
+    return $output;
+
+  }
+  else {
+    // Redirect to the main event page.
+    drupal_goto('event');
+  }
+}
+
+/**
+ * Implementation of hook_db_rewrite_sql().
+ */
+function og_calendar_db_rewrite_sql($query, $primary_table, $primary_field, $args) {
+  if ($args["event_get_events_event"] && $args["og_nid"]) {
+    $array = array();
+    $array['join'] = "JOIN {og_ancestry} og ON og.nid = n.nid";
+    $array['where'] = "group_nid = " .$args["og_nid"];
+    return $array; 
+  }
+}
+
+/**
+ * Provide a link to the previous or next month for which an event is found.
+ * Adapted from _event_nav().
+ *
+ * @param $timestamp
+ *   The timestamp to search from.
+ * @param $dir
+ *   'prev' or 'next'. The direction to search.
+ * @param $gid
+ *   The group ID.
+ * @return
+ *   If $dir is 'prev', return a link to the previous month for which
+ *   an event is found. If $dir is 'next', return a link to the next month
+ *   for which an event is found. If an event is not found, return nothing.
+ */
+function _og_calendar_event_nav($timestamp, $dir, $gid) {
+  if ($dir == 'prev') {
+    $sql = "SELECT MAX(e.event_end) as event_end FROM {event} e INNER JOIN {node} n ON n.nid = e.nid WHERE n.status=1 AND UNIX_TIMESTAMP(e.event_start) < %d";
+    $sql = db_rewrite_sql($sql, 'e', 'nid', array('og_nid' => $gid));
+    $range = db_result(db_query($sql, $timestamp));
+    if (!empty($range)) {
+      $date = event_explode_date($range);
+    }
+  }
+  if ($dir == 'next') {
+    $sql = "SELECT MIN(e.event_start) as event_start FROM {event} e INNER JOIN {node} n ON n.nid = e.nid WHERE n.status=1 AND UNIX_TIMESTAMP(e.event_end) > %d";
+    $sql = db_rewrite_sql($sql, 'e', 'nid', array('og_nid' => $gid));
+    $range = db_result(db_query($sql, $timestamp));
+    if (!empty($range)) {
+      $date = event_explode_date($range);
+    }
+  }
+
+  // If we are beyond the range of the stored events, don't display navigation.
+  if (isset($date)) {
+
+    if ($dir == 'prev') {
+      return l(t('Previous'), 'og_calendar/'. $gid .'/'. _event_format_url($date)) .' ';
+    }
+    if ($dir == 'next') {
+      return ' '. l(t('Next'), 'og_calendar/'. $gid .'/'. _event_format_url($date));
+    }
+  }
+}
+

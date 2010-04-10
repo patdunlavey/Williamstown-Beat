@@ -1,0 +1,11 @@
+; $Id: referralsources_example.info,v 1.1 2009/12/18 22:13:18 adamo Exp $
+name = Referral Sources (Example Module)
+description = Example module demonstrating how to embed the Referral Sources selection in your own forms and modules, for centralized tracking.
+core = 6.x
+dependencies[] = referralsources
+; Information added by drupal.org packaging script on 2009-12-18
+version = "6.x-1.0"
+core = "6.x"
+project = "referralsources"
+datestamp = "1261175468"
+

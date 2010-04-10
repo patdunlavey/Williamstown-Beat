@@ -1,0 +1,16 @@
+/* $Id: ie.css,v 1.2 2008/02/14 17:22:19 johnalbin Exp $ */
+
+/*
+ * IE CSS
+ *
+ * CSS targeted specifically for Internet Explorer for Windows.
+ *
+ * Properties starting with an underscore _ are for IE 5 and 6 only.
+ *
+ */
+
+  #main
+  {
+    /* Reduce amount of damage done by extremely wide content */
+    _overflow: hidden;
+  }

@@ -1,0 +1,18 @@
+// $Id: CHANGELOG.txt,v 1.1.2.3 2009/10/27 17:19:45 sgabe Exp $ 
+
+Simplenews Scheduler 6.x-1.x-dev, 2009-10-27
+--------------------------------------------
+- Fixed illegal choice detected bug.
+- Better cron interval.
+
+Simplenews Scheduler 6.x-1.x-dev, 2009-10-16
+--------------------------------------------
+- Fixed missing update procedure.
+- Simpler date selection.
+
+Simplenews Scheduler 6.x-1.x-dev, 2009-09-16
+--------------------------------------------
+- Better code formatting and reviewed code with Coder module.
+- Modified taxonomy term saving with taxonomy_node_save() function.
+- New features: stop sending based on given date or number of editions.
+- Better multilingual support with included translation template.

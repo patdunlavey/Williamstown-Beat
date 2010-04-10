@@ -1,0 +1,122 @@
+<?php
+// $Id: node_import.test,v 1.1.2.3 2009/04/18 09:50:44 robrechtj Exp $
+
+/**
+ * @file
+ * Tests ../node_import.inc.
+ */
+
+class NodeImportTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Node import API'),
+      'description' => t('Tests node import API functions.'),
+      'group' => t('Node import'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('node_import', 'date_api');
+    module_load_include('inc', 'node_import');
+  }
+
+  function tearDown() {
+    parent::tearDown();
+  }
+
+  /**
+   * Tests node_import_check_boolean().
+   */
+  function testCheckBoolean() {
+    $fields = array();
+    $options = array();
+    $preview = FALSE;
+
+    $trues = array(
+      1, '1',
+      'on', 'ON', 'On',
+      'yes', 'YES', 'Yes',
+      'true', 'TRUE', 'True',
+    );
+
+    foreach ($trues as $value) {
+      $msg = t('%value is true.', array('%value' => $value));
+      $return = node_import_check_boolean($value, $field, $options, $preview);
+      $this->assertEqual($value, '1', $msg, t('Check boolean'));
+    }
+
+    $falses = array(
+      0, '0',
+      'off', 'OFF', 'Off',
+      'no', 'NO', 'No',
+      'false', 'FALSE', 'False',
+    );
+
+    foreach ($falses as $value) {
+      $msg = t('%value is false.', array('%value' => $value));
+      $return = node_import_check_boolean($value, $field, $options, $preview);
+      $this->assertEqual($value, '0', $msg, t('Check boolean'));
+    }
+
+    $fails = array(
+      '1.0',
+      '0.0',
+      'foo',
+    );
+
+    foreach ($fails as $value) {
+      $msg = t('%value is neither true nor false.', array('%value' => $value));
+      $return = node_import_check_boolean($value, $field, $options, $preview);
+      $this->assertEqual($return, FALSE, $msg, t('Check boolean'));
+    }
+  }
+
+  /**
+   * Tests node_import_check_node_reference().
+   */
+  function testCheckNodeReference() {
+    $node = $this->drupalCreateNode(array('type' => 'story'));
+
+    $field = array('output_format' => 'nid');
+    $options = array();
+    $preview = FALSE;
+
+    $value = $node->nid;
+
+    $result = node_import_check_node_reference($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Lookup returned succesfully.'), t('Node reference by ID'));
+    $this->assertTrue($value == $node->nid, t('Lookup returned correct ID.'), t('Node reference by ID'));
+
+    $value = $node->title;
+
+    $result = node_import_check_node_reference($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Lookup returned succesfully.'), t('Node reference by Title'));
+    $this->assertTrue($value == $node->nid, t('Lookup returned correct ID.'), t('Node reference by Title'));
+
+    $field = array('output_format' => 'title');
+    $value = $node->nid;
+
+    $result = node_import_check_node_reference($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Lookup returned succesfully.'), t('Node reference by ID'));
+    $this->assertTrue($value == $node->title, t('Lookup returned correct Title.'), t('Node reference by ID'));
+
+    $value = $node->title;
+
+    $result = node_import_check_node_reference($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Lookup returned succesfully.'), t('Node reference by Title'));
+    $this->assertTrue($value == $node->title, t('Lookup returned correct Title.'), t('Node reference by Title'));
+
+    $value = $node->nid + 1;
+
+    $result = node_import_check_node_reference($value, $field, $options, $preview);
+    $this->assertFalse($result, t('Lookup returned not succesfully.'), t('Wrong node reference by ID'));
+
+    $value = $this->randomName(32);
+
+    $result = node_import_check_node_reference($value, $field, $options, $preview);
+    $this->assertFalse($result, t('Lookup returned not succesfully.'), t('Wrong node reference by Title'));
+
+    node_delete($node->nid);
+  }
+}
+

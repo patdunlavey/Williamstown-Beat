@@ -1,0 +1,142 @@
+# Danish translation of Drupal  (workspace.module)
+# Copyright 2006 Morten Wulff <wulff@psyke.org>
+# Generated from file: workspace.module,v 1.16.2.2 2005/07/02 04:01:17 jvandyk
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Danish translation of Drupal (workspace.module) $Id: da.po,v 1.1 2006/02/11 16:01:05 wulff Exp $\n"
+"POT-Creation-Date: 2005-08-14 17:22+0200\n"
+"PO-Revision-Date: 2006-02-11 17:01+0100\n"
+"Last-Translator: Morten Wulff <wulff@psyke.org>\n"
+"Language-Team: Danish <danish@psyke.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: workspace.module:12
+msgid "For individual users to manage their workspace"
+msgstr "Brugerne kan vedligeholde deres arbejdsområde"
+
+#: workspace.module:32
+msgid "my workspace"
+msgstr "mit arbejdsområde"
+
+#: workspace.module:38
+msgid "list"
+msgstr "liste"
+
+#: workspace.module:44
+msgid "configure"
+msgstr "indstil"
+
+#: workspace.module:51
+#: ;237;256
+msgid "delete"
+msgstr "slet"
+
+#: workspace.module:75
+#: ;318
+msgid "Select..."
+msgstr "Vælg..."
+
+#: workspace.module:89
+#: ;0
+msgid "workspace"
+msgstr "arbejdsområde"
+
+#: workspace.module:103
+msgid "Number of items"
+msgstr "Antal elementer"
+
+#: workspace.module:104
+msgid "Maximum number of items to display in your workspace."
+msgstr "Maksimalt antal elementer, der vises i dit arbejdsområde."
+
+#: workspace.module:110
+msgid "Number of files"
+msgstr "Antal filer"
+
+#: workspace.module:111
+msgid "Maximum number of filenames to display in your workspace."
+msgstr "Maksimalt antal filnavne der vises i dit arbejdsområde."
+
+#: workspace.module:119
+msgid "workspace : %username"
+msgstr "arbejdsområde : %username"
+
+#: workspace.module:125
+#: ;128
+msgid "Please enter a numeric value."
+msgstr "Indtast venligst et tal."
+
+#: workspace.module:189
+#: ;277
+msgid "Type"
+msgstr "Type"
+
+#: workspace.module:190
+msgid "Title"
+msgstr "Titel"
+
+#: workspace.module:191
+msgid "Owner"
+msgstr "Ejer"
+
+#: workspace.module:192
+msgid "Published"
+msgstr "Udgivet"
+
+#: workspace.module:193
+msgid "Modified"
+msgstr "Ændret"
+
+#: workspace.module:194
+msgid "Replies"
+msgstr "Svar"
+
+#: workspace.module:195
+msgid "Operations"
+msgstr "Handlinger"
+
+#: workspace.module:200
+msgid "yes"
+msgstr "ja"
+
+#: workspace.module:201
+msgid "no"
+msgstr "nej"
+
+#: workspace.module:236
+#: ;248;252
+msgid "edit"
+msgstr "rediger"
+
+#: workspace.module:259
+msgid "comment"
+msgstr "kommenter"
+
+#: workspace.module:271
+msgid "Your workspace is currently empty."
+msgstr "Dit arbejdsområde er tomt."
+
+#: workspace.module:278
+msgid "Filename"
+msgstr "Filnavn"
+
+#: workspace.module:279
+msgid "Size"
+msgstr "Størrelse"
+
+#: workspace.module:289
+msgid "Files"
+msgstr "Filer"
+
+#: workspace.module:317
+msgid "Choose what kind of content you would like to add."
+msgstr "Vælg hvilken type indhold, du ønsker at tilføje."
+
+#: workspace.module:64
+msgid "administer own workspace"
+msgstr "administrer eget arbejdsområde"
+

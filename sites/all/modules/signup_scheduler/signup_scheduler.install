@@ -1,0 +1,61 @@
+<?php
+// $Id: signup_scheduler.install,v 1.1.2.4.2.2 2008/11/20 02:01:31 jrbeeman Exp $
+
+/**
+ * @file
+ * Install, uninstall and schema methods for Signup Scheduler.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function signup_scheduler_schema() {
+  $schema['signup_scheduler'] = array(
+    'description' => t('Store info about the signup open and close dates for a node.'),
+    'fields' => array(
+      'nid' => array(
+        'description' => t('Primary Key: {node}.nid for node.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => t('Boolean indicating whether Signup Scheduler is enabled for the node.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'open' => array(
+        'description' => t('The Unix timestamp when signups should be opened for the node.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'close' => array(
+        'description' => t('The Unix timestamp when signups should be closed for the node.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+  return $schema;
+}
+
+
+/**
+ * Implementation of hook_install().
+ */
+function signup_scheduler_install() {
+  drupal_install_schema('signup_scheduler');
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function signup_scheduler_uninstall() {
+  drupal_uninstall_schema('signup_scheduler');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'signup_scheduler_%'");
+}

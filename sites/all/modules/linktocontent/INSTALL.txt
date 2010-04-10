@@ -1,0 +1,70 @@
+// $Id: INSTALL.txt,v 1.4 2007/10/08 15:18:09 stborchert Exp $
+
+*******************************************************************************************
+Warning
+-------
+This is an "experimental" version of Linktocontent plugin with removed TinyMCE dependencies.
+This module is FCKeditor and TinyMCE compatible.
+The minimal list of changes in this module for FCKeditor to work is available here:
+http://drupal.fckeditor.net/linktocontent.patch
+
+Modified by: wwalc (http://drupal.org/user/184556)
+
+Installation (with FCKeditor)
+-----------------------------
+Follow the steps below. Skip TinyMCE specific instructions (2,4).
+Complete the installation procedure by following the instruction attached to the FCKeditor
+module (README.txt) in the "Modules: Link to content" section.
+
+*******************************************************************************************
+
+Requirements
+------------
+
+This module and its plugins require at least version 6.0 of Drupal and
+tinymce.module installed and enabled.
+linktocontent_node.module requires additionally taxonomy.module.
+linktocontent_category requires category.module installed.
+
+Installation
+------------
+
+1. Copy the folder named 'linktocontent' and its contents to the modules directory
+   of your Drupal installation (for example 'sites/all/modules/'.
+
+2. Copy the contents of the tinymce_plugins folder to the tinyMCE plugin
+   folder (for example sites/all/modules/tinymce/tinymce/jscripts/tiny_mce/plugins)
+
+3. Go to 'admin/build/modules' and enable linktocontent. There are three plugins
+   (for example Linktocontent_Node). You can enable any or all of these. 
+   The Description column describes dependencies. 
+   For example, to enable Linktocontent_Category you must enable Linktocontent_Node. 
+
+4. Go to 'admin/settings/tinymce' and edit the profile you want to enable the
+   new plugins (for example "linktonode") for.
+   In section "buttons and plugins" check linktonode and save the profile.
+
+   NOTE: If you would like to do a multi-site installation, the file plugin_reg.php is 
+   not writable or the plugin-buttons do not appear in the tinymce Buttons and Plugins section, 
+   you have to manually include the following lines into tinymce/plugin_reg.php:
+   <code>
+   // linktocontent.module: linktonode
+   if (is_dir(drupal_get_path('module', 'tinymce') . '/tinymce/jscripts/tiny_mce/plugins/linktonode/')) {
+     $plugins['linktonode'] = array();
+     $plugins['linktonode']['theme_advanced_buttons3'] = array('linktonode');
+   }
+   </code>
+
+   Insert the text near the end of the file before the last two lines:
+   <code>
+     return $plugins;
+   }
+   </code>
+
+   The preceding example is for "linktonode".
+   The text to be inserted for other contrib modules (e.g. linktomenu) looks similar. 
+   Please check tinymce_plugins/{modulename}/INSTALL.txt for further instructions.  
+
+5. Go to 'admin/settings/linktocontent' and enable every sub-module you would like to use.
+   After enabling a module check its settings page for more specific settings (for example 
+   which node types to display or which menus to use).

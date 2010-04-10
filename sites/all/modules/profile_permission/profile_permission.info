@@ -1,0 +1,14 @@
+; $Id: profile_permission.info,v 1.1 2008/12/04 05:50:51 boombatower Exp $
+name = "Profile permission"
+description = "Restrict editing of profile fields."
+package = "Profile"
+version = 1.x-dev
+core = 6.x
+dependencies[] = profile
+
+; Information added by drupal.org packaging script on 2009-02-10
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "profile_permission"
+datestamp = "1234224944"
+

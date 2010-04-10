@@ -1,0 +1,143 @@
+# LANGUAGE translation of PROJECT
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: V 1.00\n"
+"POT-Creation-Date: 2005-02-04 11:28+0100\n"
+"PO-Revision-Date: 2005-02-04 11:32+0100\n"
+"Last-Translator: Matteo Ferrari <webmaster@cantincoro.org>\n"
+"Language-Team:  MATTEO <m.ferrari@tiscali.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#: d:\ccoro\modules\workspace.module:36
+msgid "my workspace"
+msgstr "la mia area personale"
+
+#: d:\ccoro\modules\workspace.module:42
+msgid "list"
+msgstr "elenco"
+
+#: d:\ccoro\modules\workspace.module:48
+msgid "configure"
+msgstr "configurazione"
+
+#: d:\ccoro\modules\workspace.module:55;178;198
+msgid "delete"
+msgstr "elimina"
+
+#: d:\ccoro\modules\workspace.module:87;274
+msgid "Select..."
+msgstr "Scegli..."
+
+#: d:\ccoro\modules\workspace.module:92;283
+msgid "Add new item"
+msgstr "Aggiungi nuovo elemento"
+
+#: d:\ccoro\modules\workspace.module:101;0
+msgid "workspace"
+msgstr "area personale"
+
+#: d:\ccoro\modules\workspace.module:113;253
+msgid "Save configuration"
+msgstr "Salva configurazione"
+
+#: d:\ccoro\modules\workspace.module:120
+msgid "workspace : %username"
+msgstr "area personale: %username"
+
+#: d:\ccoro\modules\workspace.module:154;219
+msgid "Type"
+msgstr "Tipo"
+
+#: d:\ccoro\modules\workspace.module:155
+msgid "Title"
+msgstr "Titolo"
+
+#: d:\ccoro\modules\workspace.module:156
+msgid "Owner"
+msgstr "Autore"
+
+#: d:\ccoro\modules\workspace.module:157
+msgid "Published"
+msgstr "Pubblicato"
+
+#: d:\ccoro\modules\workspace.module:158
+msgid "Modified"
+msgstr "Modificato"
+
+#: d:\ccoro\modules\workspace.module:159
+msgid "Replies"
+msgstr "Risposte"
+
+#: d:\ccoro\modules\workspace.module:160
+msgid "Operations"
+msgstr "Operazioni"
+
+#: d:\ccoro\modules\workspace.module:165
+msgid "yes"
+msgstr "Si"
+
+#: d:\ccoro\modules\workspace.module:166
+msgid "no"
+msgstr "No"
+
+#: d:\ccoro\modules\workspace.module:190;194
+msgid "edit"
+msgstr "modifica"
+
+#: d:\ccoro\modules\workspace.module:201
+msgid "comment"
+msgstr "commento"
+
+#: d:\ccoro\modules\workspace.module:213
+msgid "Your workspace is currently empty."
+msgstr "La tua area personale è attualmente vuota."
+
+#: d:\ccoro\modules\workspace.module:220
+msgid "Filename"
+msgstr "Nome file"
+
+#: d:\ccoro\modules\workspace.module:221
+msgid "Size"
+msgstr "Dimensione"
+
+#: d:\ccoro\modules\workspace.module:231
+msgid "Files"
+msgstr "Files"
+
+#: d:\ccoro\modules\workspace.module:250
+msgid "Number of items"
+msgstr "Numero di elementi"
+
+#: d:\ccoro\modules\workspace.module:250
+msgid "Maximum number of items to display in your workspace."
+msgstr "Numero massimo di elementi da visualizzare nella tua area personale."
+
+#: d:\ccoro\modules\workspace.module:252
+msgid "Number of files"
+msgstr "Numero di files"
+
+#: d:\ccoro\modules\workspace.module:252
+msgid "Maximum number of filenames to display in your workspace."
+msgstr "Numero massimo di files da visualizzare nella tua area personale."
+
+#: d:\ccoro\modules\workspace.module:273
+msgid "Choose what kind of content you would like to add."
+msgstr "Scegli quale tipo di contenuto vorresti pubblicare."
+
+#: d:\ccoro\modules\workspace.module:282
+msgid "Add content"
+msgstr "Aggiungi contenuto"
+
+#: d:\ccoro\modules\workspace.module:294;297
+msgid "Please enter a numeric value."
+msgstr "Inserisci un valore numerico."
+
+#: d:\ccoro\modules\workspace.module:68
+msgid "administer own workspace"
+msgstr "amministrare la propria area personale"
+

@@ -1,0 +1,11 @@
+﻿--- uc_who_bought_what.module.bak	2010-01-01 11:04:33.000000000 -0500
++++ uc_who_bought_what.module	2010-01-01 11:09:18.000000000 -0500
+@@ -267,7 +267,7 @@ function uc_who_bought_what_form_submit(
+ * @return array An array of valid permissions for the uc_who_bought_what module
+ */
+ function uc_who_bought_what_perm() {
+-  return array('view uc_who_bought_what', 'view all who bought what');
++  return array('view uc_who_bought_what', 'view all uc_who_bought_what');
+ } // function uc_who_bought_what_perm
+ 
+ 

@@ -1,0 +1,23 @@
+table#users-roles th {
+  text-align: center;
+}
+
+table#users-roles {
+  text-align: left;
+}
+
+table#users-roles div.form-item {
+  text-align: center;
+}
+
+table#permissions div.form-item {
+  text-align: center;
+}
+
+table#multi-users div.form-item {
+  text-align: center;
+}
+
+table#multi-users th {
+  text-align: center;
+}

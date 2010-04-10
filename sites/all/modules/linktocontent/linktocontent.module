@@ -1,0 +1,213 @@
+<?php
+// $Id: linktocontent.module,v 1.12.2.1 2008/03/01 12:43:57 stborchert Exp $
+
+/*
+* @file
+* Linktocontent Module for Drupal 6.x (patched for FCKeditor)
+*/
+
+include_once drupal_get_path('module', 'linktocontent') .'/linktocontent_util.inc';
+
+/**
+ * Displays the help text for this module.
+ *
+ * @ingroup linktocontent_core
+ * @param $section the page which is requesting help
+ * @return the help text
+ */
+function linktocontent_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#linktocontent' :
+      $output = t('<p>Linktocontent allows FCKeditor and TinyMCE plugins to work with drupal data.</p>');
+      return $output;
+  }
+}
+
+ /**
+ * Implementation of hook_theme().
+ */
+function linktocontent_theme() {
+  return array(
+    'linktocontent_settings_page' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'linktocontent.theme',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_perm()
+ *
+ * @ingroup linktcontent_core
+ */
+function linktocontent_perm() {
+  $access = array('administer linktocontent');
+  return $access;
+}
+
+function linktocontent_menu() {
+  $items = array();
+  $items['linktocontent'] = array(
+    'title' => 'linktocontent',
+    'page callback' => 'linktocontent_get_data',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content')
+  );
+  $items['admin/settings/linktocontent'] = array(
+    'title' => 'Link to content',
+    'description' => 'Configure relevant settings for linktocontent.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('linktocontent_settings_page'),
+    'access arguments' => array('administer linktocontent')
+  );
+   return $items;
+ }
+/**
+ * Retrieve all plugins registered for this function
+ *
+ * @ingroup linktocontent_core
+ * @param $function Name of the function to find plugins for.
+ * @return All plugins registered to this function.
+ **/
+function _linktocontent_get_registered_plugins($function = 'global') {
+  $registered = variable_get('linktocontent_registered_plugins', array());
+  if ($registered[$function]) {
+    return $registered[$function];
+  }
+  return array();
+}
+
+/**
+ * Get plugin info
+ *
+ * @ingroup linktocontent_core
+ * @param $plugin The name of the plugin to retrieve info from
+ * @return An object representing the plugin.
+ **/
+function _linktocontent_plugin_info($plugin) {
+  return module_invoke($plugin, 'get_info');
+}
+
+/**
+ * Menu callback; Prints the settings page under admin/settings/linktocontent
+ *
+ * @ingroup linktocontent_callback
+ */
+function linktocontent_settings_page() {
+  $plugins = _linktocontent_get_registered_plugins();
+  if (!count($plugins)) {
+    drupal_set_message(t('Please !install at least one plugin.',
+      array('!install' => l(t('install'), 'admin/build/modules'))));
+    return;
+  }
+
+  $weights = variable_get('linktocontent_plugin_weight', array());
+  $enabled = variable_get('linktocontent_enabled_plugins', array());
+
+  $options = array();
+  $status = array();
+  foreach (_linktocontent_get_registered_plugins() as $plugin_name) {
+    $plugin = _linktocontent_plugin_info($plugin_name);
+    // Check if plugin-module is still enabled on [admin/build/modules]. 
+    if (!module_exists($plugin_name)) {
+      // Module has been deactivated but not uninstalled yet.
+      continue;
+    }
+    
+    if (!module_exists('fckeditor') && module_invoke($plugin_name, 'check_files') == FALSE) {
+      drupal_set_message(t('There seems to be an error with the installation of @module.
+        Please check you copied all files from <em>linktocontent/tinymce_plugins/@plugin</em>
+        to the TinyMCE plugin directory.', array('@module' => $plugin_name,
+          '@plugin' => $plugin->info['plugin'])),
+        'error');
+      // Don't show plugin until this error is resolved.
+      continue;
+    }
+    $weight = (isset($weights[$plugin_name]) ? $weights[$plugin_name] : 0);
+
+    $form['name'][$plugin_name] = array('#value' => $plugin->info['title']);
+    $form['description'][$plugin_name] = array('#value' => $plugin->info['description']);
+    $form['weight'][$plugin_name] = array('#type' => 'weight', '#default_value' => $weight);
+    $options[$plugin_name] = '';
+    if (!empty($enabled[$plugin_name])) {
+      $status[] = $plugin_name;
+    }
+  }
+  $form['status'] = array(
+    '#type' => 'checkboxes',
+    '#default_value' => $status,
+    '#options' => $options);
+
+  $form['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback; handles form submission.
+ */
+function linktocontent_settings_page_submit($form, &$form_state) {
+  $enabled = variable_get('linktocontent_enabled_plugins', array());
+  $weights = variable_get('linktocontent_plugin_weight', array());
+
+  foreach ($form_state['values']['status'] as $key => $choice) {
+    $enabled[$key] = $choice;
+    $weights[$key] = $form_state['values'][$key];
+  }
+
+  variable_set('linktocontent_enabled_plugins', $enabled);
+  variable_set('linktocontent_plugin_weight', $weights);
+}
+
+function linktocontent_get_data() {
+  $GLOBALS['devel_shutdown'] = FALSE;
+  $plugins = linktocontent_validate_args();
+  if (!is_array($plugins)) {
+    print drupal_to_js(array('message' => $plugins));
+  }
+
+  // Sort plugins by weight.
+  $weights = variable_get('linktocontent_plugin_weight', array());
+  foreach ($plugins as $plugin_name) {
+    $plugins[$plugin_name] = (isset($weights[$plugin_name]) ? $weights[$plugin_name] : 0);
+  }
+  if (is_array($plugins)) {
+    asort($plugins, SORT_NUMERIC);
+  }
+  // Retrieve the data.
+  $data = array();
+  $args = $_POST;
+  foreach ($plugins as $plugin_name => $weight) {
+    $data = module_invoke($plugin_name, 'get_data', $args, $data);
+  }
+
+  print drupal_to_js($data);
+  return;
+}
+
+function linktocontent_validate_args() {
+  $args = $_POST;
+
+  // Use all plugins.
+  $plugins = _linktocontent_get_registered_plugins();
+  if (!$plugins[$args['ltc-type']]) {
+    return t('!type isn\'t a valid type name for !ltc',
+      array('!type' => check_plain($args['ltc-type']),
+        '!ltc' => t('Link to content')));
+  }
+
+  // Use plugins registered to this type.
+  $plugins = _linktocontent_get_registered_plugins(check_plain($args['ltc-type']));
+  foreach ($plugins as $plugin_name) {
+    $return = module_invoke($plugin_name, 'validate_args', $args);
+    // In case of invalid data return the error message.
+    if ($return !== TRUE) {
+      return $return;
+    }
+  }
+  // all posted data is valid
+  return $plugins;
+}

@@ -1,0 +1,3 @@
+<?php
+
+include_once('events_calendar.features.inc');

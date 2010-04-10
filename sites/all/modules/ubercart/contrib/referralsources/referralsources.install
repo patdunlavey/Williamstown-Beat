@@ -1,0 +1,199 @@
+<?php
+// $Id: referralsources.install,v 1.1 2009/12/18 22:04:43 adamo Exp $
+
+/**
+ * @file
+ *
+ * Installation file for Referral Sources module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function referralsources_install() {
+  drupal_install_schema('referralsources');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function referralsources_uninstall() {
+  drupal_uninstall_schema('referralsources');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function referralsources_schema() {
+  $schema['referralsources'] = array(
+    'description' => t('Sources for referral tracking.'),
+    'fields' => array(
+      'rid' => array(
+        'description' => t('Referral source ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'code' => array(
+        'description' => t('Referral source code.'),
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => t('Title to be displayed in referral source select lists.'),
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'description' => array(
+        'description' => t('Extended description of referral source.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'grouping' => array(
+        'description' => t('Group this referral source belongs to (for grouped select lists).'),
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'weight' => array(
+        'description' => t('Weight for determining order in lists.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('rid'),
+    'unique keys' => array('code' => array('code')),
+    'indexes' => array('weight' => array('weight')),
+  );
+
+  $schema['referralsources_submissions'] = array(
+    'description' => t("Stores user referral source submissions from anywhere on the site."),
+    'fields' => array(
+      'rsid' => array(
+        'description' => t('ID of this Referral source Submission.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'rstid' => array(
+        'description' => t('Type of referral source submission.  Foreign key of referralsources_submission_types.'),
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('ID of submitting user.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'form_id' => array(
+        'description' => t('ID of FAPI form this was submitted with, if submitted with an 3rd party FAPI form.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default value' => NULL,
+      ),
+      'order_id' => array(
+        'description' => t('ID of the Ubercart order this was submitted with, if submitted with an order.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default value' => NULL,
+      ),
+      'sid' => array(
+        'description' => t('Webform submission ID, if submitted with Webform based form.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default value' => NULL,
+      ),
+      'cid' => array(
+        'description' => t('Webform component ID, if submitted with Webform based form.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default value' => NULL,
+      ),
+      'nid' => array(
+        'description' => t('Webform node ID, if submitted with Webform based form.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default value' => NULL,
+      ),
+      'title' => array(
+        'description' => t('Title of Webform, if submitted with a Webform based form.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'rid' => array(
+        'description' => t('ID of the selected referral source.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'other' => array(
+        'description' => t('"Other" text submitted'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'created_datetime' => array(
+        'description' => t('Submission date/time stamp.'),
+        'type' => 'datetime',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('rsid'),
+    'unique keys' => array(
+      'order_id' => array('order_id'),
+      'sid_cid_nid' => array('sid', 'cid', 'nid'),
+    ),
+    'indexes' => array(
+      'rstid' => array('rstid'),
+      'uid' => array('uid'),
+      'form_id' => array('form_id'),
+      'rid' => array('rid'),
+      'other' => array('other'),
+      'created_datetime' => array('created_datetime'),
+    ),
+  );
+
+  return $schema;
+}
+
+function referralsources_update_6023() {
+  $ret = array();
+
+  $title = array(
+    'description' => t('Title of Webform, if submitted with a Webform based form.'),
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+  );
+
+  db_add_field($ret, 'referralsources_submissions', 'title', $title);
+
+  return $ret;
+}
+
+function referralsources_update_6101() {
+  $ret = array();
+
+  $grouping = array(
+    'description' => t('Group this referral source belongs to (for grouped select lists).'),
+    'type' => 'varchar',
+    'length' => 50,
+    'not null' => TRUE,
+  );
+
+  db_add_field($ret, 'referralsources', 'grouping', $grouping);
+
+  return $ret;
+}

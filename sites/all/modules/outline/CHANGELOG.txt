@@ -1,0 +1,101 @@
+# $Id: CHANGELOG.txt,v 1.18 2008/11/30 01:49:19 augustin Exp $
+# CHANGELOG.txt for the outline.module
+######################################
+
+30th November 2008
+==================
+* (#315186) Data synchronization when outline.module is enabled.
+  Added to the outline new books and new book pages that have been added by book.module while outline.module was disabled.
+
+# tag DRUPAL-6--0-0-ALPHA2 : 28th November 2008. 
+# ==============================================
+
+28th November 2008
+==================
+* (#295521) User specific books:
+  The administrator can limit some books to some specified authors. Only nodes by those authors will be accepted in such books.
+
+27th November 2008
+==================
+* Many bugfixes related to versioning.
+  Regardless of the user permissions with regard to book outlining and outline settings,
+  new versions of the node are properly saved, and versions can be deleted or reverted.
+
+26th November 2008
+==================
+Big patch coming!
+* (#295521) The permission "add content to books" can now be overruled on a per book basis.
+  We can set which roles and which individual users are allowed to add content in each book.
+  For this we created a new permission setting page for each book (see admin > Content management > Books > edit permissions).
+  The setting affect the 'add child page' links and the node form. 
+* (#331564) bugfix: "Call-time pass-by-reference has been deprecated;"
+
+24th October 2008
+==================
+* A book cover has now two TOC_depth settings: one for the book cover itself, and one for all child pages.
+
+23rd October 2008
+==================
+* (#315186) Import data from {book} when outline is enabled after book.module had been in use.
+* Add proper default values in some fields in {outline_book} and {outline_node}.
+
+30th September 2008
+==================
+* Fixed hook_uninstall(), deleting tables and variables.
+
+
+20th August 2008
+==================
+
+* (#297257) Bugfix: editing nodes in different scenarios (whether they were previously outlined or not, etc.)
+
+
+# tag DRUPAL-6--0-0-alpha1 : 15th August 2008. 
+# ============================================
+
+14th August 2008
+================
+
+* Fixed the form in the outline tab. The outline options set by this module can now be updated at the 'outline' tab.
+* Fixed the import of the D5 data during the upgrade to D6. 
+* Fix add_child url. (#256355)
+
+13th August 2008
+================
+
+* Added the outline navigation block at the bottom of a node. This outline is overriding the similar book navigation block.
+  Thus, we can use our custom TOC depth settings to modify the look of the outline. 
+* Removed outline.css. Replaced it with new stylesheet.css (I don't want all my files to start with outline*).
+* Added Outline-navigation.tpl.php, which is a slightly modified copy of book-navigation.tpl.php
+
+
+
+18th April 2008
+===============
+
+* The upcoming Drupal 6 version of outline.module is a *complete rewrite* of the module.
+
+* The Drupal 6 version of outline.module is now *dependent on* core's book.module, 
+instead of being a replacement module, like in Drupal 5.
+
+* The tables {outline_nodes} and {outline_volume} are replaced by 
+{outline_node}, {outline_book}, {outline_perm} and {outline_types}
+to accomodate for all the features planned in the upcoming release.
+
+* There is a migration path from the Drupal 5 DB schema. The migration is not yet complete and needs testing.
+
+* We replace the book.module javascript AHAH callback with our own, so we can customize the return value (add form elements).
+
+* Any change in the outline settings at the node level is saved in the revision if 'create revision' is checked.
+
+* The form elements to set the child page node, and the TOC depth view are directly inserted on the form node,
+alongside book.module's form elements.
+
+* The link 'add child node' is customized to take into account the child node type setting. 
+The text of the link also specify the node type of the child node.
+
+
+# tag DRUPAL-5--1-0 : 21st March 2007. 
+# =======================================
+
+* First official release for outline.module which is a replacement of Drupal core book.module.

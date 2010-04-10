@@ -1,0 +1,410 @@
+<?php
+// $Id: taxonomy.test,v 1.1.2.3 2009/04/21 17:57:37 robrechtj Exp $
+
+/**
+ * @file
+ * Taxonomy tests.
+ */
+
+class NodeImportTaxonomyTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Core - Taxonomy (taxonomy)'),
+      'description' => t('Tests assigning taxonomy terms to nodes.'),
+      'group' => t('Node import'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('node', 'taxonomy', 'date_api', 'node_import');
+    module_load_include('inc', 'node_import');
+  }
+
+  function tearDown() {
+    parent::tearDown();
+  }
+
+  /**
+   * Tests node_import_check_taxonomy_term().
+   */
+  function testCheckTaxonomyTerm() {
+    // Create vocabulary.
+    $vocabulary = array(
+      'name' => $this->randomName(32),
+      'nodes' => array(),
+      'tags' => 0,
+      'multiple' => 0,
+      'hierarchy' => 1,
+      'required' => 0,
+      'relations' => 0,
+    );
+    taxonomy_save_vocabulary($vocabulary);
+
+    // Create parent.
+    $parent = array(
+      'name' => 'parent_'. $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+      'synonyms' => 'synonym_'. $this->randomName(32),
+    );
+    taxonomy_save_term($parent);
+
+    // Check by ID.
+    $value = $parent['tid'];
+    $field = array(
+      'vocabulary' => (object)$vocabulary,
+    );
+    $options = array();
+    $preview = FALSE;
+
+    $result = node_import_check_taxonomy_term($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Check by ID returned succesfully.'));
+    $this->assertTrue($value == $parent['tid'], t('Check by ID returned correct tid.'));
+
+    // Check by tid.
+    $value = $parent['name'];
+
+    $result = node_import_check_taxonomy_term($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Check by name returned succesfully.'));
+    $this->assertTrue($value == $parent['tid'], t('Check by name returned correct tid.'));
+
+    // Check by synonym.
+    $value = $parent['synonyms'];
+
+    $result = node_import_check_taxonomy_term($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Check by synonym returned succesfully.'));
+    $this->assertTrue($value == $parent['tid'], t('Check by synonym returned correct tid.'));
+
+    // Add a child and check hierarchically.
+    $child = array(
+      'name' => 'child_'. $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+      'parent' => $parent['tid'],
+    );
+    taxonomy_save_term($child);
+
+    $value = array($parent['name'], $child['name']);
+
+    $result = node_import_check_taxonomy_term($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Check hierarchically (parent >> child) returned sucessfully.'));
+    $this->assertTrue($value == $child['tid'], t('Check hierarchically (parent >> child) returned correct tid.'));
+
+    // Add another child and check hierarchically.
+    $child = array(
+      'name' => 'child_'. $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+      'parent' => $parent['tid'],
+    );
+    taxonomy_save_term($child);
+
+    $value = array($child['name']);
+
+    $result = node_import_check_taxonomy_term($value, $field, $options, $preview);
+    $this->assertTrue($result, t('Check hierarchically (child) returned sucessfully.'));
+    $this->assertTrue($value == $child['tid'], t('Check hierarchically (child) returned correct tid.'));
+  }
+
+  /**
+   * Tests assiging terms to nodes.
+   */
+  function testAssignTerms() {
+    // Create vocabulary - tags.
+    $vocabulary = array(
+      'name' => $this->randomName(32),
+      'nodes' => array('story' => 1),
+      'tags' => 1,
+      'multiple' => 1,
+      'hierarchy' => 0,
+      'required' => 0,
+      'relations' => 0,
+    );
+    taxonomy_save_vocabulary($vocabulary);
+
+    // Create term.
+    $term = array(
+      'name' => $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+    );
+    taxonomy_save_term($term);
+
+    // Check if the taxonomy field is set.
+    $type = 'node:story';
+    $fields = node_import_fields($type, TRUE);
+    $this->assertTrue(isset($fields['taxonomy:'. $vocabulary['vid']]), t('Taxonomy field is set.'));
+
+    // Create a node with one existing term assigned.
+    $title = $this->randomName(32);
+    $data = array($title, $term['name']);
+    $map = array('title' => 0, 'taxonomy:' . $vocabulary['vid'] => 1);
+    $defaults = array();
+    $options = array();
+    $preview = FALSE;
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Assign existing tag.'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(isset($node->taxonomy) && is_array($node->taxonomy) && count($node->taxonomy) == 1, t('Node has one taxonomy tag.'), t('Assign existing tag.'));
+      $found = FALSE;
+      foreach ($node->taxonomy as $i => $t) {
+        if ($t->tid == $term['tid']) {
+          $this->assertTrue($t->tid == $term['tid'], t('Existing tag has correct tid.'), t('Assign existing tag.'));
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('Existing tag is of correct vocabulary.'), t('Assign existing tag.'));
+          $this->assertTrue($t->name == $term['name'], t('Existing tag has correct name.'), t('Assign existing tag.'));
+          $found = TRUE;
+        }
+      }
+      $this->assertTrue($found, t('Existing tag was assigned.'), t('Assign existing tag.'));
+    }
+
+    // Create a node with one non-existing term assigned.
+    // For tags this will create the tag.
+    $new_term = $this->randomName(32);
+    $data = array($title, $new_term);
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Assign new tag.'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(isset($node->taxonomy) && is_array($node->taxonomy) && count($node->taxonomy) == 1, t('Node has one taxonomy tag.'), t('Assign new tag.'));
+      $found_new = FALSE;
+      foreach ($node->taxonomy as $i => $t) {
+        if ($t->name == $new_term) {
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('New tag is of correct vocabulary.'), t('Assign new tag.'));
+          $this->assertTrue($t->name == $new_term, t('New tag has correct name.'), t('Assign new tag.'));
+          $found_new = TRUE;
+        }
+      }
+      $this->assertTrue($found_new, t('New tag was assigned.'), t('Assign new tag.'));
+    }
+
+    // Create a node with two terms assigned.
+    // For tags these need to be separated by ','.
+    $new_term = $this->randomName(32);
+    $data = array($title, $term['name'] .','. $new_term);
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Assign two tags.'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(isset($node->taxonomy) && is_array($node->taxonomy) && count($node->taxonomy) == 2, t('Node has two taxonomy tags.'), t('Assign two tags.'));
+      $found_new = FALSE;
+      $found = FALSE;
+      foreach ($node->taxonomy as $i => $t) {
+        if ($t->name == $new_term) {
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('New tag is of correct vocabulary.'), t('Assign two tags.'));
+          $this->assertTrue($t->name == $new_term, t('New tag has correct name.'), t('Assign two tags.'));
+          $found_new = TRUE;
+        }
+        else if ($t->tid == $term['tid']) {
+          $this->assertTrue($t->tid == $term['tid'], t('Existing tag has correct tid.'), t('Assign two tags.'));
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('Existing tag is of correct vocabulary.'), t('Assign two tags.'));
+          $this->assertTrue($t->name == $term['name'], t('Existing tag has correct name.'), t('Assign two tags.'));
+          $found = TRUE;
+        }
+      }
+      $this->assertTrue($found, t('Existing tag was assigned.'), t('Assign two tags.'));
+      $this->assertTrue($found_new, t('New tag was assigned.'), t('Assign two tags.'));
+    }
+
+    taxonomy_del_vocabulary($vocabulary['vid']);
+
+    // Create vocabulary - single select.
+    $vocabulary = array(
+      'name' => $this->randomName(32),
+      'nodes' => array('story' => 1),
+      'tags' => 0,
+      'multiple' => 0,
+      'hierarchy' => 0,
+      'required' => 0,
+      'relations' => 0,
+    );
+    taxonomy_save_vocabulary($vocabulary);
+
+    // Create term.
+    $term = array(
+      'name' => $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+    );
+    taxonomy_save_term($term);
+
+    // Check if the taxonomy field is set.
+    $type = 'node:story';
+    $fields = node_import_fields($type, TRUE);
+    $this->assertTrue(isset($fields['taxonomy:'. $vocabulary['vid']]), t('Taxonomy field is set.'));
+
+    // Create a node with one existing term assigned.
+    $title = $this->randomName(32);
+    $data = array($title, $term['name']);
+    $map = array('title' => 0, 'taxonomy:' . $vocabulary['vid'] => 1);
+    $defaults = array();
+    $options = array();
+    $preview = FALSE;
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Assign existing term.'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(isset($node->taxonomy) && is_array($node->taxonomy) && count($node->taxonomy) == 1, t('Node has one taxonomy term.'), t('Assign existing term.'));
+      $found = FALSE;
+      foreach ($node->taxonomy as $i => $t) {
+        if ($t->tid == $term['tid']) {
+          $this->assertTrue($t->tid == $term['tid'], t('Existing term has correct tid.'), t('Assign existing term.'));
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('Existing term is of correct vocabulary.'), t('Assign existing term.'));
+          $this->assertTrue($t->name == $term['name'], t('Existing term has correct name.'), t('Assign existing term.'));
+          $found = TRUE;
+        }
+      }
+      $this->assertTrue($found, t('Existing term was assigned.'), t('Assign existing term.'));
+    }
+
+    taxonomy_del_vocabulary($vocabulary['vid']);
+
+    // Create vocabulary - multiple select.
+    $vocabulary = array(
+      'name' => $this->randomName(32),
+      'nodes' => array('story' => 1),
+      'tags' => 0,
+      'multiple' => 1,
+      'hierarchy' => 0,
+      'required' => 0,
+      'relations' => 0,
+    );
+    taxonomy_save_vocabulary($vocabulary);
+
+    // Create two terms.
+    $terms = array(
+      0 => array(
+        'name' => $this->randomName(32),
+        'vid' => $vocabulary['vid'],
+      ),
+      1 => array(
+        'name' => $this->randomName(32),
+        'vid' => $vocabulary['vid'],
+      ),
+    );
+    foreach ($terms as $i => $term) {
+      taxonomy_save_term($term);
+      $terms[$i] = $term;
+    }
+
+    // Check if the taxonomy field is set.
+    $type = 'node:story';
+    $fields = node_import_fields($type, TRUE);
+    $this->assertTrue(isset($fields['taxonomy:'. $vocabulary['vid']]), t('Taxonomy field is set.'));
+
+    // Create a node with one existing term assigned.
+    $title = $this->randomName(32);
+    $data = array($title, $terms[0]['name']);
+    $map = array('title' => 0, 'taxonomy:' . $vocabulary['vid'] => 1);
+    $defaults = array();
+    $options = array();
+    $preview = FALSE;
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Assign one term.'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(isset($node->taxonomy) && is_array($node->taxonomy) && count($node->taxonomy) == 1, t('Node has one taxonomy term.'), t('Assign one term.'));
+      $found = FALSE;
+      foreach ($node->taxonomy as $i => $t) {
+        if ($t->tid == $terms[0]['tid']) {
+          $this->assertTrue($t->tid == $terms[0]['tid'], t('Term has correct tid.'), t('Assign one term.'));
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('Term is of correct vocabulary.'), t('Assign one term.'));
+          $this->assertTrue($t->name == $terms[0]['name'], t('Term has correct name.'), t('Assign one term.'));
+          $found = TRUE;
+        }
+      }
+      $this->assertTrue($found, t('Term was assigned.'), t('Assign one term.'));
+    }
+
+    // Create a node with two existing terms assigned.
+    $data = array($title, $terms[0]['name'] .'||'. $terms[1]['name']);
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Assign two terms.'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(isset($node->taxonomy) && is_array($node->taxonomy) && count($node->taxonomy) == 2, t('Node has two taxonomy terms.'), t('Assign two terms.'));
+      $found0 = FALSE;
+      $found1 = FALSE;
+      foreach ($node->taxonomy as $i => $t) {
+        if ($t->tid == $terms[0]['tid']) {
+          $this->assertTrue($t->tid == $terms[0]['tid'], t('First term has correct tid.'), t('Assign two terms.'));
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('First term is of correct vocabulary.'), t('Assign two terms.'));
+          $this->assertTrue($t->name == $terms[0]['name'], t('First term has correct name.'), t('Assign two terms.'));
+          $found0 = TRUE;
+        }
+        else if ($t->tid == $terms[1]['tid']) {
+          $this->assertTrue($t->tid == $terms[1]['tid'], t('Second term has correct tid.'), t('Assign two terms.'));
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('Second term is of correct vocabulary.'), t('Assign two terms.'));
+          $this->assertTrue($t->name == $terms[1]['name'], t('Second term has correct name.'), t('Assign two terms.'));
+          $found1 = TRUE;
+        }
+      }
+      $this->assertTrue($found0, t('First term was assigned.'), t('Assign two terms.'));
+      $this->assertTrue($found1, t('Second term was assigned.'), t('Assign two terms.'));
+    }
+
+    taxonomy_del_vocabulary($vocabulary['vid']);
+
+    // Create vocabulary - hierarchical.
+    $vocabulary = array(
+      'name' => $this->randomName(32),
+      'nodes' => array('story' => 1),
+      'tags' => 0,
+      'multiple' => 0,
+      'hierarchy' => 1,
+      'required' => 0,
+      'relations' => 0,
+    );
+    taxonomy_save_vocabulary($vocabulary);
+
+    // Create a parent term.
+    $parent = array(
+      'name' => $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+    );
+    taxonomy_save_term($parent);
+
+    // Create a child term.
+    $child = array(
+      'name' => $this->randomName(32),
+      'vid' => $vocabulary['vid'],
+      'parent' => $parent['tid'],
+    );
+    taxonomy_save_term($child);
+
+    // Check if the taxonomy field is set.
+    $type = 'node:story';
+    $fields = node_import_fields($type, TRUE);
+    $this->assertTrue(isset($fields['taxonomy:'. $vocabulary['vid']]), t('Taxonomy field is set.'));
+
+    // Create a node with the child term assigned.
+    $title = $this->randomName(32);
+    $data = array($title, $parent['name'] .'>>'. $child['name']);
+    $map = array('title' => 0, 'taxonomy:' . $vocabulary['vid'] => 1);
+    $defaults = array();
+    $options = array();
+    $preview = FALSE;
+
+    $result = node_import_create($type, $data, $map, $defaults, $options, $preview);
+    $this->assertTrue(!is_array($result) && intval($result) > 0, t('Node ID is returned.'), t('Assign hierarchical term (child).'));
+    if (!is_array($result)) {
+      $node = node_load($result);
+      $this->assertTrue(isset($node->taxonomy) && is_array($node->taxonomy) && count($node->taxonomy) == 1, t('Node has one taxonomy tag.'), t('Assign hierarchical term (child).'));
+      $found = FALSE;
+      foreach ($node->taxonomy as $i => $t) {
+        if ($t->tid == $child['tid']) {
+          $this->assertTrue($t->tid == $child['tid'], t('Child term has correct tid.'), t('Assign hierarchical term (child).'));
+          $this->assertTrue($t->vid == $vocabulary['vid'], t('Child term is of correct vocabulary.'), t('Assign hierarchical term (child).'));
+          $this->assertTrue($t->name == $child['name'], t('Child term has correct name.'), t('Assign hierarchical term (child).'));
+          $found = TRUE;
+        }
+      }
+      $this->assertTrue($found, t('Child term was assigned.'), t('Assign existing tag.'));
+    }
+
+    taxonomy_del_vocabulary($vocabulary['vid']);
+  }
+}
+

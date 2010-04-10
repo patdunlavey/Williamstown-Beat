@@ -1,0 +1,113 @@
+<?php
+// $Id: signup_scheduler.module,v 1.1.2.12.2.6 2008/11/20 06:41:27 jrbeeman Exp $
+
+/**
+ * @file
+ * The Signup Scheduler module allows users of the Signup module to define a
+ * schedule upon which node signups should be opened and closed.
+ */
+
+/**
+ * @defgroup signup_scheduler_core Core Drupal hooks
+ */
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * @ingroup signup_scheduler_core
+ * @see signup_scheduler_alter_node_form()
+ * @see signup_scheduler_alter_signup_node_admin_summary_form()
+ */
+function signup_scheduler_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    // Node edit form
+    case $form['type']['#value'] .'_node_form':
+      module_load_include('inc', 'signup_scheduler', 'includes/node_form');
+      signup_scheduler_alter_node_form($form, $form_state);
+      break;
+    
+    case 'signup_node_admin_summary_form':
+      module_load_include('inc', 'signup_scheduler', 'includes/node_admin_summary');
+      signup_scheduler_alter_signup_node_admin_summary_form($form, $form_state);
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ * @ingroup signup_scheduler_core
+ * @see signup_scheduler_nodeapi_validate()
+ * @see signup_scheduler_nodeapi_update()
+ * @see signup_scheduler_nodeapi_delete()
+ * @see signup_scheduler_nodeapi_load()
+ * @see signup_scheduler_nodeapi_view()
+ */
+function signup_scheduler_nodeapi(&$node, $op, $a3, $a4) {
+  if ($op == 'validate' && $node->signup_scheduler_status) {
+    module_load_include('inc', 'signup_scheduler', 'includes/node_api');
+    signup_scheduler_nodeapi_validate($node);
+  }
+
+  if (($op == 'insert' || $op == 'update') && $node->signup) {
+    module_load_include('inc', 'signup_scheduler', 'includes/node_api');
+    signup_scheduler_nodeapi_update($node);
+  }
+
+  if ($op == 'delete') {
+    module_load_include('inc', 'signup_scheduler', 'includes/node_api');
+    signup_scheduler_nodeapi_delete($node);
+  }
+
+  if ($op == 'load') {
+    module_load_include('inc', 'signup_scheduler', 'includes/node_api');
+    signup_scheduler_nodeapi_load($node);
+  }
+
+  if ($op == 'view' && $node->signup_scheduler_status && user_access('sign up for content')) {
+    module_load_include('inc', 'signup_scheduler', 'includes/node_api');
+    signup_scheduler_nodeapi_view($node);
+  }
+}
+
+
+/**
+ * Implementation of hook_theme().
+ *
+ * @ingroup signup_scheduler_core
+ * @see theme_signup_scheduler_node_view()
+ */
+function signup_scheduler_theme() {
+  $path = drupal_get_path('module', 'signup_scheduler') .'/includes';
+  return array(
+    'signup_scheduler_node_view' => array(
+      'file' => 'node_output.inc',
+      'path' => $path,
+      'arguments' => array('node', 'open', 'close'),
+    ),
+  );
+}
+
+
+/**
+ * Implementation of hook_cron().
+ *
+ * @ingroup signup_scheduler_core
+ * @see signup_scheduler_process_all_nodes()
+ */
+function signup_scheduler_cron() {
+  module_load_include('inc', 'signup_scheduler', 'includes/cron');
+  signup_scheduler_process_all_nodes();
+}
+
+
+/**
+ * Implementation of hook_views_api().
+ */
+function signup_scheduler_views_api() {
+  return array(
+    'api' => 2.0,
+    'path' => drupal_get_path('module', 'signup_scheduler') .'/includes/views',
+  );
+}

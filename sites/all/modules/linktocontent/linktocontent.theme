@@ -1,0 +1,73 @@
+<?php
+// $Id: linktocontent.theme,v 1.1.6.2 2008/03/01 17:31:58 stborchert Exp $
+
+/**
+ * @addtogroup themeable
+ * @{
+ */
+
+/**
+ * Format the display of the settings page
+ **/
+function theme_linktocontent_settings_page($form) {
+  // Table headers.
+  $header = array(t('Enabled'));
+  $header[] = t('Name');
+  $header[] = t('Description');
+  $header[] = t('Weight');
+
+  $plugins = _linktocontent_get_registered_plugins();
+
+  $enabled = array();
+  $disabled = array();
+  error_log( print_r( $form, 1) );
+  foreach ($plugins as $plugin_name) {
+    if (!empty($form['status']['#value'][$plugin_name])) {
+      $enabled[$plugin_name] = $plugin_name;
+    }
+    else {
+      // Check whether plugin is diabled or not installed.
+      if (isset($form['name'][$plugin_name])) {
+        $disabled[$plugin_name] = $plugin_name;
+      }
+    }
+  }
+
+  $output = '';
+  $process = array(t('Enabled plugins') => array('summary' => t('List of enabled plugins'),
+      'data' => $enabled),
+    t('Disabled plugins') => array('summary' => t('List of disabled plugins'),
+      'data' => $disabled));
+
+  foreach ($process as $title => $val) {
+    if (count($val['data'])) {
+      $rows = array();
+      foreach ($val['data'] as $plugin_name) {
+        $row = array();
+        $row[] = array('data' => drupal_render($form['status'][$plugin_name]), 'align' => 'left');
+        $row[] = '<strong>'. drupal_render($form['name'][$plugin_name]) .'</strong>';
+        $row[] = array('data' => drupal_render($form['description'][$plugin_name]), 'class' => 'description');
+        $row[] = array('data' => drupal_render($form['weight'][$plugin_name]), 'class' => 'weight');
+        if ($title === t('Enabled plugins')) {
+           $row[] = array('data' => l(t('edit settings'),
+             'admin/settings/linktocontent/' . $plugin_name));
+        }
+        $rows[] = $row;
+      }
+      $fieldset = array(
+        '#title' => $title,
+        '#collapsed' => ($title === t('Disabled plugins')),
+        '#collapsible' => true,
+        '#value' => theme('table',
+          (($title === t('Enabled plugins')) ? array_merge($header, array(t('Operations'))) : $header),
+          $rows,
+          array('summary' => $val['summary'])));
+      $output .= theme('fieldset', $fieldset);
+    }
+  }
+
+  $output .= drupal_render($form);
+  return $output;
+}
+
+/** @} End of addtogroup themeable */
