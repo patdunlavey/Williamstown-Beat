@@ -1,30 +1,26 @@
 <?php
-// $Id: views-slideshow-singleframe.tpl.php,v 1.1.2.1.2.3 2009/09/26 22:20:50 redndahead Exp $
+// $Id: views-slideshow-singleframe.tpl.php,v 1.1.2.1.2.7 2010/03/01 11:05:12 psynaptic Exp $
 
 /**
- *  @file
- *  Views Slideshow: Single Frame
+ * @file
+ * Views Slideshow: Single Frame template file.
  */
-
-  // these are hidden elements, used to cycle through the main div
-  $hidden_elements = theme('views_slideshow_singleframe_no_display_section', $view, $rows, $id, $options['mode'], $teaser);
-  if ($options['singleframe']['controls'] == 1) {
-    print theme('views_slideshow_singleframe_controls',$id,$view,$options);
-  }
-  if ($options['singleframe']['pager'] == 1) {
-    print theme('views_slideshow_singleframe_pager', $id, $view, $options);
-  }
-  if ($options['singleframe']['image_count'] == 1) {
-    print theme('views_slideshow_singleframe_image_count', $id, $view, $options);
-  }
-  print theme('views_slideshow_main_section', $id, $hidden_elements, 'singleframe');
-  if ($options['singleframe']['controls'] == 2) {
-    print theme('views_slideshow_singleframe_controls',$id,$view,$options);
-  }
-  if ($options['singleframe']['pager'] == 2) {
-    print theme('views_slideshow_singleframe_pager', $id, $view, $options);
-  }
-  if ($options['singleframe']['image_count'] == 2) {
-    print theme('views_slideshow_singleframe_image_count', $id, $view, $options);
-  }
 ?>
+
+<?php if ($controls_top || $pager_top || $image_count_top): ?>
+  <div class="views-slideshow-controls-top clear-block">
+    <?php print $controls_top; ?>
+    <?php print $pager_top; ?>
+    <?php print $image_count_top; ?>
+  </div>
+<?php endif; ?>
+
+<?php print $slideshow; ?>
+
+<?php if ($controls_bottom || $pager_bottom || $image_count_bottom): ?>
+  <div class="views-slideshow-controls-bottom clear-block">
+    <?php print $controls_bottom; ?>
+    <?php print $pager_bottom; ?>
+    <?php print $image_count_bottom; ?>
+  </div>
+<?php endif; ?>

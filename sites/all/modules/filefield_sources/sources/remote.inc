@@ -1,5 +1,5 @@
 <?php
-// $Id: remote.inc,v 1.2 2009/09/20 20:57:20 quicksketch Exp $
+// $Id: remote.inc,v 1.5 2010/02/21 04:47:43 quicksketch Exp $
 
 /**
  * @file
@@ -82,6 +82,7 @@ function filefield_source_remote_process($element, $edit, &$form_state, $form) {
   $element['filefield_remote']['url'] = array(
     '#type' => 'textfield',
     '#description' => filefield_sources_element_validation_help($element),
+    '#maxlength' => NULL,
   );
 
   $element['filefield_remote']['transfer'] = array(
@@ -112,7 +113,7 @@ function filefield_source_remote_value($element, &$item) {
     $field = content_fields($element['#field_name'], $element['#type_name']);
     $url = $item['filefield_remote']['url'];
     $pathinfo = pathinfo($url);
-    $filename = basename($url);
+    $filename = rawurldecode(basename($url));
     $filepath = file_create_filename($filename, file_directory_temp());
 
     if (empty($pathinfo['extension'])) {
@@ -142,7 +143,8 @@ function filefield_source_remote_value($element, &$item) {
     curl_setopt($ch, CURLOPT_HEADER, TRUE);
     curl_setopt($ch, CURLOPT_NOBODY, TRUE);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+    // Causes a warning if PHP safe mode is on.
+    @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
     curl_exec($ch);
     $info = curl_getinfo($ch);
     curl_close($ch);

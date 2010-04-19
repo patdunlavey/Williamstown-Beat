@@ -1,5 +1,5 @@
 <?php
-// $Id: nodereference_url.module,v 1.23 2010/03/02 17:35:34 quicksketch Exp $
+// $Id: nodereference_url.module,v 1.27 2010/04/07 07:10:25 quicksketch Exp $
 
 /**
  * @file
@@ -137,9 +137,19 @@ function nodereference_url_build_link($node, $field, $teaser = FALSE) {
           $link['query'] = 'destination='. urlencode(drupal_get_path_alias('node/'. $node->nid));
         }
       }
-      if (module_exists('og') && $group_node = og_determine_context_get_group($node)) {
-        $link['query'] = isset($link['query']) ? $link['query'] . '&' : '';
-        $link['query'] .= 'gids[]=' . $group_node->nid;
+      if (module_exists('og')) {
+        // First try to get context based on the current page URL.
+        $group_node = og_get_group_context();
+
+        // Otherwise try getting the context based on the node being referenced.
+        if (!$group_node) {
+          $group_node = og_determine_context_get_group($node);
+        }
+
+        if ($group_node) {
+          $link['query'] = isset($link['query']) ? $link['query'] . '&' : '';
+          $link['query'] .= 'gids[]=' . $group_node->nid;
+        }
       }
     }
   }
@@ -347,8 +357,8 @@ function nodereference_url_widget(&$form, &$form_state, $field, $items, $delta =
 
   // Check that the NID is a valid reference.
   if (!empty($referenced_nid)) {
-    $valid_options = optionwidgets_options($field);
-    if (!isset($valid_options[$referenced_nid])) {
+    $reference = _nodereference_potential_references($field, '', 'equals', array($referenced_nid), 1);
+    if (empty($reference)) {
       $referenced_nid = NULL;
     }
   }
@@ -357,7 +367,7 @@ function nodereference_url_widget(&$form, &$form_state, $field, $items, $delta =
   if (empty($referenced_nid) || (!empty($field['widget']['edit_fallback']) && !empty($items))) {
     // If not on a node/add page (such as editing a node that does not yet have
     // a reference), switch to using an autocomplete widget.
-    if ($field['widget']['fallback'] == 'page_not_found' && nodereference_url_get_nid($field_name) === FALSE) {
+    if (in_array($field['widget']['fallback'], array('page_not_found', 'leave_blank')) && nodereference_url_get_nid($field_name) === FALSE) {
       $field['widget']['fallback'] = 'autocomplete';
     }
 
@@ -386,13 +396,9 @@ function nodereference_url_widget(&$form, &$form_state, $field, $items, $delta =
         '#element_validate' => array('nodereference_url_autocomplete_validate'),
       );
     }
-    // Fallback to an empty field.
-    else {
-      $referenced_nid = '';
-    }
   }
 
-  if (isset($referenced_nid) && (empty($field['widget']['edit_fallback']))) {
+  if (isset($referenced_nid) && (empty($element['#type']))) {
     $element[0]['nid'] = array(
       '#title' => $field['widget']['label'],
       '#type' => 'nodereference_url',
@@ -477,6 +483,10 @@ function nodereference_url_get_nid($field_name) {
         $referenced_nid = FALSE;
         break;
       }
+    }
+
+    if ($referenced_nid) {
+      break;
     }
   }
 

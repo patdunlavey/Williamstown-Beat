@@ -1,48 +1,26 @@
 <?php
-// $Id: views-slideshow-thumbnailhover.tpl.php,v 1.1.2.1.2.3 2009/09/26 22:20:50 redndahead Exp $
+// $Id: views-slideshow-thumbnailhover.tpl.php,v 1.1.2.1.2.9 2010/04/17 04:29:54 redndahead Exp $
 
 /**
- *  @file
- *  Views Slideshow: Thumbnail Hover
+ * @file
+ * Views Slideshow: Thumbnail Hover template file.
  */
-
-  $base = drupal_get_path('module', 'views_slideshow_thumbnailhover');
-
-  $js = theme('views_slideshow_div_js', $rows, $options, $id);
-  drupal_add_js($js, 'inline');
-
-  if ($options['thumbnailhover']['controls'] == 1) {
-    print theme('views_slideshow_thumbnailhover_controls', $id, $view, $options);
-  }
-  
-  if ($options['thumbnailhover']['image_count'] == 1) {
-    print theme('views_slideshow_thumbnailhover_image_count', $id, $view, $options);
-  }
-  
-  $teaser = ($options['thumbnailhover']['hover_breakout'] == 'teaser' ? TRUE : FALSE);
-  $output = '';
-  $view_teasers = FALSE;
-
-  // As we're using the 'thumbnail hover' mode, then we need to display all the view thumbnails.
-  $view_teasers = theme('views_slideshow_thumbnailhover_breakout_teasers', $rows, $id);
-  if (!$options['thumbnailhover']['teasers_last']) {
-    $output .= $view_teasers;
-  }
-
-  // These are hidden elements, used to cycle through the main div
-  $hidden_elements = theme('views_slideshow_thumbnailhover_no_display_section', $view, $rows, $id, $options['mode'], $teaser);
-  $output .= theme('views_slideshow_main_section', $id, $hidden_elements, 'thumbnailhover');
-
-  if ($view_teasers && $options['thumbnailhover']['teasers_last']) {
-    $output .= $view_teasers;
-  }
-  if ($options['thumbnailhover']['controls'] == 2) {
-    print theme('views_slideshow_thumbnailhover_controls',$id,$view,$options);
-  }
-  
-  if ($options['thumbnailhover']['image_count'] == 2) {
-    print theme('views_slideshow_thumbnailhover_image_count', $id, $view, $options);
-  }
-  print $output;
-
 ?>
+
+<?php if ($controls_top || $image_count_top || $teasers_top): ?>
+  <div class="views-slideshow-controls-top clear-block">
+    <?php print $controls_top; ?>
+    <?php print $pager_top; ?>
+    <?php print $breakout_top; ?>
+  </div>
+<?php endif; ?>
+
+<?php print $slideshow; ?>
+
+<?php if ($teasers_bottom || $controls_bottom || $image_count_bottom): ?>
+  <div class="views-slideshow-controls-bottom clear-block">
+    <?php print $breakout_bottom; ?>
+    <?php print $controls_bottom; ?>
+    <?php print $image_count_bottom; ?>
+  </div>
+<?php endif; ?>

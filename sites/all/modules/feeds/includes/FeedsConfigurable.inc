@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsConfigurable.inc,v 1.10 2010/02/19 23:11:06 alexb Exp $
+// $Id: FeedsConfigurable.inc,v 1.12 2010/02/28 17:16:25 alexb Exp $
 
 /**
  * @file
@@ -13,7 +13,9 @@ class FeedsNotExistingException extends Exception {
 }
 
 /**
- * A configurable class.
+ * Base class for configurable classes. Captures configuration handling, form
+ * handling and distinguishes between in-memory configuration and persistent
+ * configuration.
  */
 abstract class FeedsConfigurable {
 
@@ -236,4 +238,5 @@ function feeds_config_form_submit($form, &$form_state) {
   $form['#configurable']->addConfig($form_state['values']);
   $form['#configurable']->save();
   drupal_set_message(t('Your changes have been saved.'));
+  feeds_cache_clear(FALSE);
 }

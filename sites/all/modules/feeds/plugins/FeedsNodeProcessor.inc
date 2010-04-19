@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsNodeProcessor.inc,v 1.22 2010/02/10 23:49:35 alexb Exp $
+// $Id: FeedsNodeProcessor.inc,v 1.26 2010/04/12 00:30:33 alexb Exp $
 
 /**
  * @file
@@ -40,7 +40,7 @@ class FeedsNodeProcessor extends FeedsProcessor {
 
           // If updating populate nid and vid avoiding an expensive node_load().
           $node->nid = $nid;
-          $node->vid = db_result(db_query('SELECT vid FROM {node} WHERE nid = %d', $nid));
+          $node->vid = db_result(db_query("SELECT vid FROM {node} WHERE nid = %d", $nid));
           $batch->updated++;
         }
         else {
@@ -68,12 +68,6 @@ class FeedsNodeProcessor extends FeedsProcessor {
 
         // Execute mappings from $item to $node.
         $this->map($item, $node);
-
-        // Add attributes inherited from the source feed node to the node.
-        if ($source->feed_nid) {
-          $feed_node = node_load($source->feed_nid);
-          $this->inherit($feed_node, $node);
-        }
 
         // Save the node.
         node_save($node);
@@ -104,14 +98,14 @@ class FeedsNodeProcessor extends FeedsProcessor {
    */
   public function clear(FeedsBatch $batch, FeedsSource $source) {
     if (empty($batch->total)) {
-      $batch->total = db_result(db_query("SELECT COUNT(nid) FROM {feeds_node_item} WHERE feed_nid = %d", $source->feed_nid));
+      $batch->total = db_result(db_query("SELECT COUNT(nid) FROM {feeds_node_item} WHERE id = '%s' AND feed_nid = %d", $source->id, $source->feed_nid));
     }
-    $result = db_query_range('SELECT nid FROM {feeds_node_item} WHERE feed_nid = %d', $source->feed_nid, 0, variable_get('feeds_node_batch_size', FEEDS_NODE_BATCH_SIZE));
+    $result = db_query_range("SELECT nid FROM {feeds_node_item} WHERE id = '%s' AND feed_nid = %d", $source->id, $source->feed_nid, 0, variable_get('feeds_node_batch_size', FEEDS_NODE_BATCH_SIZE));
     while ($node = db_fetch_object($result)) {
       _feeds_node_delete($node->nid);
       $batch->deleted++;
     }
-    if (db_result(db_query_range('SELECT nid FROM {feeds_node_item} WHERE feed_nid = %d', $source->feed_nid, 0, 1))) {
+    if (db_result(db_query_range("SELECT nid FROM {feeds_node_item} WHERE id = '%s' AND feed_nid = %d", $source->id, $source->feed_nid, 0, 1))) {
       return (1.0 / ($batch->total + 1)) * $batch->deleted;
     }
 
@@ -172,7 +166,6 @@ class FeedsNodeProcessor extends FeedsProcessor {
       'update_existing' => 0,
       'expire' => FEEDS_EXPIRE_NEVER,
       'mappings' => array(),
-      'inherit' => array(),
     );
   }
 
@@ -203,22 +196,6 @@ class FeedsNodeProcessor extends FeedsProcessor {
       '#description' => t('Select after how much time nodes should be deleted. The node\'s published date will be used for determining the node\'s age, see Mapping settings.'),
       '#default_value' => $this->config['expire'],
     );
-    $disabled = !feeds_importer($this->id)->config['content_type'];
-    $form['inherit'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Inherit from feed node'),
-      '#description' => $disabled ? t('Only available for importers that are attached to a content type (see Basic settings).') : t('Copy one or more properties from the feed node to feed item nodes created by this importer.'),
-      '#tree' => TRUE,
-    );
-    foreach ($this->getInheritors() as $key => $info) {
-      $form['inherit'][$key] = array(
-       '#type' => 'checkbox',
-       '#title' => $info['name'],
-       '#description' => $info['description'],
-       '#default_value' => $disabled ? 0 : $this->config['inherit'][$key],
-       '#disabled' => $disabled,
-     );
-    }
     return $form;
   }
 
@@ -297,10 +274,10 @@ class FeedsNodeProcessor extends FeedsProcessor {
     foreach ($this->uniqueTargets($source_item) as $target => $value) {
       switch ($target) {
         case 'url':
-          $nid = db_result(db_query('SELECT nid FROM {feeds_node_item} WHERE feed_nid = %d AND url = "%s"', $source->feed_nid, $value));
+          $nid = db_result(db_query("SELECT nid FROM {feeds_node_item} WHERE feed_nid = %d AND id = '%s' AND url = '%s'", $source->feed_nid, $source->id, $value));
           break;
         case 'guid':
-          $nid = db_result(db_query('SELECT nid FROM {feeds_node_item} WHERE feed_nid = %d AND guid = "%s"', $source->feed_nid, $value));
+          $nid = db_result(db_query("SELECT nid FROM {feeds_node_item} WHERE feed_nid = %d AND id = '%s' AND guid = '%s'", $source->feed_nid, $source->id, $value));
           break;
       }
       if ($nid) {
@@ -346,139 +323,14 @@ class FeedsNodeProcessor extends FeedsProcessor {
    * @return Empty string if no item is found, hash otherwise.
    */
   protected function getHash($nid) {
-    $hash = db_result(db_query('SELECT hash FROM {feeds_node_item} WHERE nid = %d', $nid));
+    $hash = db_result(db_query("SELECT hash FROM {feeds_node_item} WHERE nid = %d", $nid));
     if ($hash) {
       // Return with the hash.
       return $hash;
     }
     return '';
   }
-
-  /**
-   * Invoke inheritors depending on configuration.
-   */
-  protected function inherit($item_node, $feed_node) {
-    $inheritors = $this->getInheritors();
-    foreach ($this->config['inherit'] as $key => $value) {
-      if ($value && function_exists($inheritors[$key]['callback'])) {
-        $inheritors[$key]['callback']($feed_node, $item_node);
-      }
-    }
-  }
-
-  /**
-   * Get a list of available inheritors.
-   */
-  protected function getInheritors() {
-    $inheritors = array();
-    if (module_exists('og')) {
-     $inheritors['og'] = array(
-       'name' => t('Inherit organic group(s)'),
-       'description' => t('Feed item nodes inherit organic group settings from feed node.'),
-       'callback' => 'feeds_inherit_og',
-     );
-    }
-    if (module_exists('translation')) {
-      $inheritors['translation'] = array(
-        'name' => t('Inherit language'),
-        'description' => t('Feed nodes inherit language settings from feed node.'),
-        'callback' => 'feeds_inherit_translation',
-      );
-    }
-    $inheritors['taxonomy'] = array(
-      'name' => t('Inherit taxonomy'),
-      'description' => t('Feed item nodes inherit taxonomy terms from feed node.'),
-       'callback' => 'feeds_inherit_taxonomy',
-    );
-    $inheritors['user'] = array(
-      'name' => t('Inherit author'),
-      'description' => t('Feed item nodes will be authored by the same user as the feed node.'),
-      'callback' => 'feeds_inherit_user',
-    );
-    drupal_alter('feeds_node_processor_inheritors', $inheritors);
-    return $inheritors;
-  }
 }
-
-/**
- * @defgroup inheritors Inheritors for Feeds node processor.
- * @{
- */
-
-/**
- * Inherit OG properties.
- */
-function feeds_inherit_og($item_node, $feed_node) {
-  if (isset($feed_node->og_public) ) {
-    if (!isset($item_node->og_public)) {
-      $item_node->og_public = 1;
-    }
-    $item_node->og_public = $item_node->og_public & $feed_node->og_public;
-  }
-  if (isset($feed_node->og_groups)) {
-    if (!(isset($item_node->og_groups) && is_array($item_node->og_groups))) {
-      $item_node->og_groups = array();
-    }
-    $item_node->og_groups = array_merge($feed_node->og_groups, $item_node->og_groups);
-    foreach ($item_node->og_groups as $gid) {
-      if ($gid != 0) {
-        $transformed_groups[$gid] = $gid;
-      }
-    }
-    $item_node->og_groups = $transformed_groups;
-  }
-  if (isset($feed_node->og_groups_names)) {
-    if (!is_array($item_node->og_groups_names)) {
-      $item_node->og_groups_names = array();
-    }
-    $item_node->og_groups_names = array_merge($feed_node->og_groups_names, $item_node->og_groups_names);
-  }
-}
-
-/**
- * Inherit translation properties.
- */
-function feeds_inherit_translation($item_node, $feed_node) {
-  $item_node->language = $feed_node->language;
-}
-
-/**
- * Inherit taxonomy properties.
- */
-function feeds_inherit_taxonomy($item_node, $feed_node) {
-  $terms = taxonomy_node_get_terms($feed_node);
-  if (!(isset($item_node->taxonomy) && is_array($item_node->taxonomy))) {
-    $item_node->taxonomy = array();
-  }
-  foreach ($terms as $tid => $term) {
-    $vid = $term->vid;
-    $vocabulary = taxonomy_vocabulary_load($vid);
-    if ($vocabulary->multiple) {
-      if (!(isset($item_node->taxonomy[$vid]) && is_array($item_node->taxonomy[$vid]))) {
-        $item_node->taxonomy[$vid] = array();
-      }
-      if (!in_array($tid, $item_node->taxonomy[$vid])) {
-        $item_node->taxonomy[$vid][$tid] = $tid;
-      }
-    }
-    else {
-      if (!$item_node->taxonomy[$vid]) {
-        $item_node->taxonomy[$vid] = $tid;
-      }
-    }
-  }
-}
-
-/**
- * Inherit user properties.
- */
-function feeds_inherit_user($item_node, $feed_node) {
-  $item_node->uid = $feed_node->uid;
-}
-
-/**
- * @}
- */
 
 /**
  * Copy of node_delete() that circumvents node_access().
@@ -489,8 +341,8 @@ function _feeds_node_delete($nid) {
 
   $node = node_load($nid);
 
-  db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
-  db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+  db_query("DELETE FROM {node} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {node_revisions} WHERE nid = %d", $node->nid);
 
   // Call the node-specific callback (if any):
   node_invoke($node, 'delete');

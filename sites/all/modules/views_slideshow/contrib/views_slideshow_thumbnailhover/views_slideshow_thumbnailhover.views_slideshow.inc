@@ -1,22 +1,21 @@
 <?php
-// $Id: views_slideshow_thumbnailhover.views_slideshow.inc,v 1.1.2.1.2.8 2009/09/28 21:37:38 redndahead Exp $
+// $Id: views_slideshow_thumbnailhover.views_slideshow.inc,v 1.1.2.1.2.19 2010/04/17 04:29:54 redndahead Exp $
 
 /**
- *  @file
- *  The default options available with Views Slideshow: ThumbnailHover.
+ * @file
+ * The default options available with Views Slideshow: ThumbnailHover.
  */
 
 function views_slideshow_thumbnailhover_views_slideshow_modes() {
   $options = array(
-    'thumbnailhover' => t('ThumbnailHover'),
+    'views_slideshow_thumbnailhover' => t('ThumbnailHover'),
   );
   return $options;
 }
 
 function views_slideshow_thumbnailhover_views_slideshow_option_definition() {
-  $options['thumbnailhover'] = array(
+  $options['views_slideshow_thumbnailhover'] = array(
     'contains' => array (
-      'default' => (module_exists('hoverintent') ? 'hoverIntent' : 'hover'),
       'timeout' => array('default' => 5000),
       'sort' => array('default' => 1),
       'effect' => array('default' => 'fade'),
@@ -24,104 +23,152 @@ function views_slideshow_thumbnailhover_views_slideshow_option_definition() {
       'fade_value' => array('default' => 0.25),
       'hover_breakout' => array('default' => 'teaser'),
       'teasers_last' => array('default' => TRUE),
-      'cleartype' => 'true',
-      'cleartypenobg' => 'false',
+      'hover' => array('default' => module_exists('hoverintent') ? 'hoverIntent' : 'hover'),
+      'main_fields' => array('default' => array()),
+      'breakout_fields' => array('default' => array()),
+      'delay' => array('default' => 0),
+      'fixed_height' => array('default' => 1),
+      'random' => array('default' => 0),
+      'pause' => array('default' => 1),
+      'pause_on_click' => array('default' => 0),
+      'pager_event' => array('default' => 'hover'),
+      'controls' => array('default' => 0),
+      'image_count' => array('default' => 0),
+      'sync' => array('default' => 1),
+      'advanced' => array('default' => ''),
+      'ie' => array(
+        'contains' => array(
+          'cleartype' => array('default' => 'true'),
+          'cleartypenobg' => array('default' => 'false'),
+        ),
+      ),
+      'advanced' => array('default' => ''),
     ),
   );
   return $options;
 }
 
 function views_slideshow_thumbnailhover_views_slideshow_options_form(&$form, &$form_state, &$view) {
-  $form['thumbnailhover'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('ThumbnailHover rotator options'),
-    '#collapsible' => TRUE,
-    '#attributes' => array('class' => 'thumbnailhover'),
-  );
-  
   if (module_exists('hoverintent')) {
     $options = array('hover' => t('Hover'));
     $options['hoverIntent'] = t('HoverIntent');
-    $form['thumbnailhover']['hover'] = array(
+    $form['views_slideshow_thumbnailhover']['hover'] = array(
       '#type' => 'radios',
       '#title' => t('Mouse hover'),
       '#options' => $options,
-      '#default_value' => $view->options['thumbnailhover']['hover'],
+      '#default_value' => $view->options['views_slideshow_thumbnailhover']['hover'],
       '#description' => t('The !hoverintent, if installed, adds the %hoverintent option here. Selecting it causes a delay when the mouse hovers, to stop quick flybys from triggering the behavior. Selecting %hoverdefault chooses the default mouse behavior.', array('!hoverintent' => l(t('HoverIntent module'), 'http://drupal.org/project/hoverintent'), '%hoverintent' => t('HoverIntent'), '%hoverdefault' => t('Hover'))),
     );
   }  
   $options = array(
+    'title' => t('Title'),
     'teaser' => t('Teaser'),
     'full' => t('Full'),
   );
-  $form['thumbnailhover']['hover_breakout'] = array(
-    '#type' => 'radios',
-    '#title' => t('Hover breakout'),
-    '#options' => $options,
-    '#default_value' => $view->options['thumbnailhover']['hover_breakout'],
-    '#description' => t("Hover breakout determines how to display the breakout element of the %thumbnail mode, either as a teaser or full node. It is ignored in %single mode.", array('%thumbnail' => t('Thumbnail hover'), '%single' => t('Single frame'))),
-  );
-  $form['thumbnailhover']['teasers_last'] = array(
+  if ($view->row_plugin->uses_fields()) {
+    $options = array();
+    foreach ($view->display->handler->get_handlers('field') as $field => $handler) {
+      $options[$field] = $handler->ui_name();
+    }
+    $form['views_slideshow_thumbnailhover']['main_fields'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Main frame fields'),
+      '#options' => $options,
+      '#default_value' => $view->options['views_slideshow_thumbnailhover']['main_fields'],
+      '#description' => t("Choose the fields that will appear in the main slide."),
+    );
+    $form['views_slideshow_thumbnailhover']['breakout_fields'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Breakout fields'),
+      '#options' => $options,
+      '#default_value' => $view->options['views_slideshow_thumbnailhover']['breakout_fields'],
+      '#description' => t("Choose the fields that will appear in the breakout thumbnails."),
+    );
+  } 
+  else {
+    $form['views_slideshow_thumbnailhover']['hover_breakout'] = array(
+      '#type' => 'radios',
+      '#title' => t('Hover breakout'),
+      '#options' => $options,
+      '#default_value' => $view->options['views_slideshow_thumbnailhover']['hover_breakout'],
+      '#description' => t("Hover breakout determines how to display the breakout element of the %thumbnail mode, either as a teaser or full node when the row style is node.", array('%thumbnail' => t('Thumbnail hover'))),
+    );
+  }
+  $form['views_slideshow_thumbnailhover']['teasers_last'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Display teasers last'),
-    '#default_value' => $view->options['thumbnailhover']['teasers_last'],
-    '#description' => t('When the mode is thumbnail hover, this determines whether to print the teasers first or second.'),
+    '#title' => t('Display breakout fields last'),
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['teasers_last'],
+    '#description' => t('When the mode is thumbnail hover, this determines whether to print the breakout fields first or second.'),
   );
-  $form['thumbnailhover']['timeout'] = array(
+  $form['views_slideshow_thumbnailhover']['timeout'] = array(
     '#type' => 'textfield',
     '#title' => t('Timer delay'),
-    '#default_value' => $view->options['thumbnailhover']['timeout'],
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['timeout'],
     '#description' => t('Amount of time in milliseconds between transitions.'),
   );
-  $form['thumbnailhover']['delay'] = array(
+  $form['views_slideshow_thumbnailhover']['delay'] = array(
     '#type' => 'textfield',
     '#title' => t('Initial slide delay offset'),
-    '#default_value' => (isset($view->options['thumbnailhover']['delay'])) ? $view->options['thumbnailhover']['delay'] : 0,
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['delay'],
     '#description' => t('Amount of time in milliseconds for the first slide to transition. This number will be added to Timer delay to create the initial delay.  For example if Timer delay is 4000 and Initial delay is 2000 then the first slide will change at 6000ms (6 seconds).  If Initial delay is -2000 then the first slide will change at 2000ms (2 seconds).')
   );
-  $form['thumbnailhover']['speed'] = array(
+  $form['views_slideshow_thumbnailhover']['speed'] = array(
     '#type' => 'textfield',
     '#title' => t('Speed'),
-    '#default_value' => $view->options['thumbnailhover']['speed'],
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['speed'],
     '#description' => t('Time in milliseconds that each transition lasts. Numeric only!'),  
   );
-  $form['thumbnailhover']['random'] = array(
+  $form['views_slideshow_thumbnailhover']['fixed_height'] = array(
+    '#type' => 'select',
+    '#title' => t('Make the slide window height fit the largest slide'),
+    '#options' => array(1 => t('Yes'),0 => t('No')),
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['fixed_height'],
+    '#description' => t('If this is set to no then if the slides are different sizes the height of the slide area will change as the slides change.'),
+  );
+  $form['views_slideshow_thumbnailhover']['random'] = array(
     '#type' => 'radios',
     '#title' => t('Random'),
     '#description' => t('This option controls the order items are displayed. The default setting, False, uses the views ordering. True will cause the images to display in a random order.'),
     '#options' => array(0 => t('False'), 1 => t('True')),
-    '#default_value' => isset($view->options['thumbnailhover']['random'])? $view->options['thumbnailhover']['random'] : 0,
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['random'],
   );
-  $form['thumbnailhover']['pause'] = array(
+  $form['views_slideshow_thumbnailhover']['pause'] = array(
     '#type' => 'radios',
     '#title' => t('Pause'),
     '#options' => array(1 => t('Yes'),2 => t('No')),
-    '#default_value' => $view->options['thumbnailhover']['pause'],
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['pause'],
     '#description' => t('Pause when hovering on the slideshow image.'),
+  );
+  $form['views_slideshow_thumbnailhover']['pause_on_click'] = array(
+    '#type' => 'radios',
+    '#title' => t('Pause On Click'),
+    '#options' => array(1 => t('Yes'), 0 => t('No')),
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['pause_on_click'],
+    '#description' => t('Pause when the slide is clicked.'),
   );
   $options = array('mouseover' => t('Hover'), 'click' => t('Click'));
   if ((module_exists('jq') && jq_add('hoverIntent')) || (module_exists('hoverintent') && hoverintent_add())) {
     $options['hoverIntent'] = 'hoverIntent';
   }
-  $form['thumbnailhover']['pager_event'] = array(
+  $form['views_slideshow_thumbnailhover']['pager_event'] = array(
     '#type' => 'select',
     '#title' => t('Pager Event'),
     '#options' => $options,
-    '#default_value' => (isset($view->options['thumbnailhover']['pager_event']) ? $view->options['thumbnailhover']['pager_event'] : 'hover'),
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['pager_event'],
     '#description' => t('Which event should be used to select an image from the breakout list.'),
   );
-  $form['thumbnailhover']['controls'] = array(
+  $form['views_slideshow_thumbnailhover']['controls'] = array(
     '#type' => 'select',
     '#title' => t('Controls'),
     '#options' => array(0 => t('None'),1 => t('Top'),2 => t('Bottom')),
-    '#default_value' => (isset($view->options['thumbnailhover']['controls'])) ? $view->options['thumbnailhover']['controls'] : 0,
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['controls'],
     '#description' => t('Determine if controls for the slideshow (start/stop/next/previous) should appear, and if so whether they should appear before or after the slideshow.'),
   );
-  $form['thumbnailhover']['image_count'] = array(
+  $form['views_slideshow_thumbnailhover']['image_count'] = array(
     '#type' => 'select',
     '#title' => t('Image Counter'),
     '#options' => array(0 => t('None'),1 => t('Top'),2 => t('Bottom')),
-    '#default_value' => (isset($view->options['thumbnailhover']['image_count'])) ? $view->options['thumbnailhover']['image_count'] : 0,
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['image_count'],
     '#description' => t('Determine if Image Counter (1 of 4) should be displayed and if so whether they should appear before or after the slideshow.'),
   );
   $options = array(
@@ -154,52 +201,59 @@ function views_slideshow_thumbnailhover_views_slideshow_options_form(&$form, &$f
     'wipe' => 'wipe',
     'zoom' => 'zoom',
   );
-  $form['thumbnailhover']['effect'] = array(
+  $form['views_slideshow_thumbnailhover']['effect'] = array(
     '#type' => 'select',
     '#title' => t('Effect'),
     '#options' => $options,
-    '#default_value' => $view->options['thumbnailhover']['effect'],
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['effect'],
     '#description' => t('The transition effect that will be used to change between images. Not all options below may be relevant depending on the effect.'),
   );
-  $form['thumbnailhover']['sync'] = array(
+  $form['views_slideshow_thumbnailhover']['sync'] = array(
     '#type' => 'radios',
     '#title' => t('Sync'),
     '#options' => array(1 => t('Yes'), 2 => t('No')),
-    '#default_value' =>$view->options['thumbnailhover']['sync'],
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['sync'],
     '#description' => t('The sync option controls whether the slide transitions occur simultaneously. The default is yes which means that the current slide transitions out as the next slide transitions in. By setting the sync option to no you can get some interesting twists on your transitions.'),  
   );
-  $form['thumbnailhover']['advanced'] = array(
+  $form['views_slideshow_thumbnailhover']['nowrap'] = array(
+    '#type' => 'select',
+    '#title' => t('End slideshow after last slide'),
+    '#options' => array(1 => t('Yes'), 0 => t('No')),
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['nowrap'],
+    '#description' => t('If you select yes the slideshow will end when it gets to the last slide.'),  
+  );
+  $form['views_slideshow_thumbnailhover']['advanced'] = array(
     '#type' => 'textarea',
     '#title' => t('Advanced Options'),
-    '#default_value' =>(isset($view->options['thumbnailhover']['advanced'])) ? $view->options['thumbnailhover']['advanced'] : '',
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['advanced'],
     '#description' => t('Add other jQuery cycle options one per line.  Ex. height: 350  !url', array('!url' => l('Click here for the additional options to add.', 'http://malsup.com/jquery/cycle/options.html'))),
   );
-  $form['thumbnailhover']['ie'] = array(
+  $form['views_slideshow_thumbnailhover']['ie'] = array(
     '#type' => 'fieldset',
     '#title' => t('Internet Explorer Options'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['thumbnailhover']['ie']['cleartype'] = array(
+  $form['views_slideshow_thumbnailhover']['ie']['cleartype'] = array(
     '#type' => 'radios',
     '#title' => t('ClearType'),
     '#options' => array('true' => t('True'), 'false' => t('False')),
-    '#default_value' =>(isset($view->options['thumbnailhover']['ie']['cleartype'])) ? $view->options['thumbnailhover']['ie']['cleartype'] : 'true',
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['ie']['cleartype'],
     '#description' => t('True if clearType corrections should be applied (for IE).  Some background issues could be fixed by setting this to false.'),
   );
-  $form['thumbnailhover']['ie']['cleartypenobg'] = array(
+  $form['views_slideshow_thumbnailhover']['ie']['cleartypenobg'] = array(
     '#type' => 'radios',
     '#title' => t('ClearType Background'),
     '#options' => array('true' => t('True'), 'false' => t('False')),
-    '#default_value' =>(isset($view->options['thumbnailhover']['ie']['cleartypenobg'])) ? $view->options['thumbnailhover']['ie']['cleartypenobg'] : 'false',
+    '#default_value' => $view->options['views_slideshow_thumbnailhover']['ie']['cleartypenobg'],
     '#description' => t('Set to true to disable extra cleartype fixing (leave false to force background color setting on slides)'),
   );
 }
 function views_slideshow_thumbnailhover_views_slideshow_options_form_validate(&$form, &$form_state, &$view) {
-  if (!is_numeric($form_state['values']['style_options']['thumbnailhover']['speed'])) {
-    form_error($form['thumbnailhover']['speed'], t('!setting must be numeric!',array('!setting' => 'Speed')));
+  if (!is_numeric($form_state['values']['style_options']['views_slideshow_thumbnailhover']['speed'])) {
+    form_error($form['views_slideshow_thumbnailhover']['speed'], t('!setting must be numeric!',array('!setting' => 'Speed')));
   }
-  if (!is_numeric($form_state['values']['style_options']['thumbnailhover']['timeout'])) {
-    form_error($form['thumbnailhover']['timeout'],t('!setting must be numeric!',array('!setting' => 'Timeout')));
+  if (!is_numeric($form_state['values']['style_options']['views_slideshow_thumbnailhover']['timeout'])) {
+    form_error($form['views_slideshow_thumbnailhover']['timeout'],t('!setting must be numeric!',array('!setting' => 'Timeout')));
   }
 }

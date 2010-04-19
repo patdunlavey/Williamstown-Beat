@@ -1,134 +1,189 @@
 <?php
-// $Id: views_slideshow_singleframe.theme.inc,v 1.1.2.1.2.9 2009/09/28 21:32:22 redndahead Exp $
+// $Id: views_slideshow_singleframe.theme.inc,v 1.1.2.1.2.22 2010/04/15 03:16:46 redndahead Exp $
 
 /**
- *  @file
- *  Theme & preprocess functions for the Views Slideshow: SingleFrame module.
+ * @file
+ * Theme & preprocess functions for the Views Slideshow: SingleFrame module.
  */
 
 /**
- *  Implement template_preprocess_hook_THEMENAME().
+ * Implements template_preprocess_hook_THEMENAME().
  */
 function template_preprocess_views_slideshow_singleframe(&$vars) {
   $options = $vars['options'];
-  $base = drupal_get_path('module', 'views_slideshow_singleframe');
-  drupal_add_js($base . '/views_slideshow.js', 'module');
-  drupal_add_css($base . '/views_slideshow.css', 'module');
-
-  $num_divs = sizeof($vars['rows']);
+  $id = $vars['id'];
+  $rows = $vars['rows'];
+  $view = $vars['view'];
 
   $settings = array_merge(
     array(
-      'num_divs' => $num_divs,
-      'hoverFunction' => $hover,
+      'num_divs' => sizeof($vars['rows']),
       'id_prefix' => '#views_slideshow_singleframe_main_',
       'div_prefix' => '#views_slideshow_singleframe_div_',
       'id' => $vars['id'],
     ),
-    $options['singleframe']
+    $options['views_slideshow_singleframe']
   );
 
   drupal_add_js(array('viewsSlideshowSingleFrame' => array('#views_slideshow_singleframe_main_'. $vars['id'] => $settings)), 'setting');
 
-}
+  $hidden_elements = theme('views_slideshow_singleframe_no_display_section', $view, $rows, $id, $options['mode']);
+  $vars['slideshow'] = theme('views_slideshow_main_section', $id, $hidden_elements, 'views_slideshow_singleframe');
 
+  $singleframe = $vars['options']['views_slideshow_singleframe'];
 
-/**
- *  These are the slideshow elements themselves; not actually displayed, but used to give the html to the main element.
- */
-function theme_views_slideshow_singleframe_no_display_section($view, $rows, $id, $mode, $teaser = TRUE) {
-  // Add support for the jQuery Cycle plugin.
-  // If we have the jQ module installed, use that to add the Cycle plugin if possible.
-  // That allows for version control.
-  if (module_exists('jq')) {
-    if (in_array('cycle', jq_plugins())) {
-      $js = jq_add('cycle');
-    }
+  if ($singleframe['controls'] == 1) {
+    $vars['controls_top'] = theme('views_slideshow_singleframe_controls', $id, $view, $options);
+  }
+  elseif ($singleframe['controls'] == 2) {
+    $vars['controls_bottom'] = theme('views_slideshow_singleframe_controls', $id, $view, $options);
   }
 
-  // Otherwise, we'll add the version included with this module.
-  if (!$js) {
-    drupal_add_js(drupal_get_path('module', 'views_slideshow') .'/js/jquery.cycle.all.min.js', 'module');
+  if ($singleframe['pager'] == 1) {
+    $vars['pager_top'] = theme('views_slideshow_singleframe_pager', $id, $view, $options);
+  }
+  elseif ($singleframe['pager'] == 2) {
+    $vars['pager_bottom'] = theme('views_slideshow_singleframe_pager', $id, $view, $options);
   }
   
-  $output = '<div id="views_slideshow_singleframe_teaser_section_' . $id . '" class="views_slideshow_singleframe_teaser_section">' . "\n";
+  if ($singleframe['image_count'] == 1) {
+    $vars['image_count_top'] = theme('views_slideshow_singleframe_image_count', $id, $view, $options);
+  }
+  elseif ($singleframe['image_count'] == 2) {
+    $vars['image_count_bottom'] = theme('views_slideshow_singleframe_image_count', $id, $view, $options);
+  }
+}
 
+/**
+ * Add the HTML for the hidden slideshow elements.
+ *
+ * @ingroup themeable
+ */
+function theme_views_slideshow_singleframe_no_display_section($view, $rows, $id, $mode) {
+  // Add the slideshow elements.
+  $attributes['id'] = "views_slideshow_singleframe_teaser_section_$id";
+  $attributes['class'] = 'views_slideshow_singleframe_teaser_section';
+  $attributes = drupal_attributes($attributes);
+
+  $output = "<div$attributes>";
   foreach ($rows as $count => $item) {
     $output .= theme('views_slideshow_singleframe_no_display_teaser', $item, $id, $count);
   }
-  $output .= "</div><!--close views_slideshow_singleframe_no_display-->\n\n";
+  $output .= "</div>\n";
+
   return $output;
 }
 
 /**
- *  The html that will be placed into the element in its turn during its frame.
+ * Views Slideshow slideshow elements.
+ *
+ * @ingroup themeable
  */
 function theme_views_slideshow_singleframe_no_display_teaser($item, $id, $count) {
-  $class = 'views_slideshow_singleframe_slide';
+  $current = $count + 1;
+  $classes = array(
+    'views_slideshow_singleframe_slide',
+    "views_slideshow_slide views-row-$current",
+  );
   if ($count) {
-    $class .= ' views_slideshow_singleframe_hidden';
+    $classes[] = 'views_slideshow_singleframe_hidden';
   }
+  $classes[] = ($count % 2) ? 'views-row-even' : 'views-row-odd';
 
-  if ($count % 2) {
-    $class .= ' views-row-even';
-  }
-  else {
-    $class .= ' views-row-odd';
-  }
-  $output = '  <div id="views_slideshow_singleframe_div_' . $id . '_' . $count . '" class="' . $class .'">' . "\n  ";
-  $output .= $item . "\n";
-  $output .= '  </div><!--close views_slideshow_singleframe_div_' . $id . '_' . $count . '-->' . "\n\n";
-  return $output;
+  $attributes['class'] = implode(' ', $classes);
+  $attributes['id'] = "views_slideshow_singleframe_div_${id}_${count}";
+  $attributes = drupal_attributes($attributes);
+
+  return "<div$attributes>$item</div>\n";
 }
 
 /**
- * Themed slideshow controls.
+ * The slideshow controls.
+ *
+ * @ingroup themeable
  */
 function theme_views_slideshow_singleframe_controls($id, $view, $options) {
-  $output = '<div class="views_slideshow_singleframe_controls" id="views_slideshow_singleframe_controls_' . $id . '">' . "\n";
+  $classes = array(
+    'views_slideshow_singleframe_controls',
+    'views_slideshow_controls',
+  );
+
+  $attributes['class'] = implode(' ', $classes);
+  $attributes['id'] = "views_slideshow_singleframe_controls_$id";
+  $attributes = drupal_attributes($attributes);
+
+  $output = "<div$attributes>";
   $output .= theme('views_slideshow_singleframe_control_previous', $id, $view, $options);
-  $output .= theme('views_slideshow_singleframe_control_pause', $id, $view, $options);
+  if ($options['views_slideshow_singleframe']['timeout']) {
+    $output .= theme('views_slideshow_singleframe_control_pause', $id, $view, $options);
+  }
   $output .= theme('views_slideshow_singleframe_control_next', $id, $view, $options);
   $output .= "</div>\n";
   return $output;
 }
 
 /**
- * Themed Previous Control
+ * Views Slideshow: "previous" control.
+ *
+ * @ingroup themeable
  */
 function theme_views_slideshow_singleframe_control_previous($id, $view, $options) {
-  return '<a href="#" id="views_slideshow_singleframe_prev_' . $id . '" class="views_slideshow_singleframe_previous">' . t('Previous') . "</a>\n";
+  return l(t('Previous'), '#', array('attributes' => array(
+    'class' => 'views_slideshow_singleframe_previous views_slideshow_previous',
+    'id' => "views_slideshow_singleframe_prev_$id",
+  )));
 }
 
 /**
- * Themed Pause Control
+ * Views Slideshow: "pause" control.
+ *
+ * @ingroup themeable
  */
 function theme_views_slideshow_singleframe_control_pause($id, $view, $options) {
-  return '<a href="#" id="views_slideshow_singleframe_playpause_' . $id . '" class="views_slideshow_singleframe_pause">' . t('Pause') . "</a>\n";
+  return l(t('Pause'), '#', array('attributes' => array(
+    'class' => 'views_slideshow_singleframe_pause views_slideshow_pause',
+    'id' => "views_slideshow_singleframe_playpause_$id",
+  )));
 }
 
 /**
- * Themed Next Control
+ * Views Slideshow: "next" control.
+ *
+ * @ingroup themeable
  */
 function theme_views_slideshow_singleframe_control_next($id, $view, $options) {
-  return '<a href="#" id="views_slideshow_singleframe_next_' . $id . '" class="views_slideshow_singleframe_next">' . t('Next') . "</a>\n";
+  return l(t('Next'), '#', array('attributes' => array(
+    'class' => 'views_slideshow_singleframe_next views_slideshow_next',
+    'id' => "views_slideshow_singleframe_next_$id",
+  )));
 }
 
+/**
+ * Views Slideshow: pager.
+ *
+ * @ingroup themeable
+ */
 function theme_views_slideshow_singleframe_pager($id, $view, $options) {
-  
-  $classes = "views_slideshow_singleframe_pager";
-  if ($options['singleframe']['pager_type'] == 1) {
-    $classes .= ' thumbnails';
-  }
-  else {
-    $classes .= ' numbered';
-  }
-  
-  $output = '<div class="' . $classes . '" id="views_slideshow_singleframe_pager_' . $id . '"></div>';
-  return $output;
+  $pager_type = $options['views_slideshow_singleframe']['pager_type'];
+
+  $attributes['class'] = "views_slideshow_singleframe_pager views_slideshow_pager$pager_type";
+  $attributes['id'] = "views_slideshow_singleframe_pager_$id";
+  $attributes = drupal_attributes($attributes);
+
+  return "<div$attributes></div>";
 }
 
+/**
+ * Views Slideshow: image counter.
+ *
+ * @ingroup themeable
+ */
 function theme_views_slideshow_singleframe_image_count($id, $view, $options) {
-  $output = '<div class="views_slideshow_singleframe_image_count" id="views_slideshow_singleframe_image_count_' . $id . '"><span class="num"></span> ' . t('of') .' <span class="total"></span></div>';
-  return $output;
+  $attributes['class'] = 'views_slideshow_singleframe_image_count views_slideshow_image_count';
+  $attributes['id'] = "views_slideshow_singleframe_image_count_$id";
+  $attributes = drupal_attributes($attributes);
+
+  $counter = '<span class="num">1</span> ' . t('of') . ' <span class="total">1</span>';
+
+  return "<div$attributes>$counter</div>";
 }

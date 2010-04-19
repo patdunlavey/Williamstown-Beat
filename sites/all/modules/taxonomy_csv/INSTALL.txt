@@ -1,33 +1,64 @@
-/* $Id: INSTALL.txt,v 1.2.2.1 2009/03/02 15:35:51 danielkm Exp $ */
+/* $Id: INSTALL.txt,v 2.3.4.9 2010/01/13 17:43:18 danielkm Exp $ */
 
 
-                         TAXONOMY CSV IMPORT
-                         ===================
+                      TAXONOMY CSV IMPORT/EXPORT
+                      ==========================
 
 
 -- REQUIREMENTS --
   --------------
-
-None.
+* Drupal default taxonomy module.
 
 
 -- INSTALLATION --
   --------------
-
 * Install as usual, see http://drupal.org/node/70151 for further information.
 
  1) Extract and copy the taxonomy_csv directory into the appropriate modules
     directory in your Drupal installation (recommended: sites/all/modules).
 
- 2) Go to Administer > Site building > Modules and enable the
-    Taxonomy CSV import module in the "Taxonomy" section. You should enable the
-    Taxonomy core module too.
+ 2) Adjust permissions of directory and files (read access).
+
+ 3) Go to Administer > Site building > Modules and enable the
+    "Taxonomy CSV import/export" module in the "Taxonomy" section.
+    Drupal "Taxonomy" core module is automatically enabled.
 
 
--- USAGE AND CONFIGURATION --
-  -------------------------
+-- UNINSTALLATION --
+  ----------------
+* As Taxonomy csv save user last used options, you can clean Drupal with the
+  "uninstall" option.
 
-* Go to Administer > Content management > Taxonomy
-  and click on the "CSV import" tab. Follow the instructions on that page.
+  1) Go to Administer > Site building > Modules > Uninstall,
+     then check "taxonomy csv import/export" and click Uninstall button.
 
-* More information in README.txt and Advanced help (Help> Taxonomy CSV import).
+  2) Remove the taxonomy_csv directory in the directory where you install it.
+
+
+-- CONFIGURATION --
+  ---------------
+* Go to Administer > User management > Roles, then check depending on user:
+  - "administer taxonomy by csv"
+  - "export taxonomy by csv"
+
+
+-- USAGE --
+  -------
+* Follow instructions in README.txt, on the main page or in advanced
+  help (Help > Taxonomy CSV import/export).
+
+* Main page access with Drupal 6:
+  - Go to: Administer > Content management > Taxonomy and click on
+    "CSV import" tab or "CSV export" tab.
+  - Direct access to CSV import at:
+    http://www.example.com/?q=admin/content/taxonomy/csv_import
+  - Direct access to CSV export at:
+    http://www.example.com/?q=admin/content/taxonomy/csv_export
+
+* Main page access With Drupal 7:
+  - Go to: Administer > Structure > Taxonomy and click on the "CSV import" tab
+    or on the "CSV export" tab.
+  - Direct access to CSV import at:
+    http://www.example.com/?q=admin/structure/taxonomy/csv_import
+  - Direct access to CSV export at:
+    http://www.example.com/?q=admin/structure/taxonomy/csv_export

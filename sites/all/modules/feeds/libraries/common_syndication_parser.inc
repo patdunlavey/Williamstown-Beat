@@ -1,5 +1,5 @@
 <?php
-// $Id: common_syndication_parser.inc,v 1.7 2010/01/28 19:57:54 alexb Exp $
+// $Id: common_syndication_parser.inc,v 1.11 2010/03/29 00:33:22 alexb Exp $
 
 /**
  * @file
@@ -260,15 +260,16 @@ function _parser_common_syndication_RDF10_parse($feed_XML) {
     }
 
     // Declaratively define mappings that determine how to construct the result object.
-    $item = _parser_common_syndication_RDF10_item($rdf_data, array(
+    $item = _parser_common_syndication_RDF10_item($rdf_data, (object)array(
       'title'       => array('rss:title', 'dc:title'),
       'description' => array('rss:description', 'dc:description', 'content:encoded'),
-      'url'         => array('rss:link', 'rdf:about'),
-      'author'      => array('dc:creator', 'dc:publisher'),
-      'guid'        => 'rdf:about',
-      'timestamp'   => 'dc:date',
-      'author'      => array('dc:creator', 'dc:publisher'),  
-      'tags'        => 'dc:subject'
+      'options'     => (object)array(
+        'guid'            => 'rdf:about',
+        'timestamp'       => 'dc:date',
+        'author' => array('dc:creator', 'dc:publisher'),
+        'url'    => array('rss:link', 'rdf:about'),
+        'tags'            => 'dc:subject',
+      ),
     ));
 
     // Special handling for the title:
@@ -288,7 +289,7 @@ function _parser_common_syndication_RDF10_parse($feed_XML) {
     }
 
     // Add every found RDF property to the feed item.
-    $item['rdf'] = array();
+    $item['rdf'] = (object)array();
     foreach ($rdf_data as $rdf_property => $rdf_value) {
       // looks nicer in the mapper UI
       // @todo Revisit, not used with feedapi mapper anymore.
@@ -298,7 +299,7 @@ function _parser_common_syndication_RDF10_parse($feed_XML) {
 
     $parsed_source['items'][] = $item;
   }
- 
+
   return $parsed_source;
 }
 
@@ -313,11 +314,16 @@ function _parser_common_syndication_RDF10_property($rdf_data, $rdf_properties = 
 }
 
 function _parser_common_syndication_RDF10_item($rdf_data, $mappings) {
-  foreach ( $mappings as $k => $v) {
-    $values = _parser_common_syndication_RDF10_property($rdf_data, $v);
-    $mappings[$k] = !is_array($values) || count($values) > 1 ? $values : reset($values);
+  foreach (get_object_vars($mappings) as $k => $v) {
+    if (is_object($v)) {
+      $mappings->$k = _parser_common_syndication_RDF10_item($rdf_data, $v);
+    }
+    else {
+      $values = _parser_common_syndication_RDF10_property($rdf_data, $v);
+      $mappings->$k = !is_array($values) || count($values) > 1 ? $values : reset($values);
+    }
   }
-  return $mappings;
+  return (object)$mappings;
 }
 
 /**
@@ -340,6 +346,7 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
   $parsed_source['items'] = array();
 
   foreach ($feed_XML->xpath('//item') as $news) {
+    $title = $body = $original_author = $original_url = $guid = '';
     $category = $news->xpath('category');
     // Get children for current namespace.
     if (version_compare(phpversion(), '5.1.2', '>')) {
@@ -351,9 +358,6 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
 
     if (isset($news['title'])) {
       $title = "{$news['title']}";
-    }
-    else {
-      $title = '';
     }
 
     if (isset($news['description'])) {
@@ -381,23 +385,14 @@ function _parser_common_syndication_RSS20_parse($feed_XML) {
     elseif (isset($dc["creator"])) {
       $original_author = (string)$dc["creator"];
     }
-    else {
-      $original_author = NULL;
-    }
 
     if (!empty($news['link'])) {
       $original_url = "{$news['link']}";
-    }
-    else {
-      $original_url = NULL;
+      $guid = $original_url;
     }
 
     if (isset($news['guid'])) {
       $guid = "{$news['guid']}";
-    }
-    else {
-      // Attempt to fall back on original URL if GUID is not present.
-      $guid = $original_url;
     }
 
     $additional_taxonomies = array();

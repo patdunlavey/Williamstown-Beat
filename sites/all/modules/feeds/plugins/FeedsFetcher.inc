@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsFetcher.inc,v 1.5 2010/02/23 04:59:07 alexb Exp $
+// $Id: FeedsFetcher.inc,v 1.6 2010/03/03 18:38:57 alexb Exp $
 
 /**
  * Abstract class, defines shared functionality between fetchers.
@@ -49,10 +49,11 @@ abstract class FeedsFetcher extends FeedsPlugin {
    *   Path for this fetcher/source combination.
    */
   public function path($feed_nid = 0) {
-    if ($feed_nid) {
-      return urlencode('feeds/importer/'. $this->id .'/'. $feed_nid);
+    $id = urlencode($this->id);
+    if ($feed_nid && is_numeric($feed_nid)) {
+      return "feeds/importer/$id/$feed_nid";
     }
-    return urlencode('feeds/importer/'. $this->id);
+    return "feeds/importer/$id";
   }
 
   /**

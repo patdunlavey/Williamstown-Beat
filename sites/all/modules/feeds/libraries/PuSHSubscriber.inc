@@ -68,7 +68,6 @@ class PuSHSubscriber {
    *   at $url.
    */
   public function subscribe($url, $callback_url, $hub = '') {
-    feeds_dbg(func_get_args());
     // Fetch document, find rel=hub and rel=self.
     // If present, issue subscription request.
     $request = curl_init($url);
@@ -76,14 +75,17 @@ class PuSHSubscriber {
     curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
     $data = curl_exec($request);
     if (curl_getinfo($request, CURLINFO_HTTP_CODE) == 200) {
-      $xml = new SimpleXMLElement($data);
-      $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
-      if (empty($hub) && $hub = @current($xml->xpath("//atom:link[attribute::rel='hub']"))) {
-        $hub = (string) $hub->attributes()->href;
+      try {
+        $xml = @ new SimpleXMLElement($data);
+        $xml->registerXPathNamespace('atom', 'http://www.w3.org/2005/Atom');
+        if (empty($hub) && $hub = @current($xml->xpath("//atom:link[attribute::rel='hub']"))) {
+          $hub = (string) $hub->attributes()->href;
+        }
+        if ($self = @current($xml->xpath("//atom:link[attribute::rel='self']"))) {
+          $self = (string) $self->attributes()->href;
+        }
       }
-      if ($self = @current($xml->xpath("//atom:link[attribute::rel='self']"))) {
-        $self = (string) $self->attributes()->href;
-      }
+      catch (Exception $e) {}
     }
     curl_close($request);
     // Fall back to $url if $self is not given.
@@ -265,7 +267,7 @@ class PuSHSubscriber {
     else {
       $sub->status = $mode .' failed';
       $sub->save();
-      $this->log("Error issuing \"$mode\" request ($code).", 'error');
+      $this->log("Error issuing \"$mode\" request to $hub ($code).", 'error');
     }
     curl_close($request);
   }
@@ -274,7 +276,7 @@ class PuSHSubscriber {
    * Helper for loading a subscription.
    */
   protected function loadSubscription() {
-    return call_user_func("{$this->subscription_class}::load", $this->domain, $this->subscriber_id);
+    return call_user_func(array($this->subscription_class, 'load'), $this->domain, $this->subscriber_id);
   }
 
   /**

@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsTermProcessor.inc,v 1.4 2010/02/10 23:49:35 alexb Exp $
+// $Id: FeedsTermProcessor.inc,v 1.7 2010/03/30 20:06:36 diggersf Exp $
 
 /**
  * @file
@@ -70,7 +70,7 @@ class FeedsTermProcessor extends FeedsProcessor {
       drupal_set_message(t('There are no new terms.'));
     }
 
-    return FEEDS_NODE_BATCH_SIZE;
+    return FEEDS_BATCH_COMPLETE;
   }
 
   /**
@@ -79,7 +79,7 @@ class FeedsTermProcessor extends FeedsProcessor {
   public function clear(FeedsBatch $batch, FeedsSource $source) {
     $deleted = 0;
 
-    $result = db_query('SELECT tid FROM {term_data} WHERE vid = %d', $this->config['vocabulary']);
+    $result = db_query("SELECT tid FROM {term_data} WHERE vid = %d", $this->config["vocabulary"]);
     while ($term = db_fetch_object($result)) {
       if (taxonomy_del_term($term->tid) == SAVED_DELETED) {
         $deleted++;
@@ -170,7 +170,7 @@ class FeedsTermProcessor extends FeedsProcessor {
     // The only possible unique target is name.
     foreach ($this->uniqueTargets($source_item) as $target => $value) {
       if ($target == 'name') {
-        if ($tid = db_result(db_query('SELECT tid FROM {term_data} WHERE name = "%s" AND vid = %d', $value, $this->config['vocabulary']))) {
+        if ($tid = db_result(db_query("SELECT tid FROM {term_data} WHERE name = '%s' AND vid = %d", $value, $this->config["vocabulary"]))) {
           return $tid;
         }
       }

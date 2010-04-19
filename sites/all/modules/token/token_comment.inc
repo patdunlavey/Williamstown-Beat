@@ -1,5 +1,5 @@
 <?php
-// $Id: token_comment.inc,v 1.3.4.6 2010/03/11 19:06:27 davereid Exp $
+// $Id: token_comment.inc,v 1.3.4.7 2010/04/09 18:39:52 greggles Exp $
 
 /**
  * @file
@@ -27,7 +27,7 @@ function comment_token_values($type, $object = NULL, $options = array()) {
       $values['comment-cid']             = $comment->cid;
       $values['comment-nid']             = $comment->nid;
       $values['comment-title']           = check_plain($comment->subject);
-      $values['comment-body']            = check_markup($comment->comment, $comment->format);
+      $values['comment-body']            = check_markup($comment->comment, $comment->format, FALSE);
       $values['comment-author-name']     = check_plain($comment->name);
       $values['comment-author-uid']      = $comment->uid;
       $values['comment-author-homepage'] = check_url($comment->homepage);

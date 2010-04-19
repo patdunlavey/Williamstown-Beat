@@ -1,0 +1,128 @@
+
+!ENTRY org.eclipse.core.resources 4 2 2010-04-10 21:21:36.087
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+java.lang.NullPointerException
+	at org.eclipse.dltk.internal.core.ExternalProjectFragment.getTimeStamp(ExternalProjectFragment.java:332)
+	at org.eclipse.dltk.internal.core.ModelManager$PerProjectInfo.rememberExternalLibTimestamps(ModelManager.java:223)
+	at org.eclipse.dltk.internal.core.ModelManager.saving(ModelManager.java:2341)
+	at org.eclipse.core.internal.resources.SaveManager.executeLifecycle(SaveManager.java:343)
+	at org.eclipse.core.internal.resources.SaveManager$1.run(SaveManager.java:160)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.resources.SaveManager.broadcastLifecycle(SaveManager.java:163)
+	at org.eclipse.core.internal.resources.SaveManager.save(SaveManager.java:1012)
+	at org.eclipse.core.internal.resources.Workspace.save(Workspace.java:1831)
+	at org.eclipse.ui.internal.ide.application.IDEWorkbenchAdvisor$5.run(IDEWorkbenchAdvisor.java:453)
+	at org.eclipse.jface.operation.ModalContext$ModalContextThread.run(ModalContext.java:121)
+
+!ENTRY org.eclipse.ui.ide 4 4 2010-04-10 21:21:40.354
+!MESSAGE Problems saving workspace
+
+!ENTRY org.eclipse.ui.ide 4 1 2010-04-10 21:21:40.354
+!MESSAGE Problems occurred while trying to save the state of the workbench.
+!SUBENTRY 1 org.eclipse.core.resources 4 568 2010-04-10 21:21:40.354
+!MESSAGE Could not write workspace metadata '/Applications/MAMP/localhost htdocs/Williamstown-Beat/.metadata/.plugins/org.eclipse.core.resources/.root/1.tree'.
+!STACK 0
+java.io.FileNotFoundException: /Applications/MAMP/localhost htdocs/Williamstown-Beat/.metadata/.plugins/org.eclipse.core.resources/.root/1.tree (No such file or directory)
+	at java.io.FileOutputStream.open(Native Method)
+	at java.io.FileOutputStream.<init>(FileOutputStream.java:179)
+	at java.io.FileOutputStream.<init>(FileOutputStream.java:131)
+	at org.eclipse.core.internal.localstore.SafeFileOutputStream.<init>(SafeFileOutputStream.java:46)
+	at org.eclipse.core.internal.resources.SaveManager.saveTree(SaveManager.java:1176)
+	at org.eclipse.core.internal.resources.SaveManager.save(SaveManager.java:1016)
+	at org.eclipse.core.internal.resources.Workspace.save(Workspace.java:1831)
+	at org.eclipse.ui.internal.ide.application.IDEWorkbenchAdvisor$5.run(IDEWorkbenchAdvisor.java:453)
+	at org.eclipse.jface.operation.ModalContext$ModalContextThread.run(ModalContext.java:121)
+!SESSION 2010-04-10 21:21:42.824 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=1.6.0_17
+java.vendor=Apple Inc.
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.php.product -product org.eclipse.epp.package.php.product -product org.eclipse.epp.package.php.product -keyring /Users/pat/.eclipse_keyring -showlocation
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -product org.eclipse.epp.package.php.product -product org.eclipse.epp.package.php.product -data /Applications/MAMP/localhost htdocs/Williamstown-Beat -product org.eclipse.epp.package.php.product -keyring /Users/pat/.eclipse_keyring -showlocation
+
+!ENTRY org.eclipse.jface 2 0 2010-04-10 21:21:50.693
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-04-10 21:21:50.693
+!MESSAGE A conflict occurred for ALT+COMMAND+Q P:
+Binding(ALT+COMMAND+Q P,
+	ParameterizedCommand(Command(org.eclipse.ui.views.showView,Show View,
+		Shows a particular view,
+		Category(org.eclipse.ui.category.views,Views,Commands for opening views,true),
+		org.eclipse.ui.handlers.ShowViewHandler@2c7a6c34,
+		[Lorg.eclipse.ui.internal.commands.Parameter;@1955e0bc,,true),[Lorg.eclipse.core.commands.Parameterization;@551563a2),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,cocoa,system)
+Binding(ALT+COMMAND+Q P,
+	ParameterizedCommand(Command(org.eclipse.ui.views.showView,Show View,
+		Shows a particular view,
+		Category(org.eclipse.ui.category.views,Views,Commands for opening views,true),
+		org.eclipse.ui.handlers.ShowViewHandler@2c7a6c34,
+		[Lorg.eclipse.ui.internal.commands.Parameter;@1955e0bc,,true),[Lorg.eclipse.core.commands.Parameterization;@6f404c51),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,cocoa,system)
+
+!ENTRY org.eclipse.core.net 1 0 2010-04-10 21:21:50.837
+!MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences
+!SESSION 2010-04-10 22:18:24.336 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=1.6.0_17
+java.vendor=Apple Inc.
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.php.product -keyring /Users/pat/.eclipse_keyring -showlocation
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -product org.eclipse.epp.package.php.product -keyring /Users/pat/.eclipse_keyring -showlocation
+
+!ENTRY org.eclipse.jface 2 0 2010-04-10 22:18:41.616
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-04-10 22:18:41.616
+!MESSAGE A conflict occurred for ALT+COMMAND+Q P:
+Binding(ALT+COMMAND+Q P,
+	ParameterizedCommand(Command(org.eclipse.ui.views.showView,Show View,
+		Shows a particular view,
+		Category(org.eclipse.ui.category.views,Views,Commands for opening views,true),
+		org.eclipse.ui.handlers.ShowViewHandler@e026161,
+		[Lorg.eclipse.ui.internal.commands.Parameter;@3e472e76,,true),[Lorg.eclipse.core.commands.Parameterization;@333b64eb),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,cocoa,system)
+Binding(ALT+COMMAND+Q P,
+	ParameterizedCommand(Command(org.eclipse.ui.views.showView,Show View,
+		Shows a particular view,
+		Category(org.eclipse.ui.category.views,Views,Commands for opening views,true),
+		org.eclipse.ui.handlers.ShowViewHandler@e026161,
+		[Lorg.eclipse.ui.internal.commands.Parameter;@3e472e76,,true),[Lorg.eclipse.core.commands.Parameterization;@5e9a94),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,cocoa,system)
+
+!ENTRY org.eclipse.core.net 1 0 2010-04-10 22:18:41.849
+!MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences
+!SESSION 2010-04-10 22:19:07.418 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=1.6.0_17
+java.vendor=Apple Inc.
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.php.product -product org.eclipse.epp.package.php.product -keyring /Users/pat/.eclipse_keyring -showlocation
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -product org.eclipse.epp.package.php.product -data /Applications/MAMP/localhost htdocs/Williamstown-Beat -product org.eclipse.epp.package.php.product -keyring /Users/pat/.eclipse_keyring -showlocation
+
+!ENTRY org.eclipse.jface 2 0 2010-04-10 22:19:15.130
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-04-10 22:19:15.130
+!MESSAGE A conflict occurred for ALT+COMMAND+Q P:
+Binding(ALT+COMMAND+Q P,
+	ParameterizedCommand(Command(org.eclipse.ui.views.showView,Show View,
+		Shows a particular view,
+		Category(org.eclipse.ui.category.views,Views,Commands for opening views,true),
+		org.eclipse.ui.handlers.ShowViewHandler@60f38b42,
+		[Lorg.eclipse.ui.internal.commands.Parameter;@153bcbc8,,true),[Lorg.eclipse.core.commands.Parameterization;@8bfc25c),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,cocoa,system)
+Binding(ALT+COMMAND+Q P,
+	ParameterizedCommand(Command(org.eclipse.ui.views.showView,Show View,
+		Shows a particular view,
+		Category(org.eclipse.ui.category.views,Views,Commands for opening views,true),
+		org.eclipse.ui.handlers.ShowViewHandler@60f38b42,
+		[Lorg.eclipse.ui.internal.commands.Parameter;@153bcbc8,,true),[Lorg.eclipse.core.commands.Parameterization;@65712a80),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,cocoa,system)
+
+!ENTRY org.eclipse.core.net 1 0 2010-04-10 22:19:15.430
+!MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences

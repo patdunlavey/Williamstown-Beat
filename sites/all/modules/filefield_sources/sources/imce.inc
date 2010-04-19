@@ -1,5 +1,5 @@
 <?php
-// $Id: imce.inc,v 1.2 2009/05/05 18:41:24 quicksketch Exp $
+// $Id: imce.inc,v 1.4 2010/03/02 20:01:27 quicksketch Exp $
 
 /**
  * @file
@@ -13,6 +13,7 @@
 if ($_GET['q'] == 'imce' && isset($_GET['filefield']) && isset($_GET['type']) && content_fields($_GET['filefield'], $_GET['type'])) {
   $GLOBALS['conf']['imce_custom_scan'] = 'filefield_source_imce_custom_scan';
   $GLOBALS['conf']['imce_custom_process'] = array('filefield_source_imce_custom_process' => 1);
+  $GLOBALS['conf']['imce_settings_absurls'] = FALSE;
 }
 
 /**
@@ -121,7 +122,7 @@ function filefield_source_imce_value($element, &$item) {
     }
 
     // Resolve the file path to an FID.
-    if ($fid = db_result(db_query("SELECT fid FROM {files} WHERE filepath = '%s'", $file_path))) {
+    if ($fid = db_result(db_query("SELECT fid FROM {files} WHERE filepath = '%s'", rawurldecode($file_path)))) {
       $file = field_file_load($fid);
       if (filefield_sources_element_validate($element, (object) $file)) {
         $item = array_merge($item, $file);
@@ -139,7 +140,6 @@ function filefield_source_imce_value($element, &$item) {
  * Theme the output of the autocomplete field.
  */
 function theme_filefield_source_imce_element($element) {
-  drupal_add_js(drupal_get_path('module', 'filefield_sources') .'/sources/imce.js');
   $output = theme('markup', $element['display_path']) . theme('hidden', $element['file_path']) . theme('submit', $element['select']);
   return '<div class="filefield-source filefield-source-imce clear-block">' . theme('form_element', $element, $output) . '</div>';
 }

@@ -1,4 +1,4 @@
-/* $Id: views_slideshow.css,v 1.1.2.1.2.4 2009/09/28 21:32:22 redndahead Exp $ */
+/* $Id: views_slideshow.css,v 1.1.2.1.2.5 2010/02/24 16:41:52 psynaptic Exp $ */
 
 .views_slideshow_singleframe_no_display,
 .views_slideshow_singleframe_hidden,
@@ -7,9 +7,8 @@
   display: none;
 }
 
-/**
- * Pager Settings
- */
+/* Pager Settings */
+
 .views_slideshow_singleframe_pager div a img {
   width: 75px;
   height: 75px;

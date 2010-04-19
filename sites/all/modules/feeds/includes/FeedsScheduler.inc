@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsScheduler.inc,v 1.15 2010/02/22 03:28:59 alexb Exp $
+// $Id: FeedsScheduler.inc,v 1.18 2010/03/30 20:06:36 diggersf Exp $
 
 /**
  * @file
@@ -50,14 +50,16 @@ interface FeedsSchedulerInterface {
 /**
  * Implementation of FeedsSchedulerInterface.
  *
- * This scheduler uses the last_scheduled_time paradigm: By storing the time
- * when a particular feed was scheduled to be refreshed last rather than
- * storing when a feed should be _refreshed_ next, we gain two advantages:
+ * This scheduler uses the last_refreshed_time paradigm: By storing the time
+ * when a particular feed was refreshed last rather than storing when a feed
+ * should be refreshed next, we gain two advantages:
  *
  * 1) If a feed's import_period setting changes, it has immediate effects -
  *    without batch updating an existing schedule.
  * 2) The time between refreshes will always be scheduled based on when it
  *    has been scheduled last. Less drift occurs.
+ *
+ * This behavior may change soon: http://drupal.org/node/721428
  */
 class FeedsScheduler implements FeedsSchedulerInterface {
 
@@ -95,7 +97,7 @@ class FeedsScheduler implements FeedsSchedulerInterface {
     $start = time();
 
     // Release schedule lock where the lock is older than 1 hour.
-    db_query('UPDATE {feeds_schedule} SET scheduled = 0 WHERE scheduled < %d', FEEDS_REQUEST_TIME - 3600);
+    db_query("UPDATE {feeds_schedule} SET scheduled = 0 WHERE scheduled < %d", FEEDS_REQUEST_TIME - 3600);
 
     // Iterate over feed importers, pick $num jobs for each of them and
     // schedule them.
@@ -145,7 +147,7 @@ class FeedsScheduler implements FeedsSchedulerInterface {
    * Implementation of FeedsSchedulerInterface::remove().
    */
   public function remove($importer_id, $callback, $feed_nid = 0) {
-    db_query('DELETE FROM {feeds_schedule} WHERE id = "%s" AND callback = "%s" AND feed_nid = %d', $importer_id, $callback, $feed_nid);
+    db_query("DELETE FROM {feeds_schedule} WHERE id = '%s' AND callback = '%s' AND feed_nid = %d", $importer_id, $callback, $feed_nid);
   }
 
   /**
@@ -197,7 +199,7 @@ class FeedsScheduler implements FeedsSchedulerInterface {
      db_query("UPDATE {feeds_schedule} SET scheduled = %d WHERE id = '%s' AND feed_nid = %d AND callback = '%s'", FEEDS_REQUEST_TIME, $job['id'], $job['feed_nid'], $job['callback']);
      if (db_affected_rows()) {
        if ($this->queue()) {
-         if (!$queue->createItem($job)) {
+         if (!$this->queue()->createItem($job)) {
            $this->unschedule($job);
            watchdog('FeedsScheduler', 'Error adding item to queue.', WATCHDOG_CRITICAL);
            return;

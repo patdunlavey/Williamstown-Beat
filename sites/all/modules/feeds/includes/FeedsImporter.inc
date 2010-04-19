@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsImporter.inc,v 1.13 2010/02/22 03:28:59 alexb Exp $
+// $Id: FeedsImporter.inc,v 1.18 2010/03/30 20:06:36 diggersf Exp $
 
 /**
  * @file
@@ -11,20 +11,17 @@ require_once(dirname(__FILE__) .'/FeedsConfigurable.inc');
 require_once(dirname(__FILE__) .'/FeedsSource.inc');
 require_once(dirname(__FILE__) .'/FeedsBatch.inc');
 
-// Status of batched operations.
-define('FEEDS_BATCH_COMPLETE', 1);
-define('FEEDS_BATCH_ACTIVE', 0);
-
 /**
- * Class defining an importer object. This is the main hub for Feeds module's
- * functionality.
+ * A FeedsImporter object describes how an external source should be fetched,
+ * parsed and processed. Feeds can manage an arbitrary amount of importers.
  *
- * A FeedsImporter holds a pointer to a fetcher, a parser and a processor
- * plugin. It further contains the configuration for itself and each of the
- * three plugins.
+ * A FeedsImporter holds a pointer to a FeedsFetcher, a FeedsParser and a
+ * FeedsProcessor plugin. It further contains the configuration for itself and
+ * each of the three plugins.
  *
- * Its most important responsibilities are configuration management and expiring
- * of all items produced by this importer.
+ * Its most important responsibilities are configuration management, interfacing
+ * with FeedsScheduler class and expiring of all items produced by this
+ * importer.
  *
  * When a FeedsImporter is instantiated, it loads its configuration. Then it
  * instantiates one fetcher, one parser and one processor plugin depending on
@@ -71,8 +68,8 @@ class FeedsImporter extends FeedsConfigurable {
    *   given, internal processor settings will be used.
    *
    * @return
-   *   FEEDS_BATCH_COMPLETE if complete, a float between 0 and 1 indicating
-   *   progress otherwise.
+   *   FEEDS_BATCH_COMPLETE if the expiry process finished. A decimal between
+   *   0.0 and 0.9 periodic if expiry is still in progress.
    *
    * @throws
    *   Throws Exception if an error occurs when expiring items.
@@ -167,7 +164,7 @@ class FeedsImporter extends FeedsConfigurable {
    * from database, does not delete configuration itself.
    */
   public function delete() {
-    db_query('DELETE FROM {feeds_importer} WHERE id = "%s"', $this->id);
+    db_query("DELETE FROM {feeds_importer} WHERE id = '%s'", $this->id);
   }
 
   /**

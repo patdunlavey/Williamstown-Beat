@@ -1,4 +1,4 @@
-/* $Id: filefield_sources.js,v 1.1 2009/04/17 00:20:12 quicksketch Exp $ */
+/* $Id: filefield_sources.js,v 1.2 2010/02/21 05:02:31 quicksketch Exp $ */
 
 Drupal.behaviors.fileFieldSources = function(context) {
   $('div.filefield-sources-list a', context).click(function() {
@@ -22,7 +22,7 @@ Drupal.behaviors.fileFieldSources = function(context) {
   });
 
   // Hide all the other upload mechanisms on page load.
-  $('div.filefield-source', context).hide();
+  $('div.filefield-source', context).css('display', 'none');
   $('div.filefield-sources-list', context).each(function() {
     $(this).find('a:first').addClass('active');
   });

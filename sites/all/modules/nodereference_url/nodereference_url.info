@@ -4,9 +4,9 @@ description = Adds an additional widget to the CCK Node Reference field that pre
 dependencies[] = nodereference
 package = CCK
 core = 6.x
-; Information added by drupal.org packaging script on 2010-03-02
-version = "6.x-1.5"
+; Information added by drupal.org packaging script on 2010-04-07
+version = "6.x-1.6"
 core = "6.x"
 project = "nodereference_url"
-datestamp = "1267551607"
+datestamp = "1270624508"
 

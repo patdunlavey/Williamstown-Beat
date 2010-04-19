@@ -1,5 +1,5 @@
 <?php
-// $Id: feeds.pages.inc,v 1.10 2010/02/23 04:59:06 alexb Exp $
+// $Id: feeds.pages.inc,v 1.14 2010/03/29 00:42:37 alexb Exp $
 
 /**
  * @file
@@ -7,15 +7,16 @@
  */
 
 /**
- * Render a page of available feed configuration.
- *
- * @todo Respect permissions.
+ * Render a page of available importers.
  */
 function feeds_page() {
   $rows = array();
   if ($importers = feeds_importer_load_all()) {
     foreach ($importers as $importer) {
       if ($importer->disabled) {
+        continue;
+      }
+      if (!(user_access('import '. $importer->id .' feeds') || user_access('administer feeds'))) {
         continue;
       }
       if (empty($importer->config['content_type'])) {
@@ -63,8 +64,6 @@ function feeds_import_form(&$form_state, $importer_id) {
 
 /**
  * Validation handler for node forms and feeds_import_form().
- *
- * Has to live in feeds.module, needs to be callable from node form.
  */
 function feeds_import_form_validate($form, &$form_state) {
   // @todo This may be a problem here, as we don't have a feed_nid at this point.

@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsHTTPFetcher.inc,v 1.15 2010/02/23 04:59:07 alexb Exp $
+// $Id: FeedsHTTPFetcher.inc,v 1.21 2010/03/30 18:54:29 diggersf Exp $
 
 /**
  * @file
@@ -85,7 +85,8 @@ class FeedsHTTPFetcher extends FeedsFetcher {
       }
     }
     // Will generate the default 200 response.
-    return '';
+    header('HTTP/1.1 200 "OK"', null, 200);
+    exit();
   }
 
   /**
@@ -93,6 +94,7 @@ class FeedsHTTPFetcher extends FeedsFetcher {
    */
   public function configDefaults() {
     return array(
+      'auto_detect_feeds' => FALSE,
       'use_pubsubhubbub' => FALSE,
       'designated_hub' => '',
     );
@@ -102,9 +104,13 @@ class FeedsHTTPFetcher extends FeedsFetcher {
    * Override parent::configForm().
    */
   public function configForm(&$form_state) {
-    $period = drupal_map_assoc(array(0, 900, 1800, 3600, 10800, 21600, 43200, 86400, 259200, 604800, 2419200), 'format_interval');
-    $period[FEEDS_SCHEDULE_NEVER] = t('Never renew');
-    $period[0] = t('Renew as often as possible');
+    $form = array();
+    $form['auto_detect_feeds'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Auto detect feeds'),
+      '#description' => t('If the supplied URL does not point to a feed but an HTML document, attempt to extract a feed URL from the document.'),
+      '#default_value' => $this->config['auto_detect_feeds'],
+    );
     $form['use_pubsubhubbub'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use PubSubHubbub'),
@@ -137,17 +143,33 @@ class FeedsHTTPFetcher extends FeedsFetcher {
   }
 
   /**
+   * Override parent::sourceFormValidate().
+   */
+  public function sourceFormValidate(&$values) {
+    if ($this->config['auto_detect_feeds']) {
+      feeds_include_library('http_request.inc', 'http_request');
+      if ($url = http_request_get_common_syndication($values['source'])) {
+        $values['source'] = $url;
+      }
+    }
+  }
+
+  /**
    * Override sourceSave() - subscribe to hub.
    */
   public function sourceSave(FeedsSource $source) {
-    $this->subscribe($source);
+    if ($this->config['use_pubsubhubbub']) {
+      $this->subscribe($source);
+    }
   }
 
   /**
    * Override sourceDelete() - unsubscribe from hub.
    */
   public function sourceDelete(FeedsSource $source) {
-    $this->unsubscribe($source);
+    if ($this->config['use_pubsubhubbub']) {
+      $this->unsubscribe($source);
+    }
   }
 
   /**

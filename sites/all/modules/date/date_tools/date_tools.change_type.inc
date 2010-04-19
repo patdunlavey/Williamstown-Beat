@@ -1,5 +1,5 @@
 <?php
-// $Id: date_tools.change_type.inc,v 1.1.2.2 2010/03/09 18:13:35 karens Exp $
+// $Id: date_tools.change_type.inc,v 1.1.2.3 2010/04/13 13:50:40 karens Exp $
 
 /**
  * A form to change the type of date used in date fields.
@@ -152,7 +152,10 @@ function date_tools_change_type_form_submit($form, &$form_state) {
     }
   }
   
+  // Make sure database timezone is set to UTC.
+  $date_handler->set_db_timezone();
   
+  // Make the replacement.  
   $sql = 'REPLACE INTO {'. $table .'} ('. implode(', ', $old_columns) .') '.
     ' SELECT '. implode(', ', $new_columns) .' FROM {'. $temp_table .'}';
   db_query($sql);

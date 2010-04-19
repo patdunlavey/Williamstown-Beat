@@ -6,9 +6,9 @@ dependencies[] = ctools
 core = 6.x
 php = 5.2
 
-; Information added by drupal.org packaging script on 2010-02-23
-version = "6.x-1.0-alpha12"
+; Information added by drupal.org packaging script on 2010-04-12
+version = "6.x-1.0-alpha14"
 core = "6.x"
 project = "feeds"
-datestamp = "1266939012"
+datestamp = "1271035809"
 

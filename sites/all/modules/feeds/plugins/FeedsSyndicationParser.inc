@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsSyndicationParser.inc,v 1.13 2010/02/08 19:48:15 alexb Exp $
+// $Id: FeedsSyndicationParser.inc,v 1.14 2010/03/29 02:55:50 alexb Exp $
 
 /**
  * Class definition for Common Syndication Parser.

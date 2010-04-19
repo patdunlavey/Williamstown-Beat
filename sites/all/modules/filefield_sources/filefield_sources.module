@@ -1,5 +1,5 @@
 <?php
-// $Id: filefield_sources.module,v 1.2 2009/09/20 20:54:39 quicksketch Exp $
+// $Id: filefield_sources.module,v 1.6 2010/02/26 12:39:35 quicksketch Exp $
 
 /**
  * @file
@@ -26,29 +26,15 @@ function filefield_sources_init() {
  * Implementation of hook_elements().
  */
 function filefield_sources_elements() {
-  $params = array();
-  $sources = filefield_sources_invoke_all('info', $params);
+  $elements = array();
 
-  // Build a list of all the extensions for FileField.
-  $extras = array();
-  foreach ($sources as $source) {
-    if (isset($source['process'])) {
-      $extras['#process'][] = $source['process'];
-    }
-    if (isset($source['validate'])) {
-      $extras['#element_validate'][] = $source['validate'];
-    }
-    if (isset($source['value'])) {
-      $extras['#filefield_value_callback'][] = $source['value'];
-    }
+  foreach (module_invoke_all('filefield_sources_widgets') as $widget) {
+    $elements[$widget]['#process'] = array('filefield_sources_process');
+    $elements[$widget]['#element_validate'] = array('filefield_sources_validate');
+    $elements[$widget]['#filefield_value_callback'] = array('filefield_sources_value');
   }
-  $extras['#process'][] = 'filefield_sources_process';
 
-  // Add the extra processing to both FileField and ImageField widgets.
-  return array(
-    'filefield_widget' => $extras,
-    'imagefield_widget' => $extras,
-  );
+  return $elements;
 }
 
 /**
@@ -66,14 +52,72 @@ function filefield_sources_theme() {
 }
 
 /**
- * Implementation of hook_widget_settings_alter().
+ * Implementation of hook_filefield_sources_widgets().
  *
- * @todo Get this hook working. See http://drupal.org/node/417122
+ * This returns a list of widgets that are compatible with FileField Sources.
  */
-function filefield_sources_widget_settings_alter(&$field, $op) {
-  // Add settings to the FileField widget form.
-  $params = array(&$field, $op);
-  return filefield_sources_invoke_all('settings', $params);
+function filefield_sources_filefield_sources_widgets() {
+  return array('filefield_widget', 'imagefield_widget');
+}
+
+/**
+ * Implementation of hook_widget_settings_alter().
+ */
+function filefield_sources_widget_settings_alter(&$settings, $op, $widget) {
+  // Only support modules that implement hook_insert_widgets().
+  $widget_type = isset($widget['widget_type']) ? $widget['widget_type'] : $widget['type'];
+  if (!in_array($widget_type, module_invoke_all('filefield_sources_widgets'))) {
+    return;
+  }
+
+  if ($op == 'form') {
+    $settings = array_merge($settings, filefield_sources_form($widget));
+  }
+
+  if ($op == 'save') {
+    $settings = array_merge($settings, filefield_sources_widget_settings($widget));
+  }
+}
+
+/**
+ * A list of settings needed by FileField Sources module on widgets.
+ */
+function filefield_sources_widget_settings($widget) {
+  $settings = array(
+    'filefield_sources',
+  );
+  $params = array('save', $widget);
+  $settings += filefield_sources_invoke_all('settings', $params);
+  return $settings;
+}
+
+/**
+ * Configuration form for editing FileField Sources settings for a widget.
+ */
+function filefield_sources_form($widget) {
+
+  $form['filefield_sources'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('File sources'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 15,
+  );
+
+  $sources = filefield_sources_list(FALSE);
+  $sources = array_intersect_key(array_merge((array) $widget['filefield_sources'], $sources), $sources);
+  $form['filefield_sources']['filefield_sources'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Enabled sources'),
+    '#options' => $sources,
+    '#default_value' => (array) $widget['filefield_sources'],
+    '#description' => t('Select the available locations from which this widget may select files.'),
+  );
+
+  $params = array('form', $widget);
+  $form['filefield_sources'] = array_merge($form['filefield_sources'], filefield_sources_invoke_all('settings', $params));
+
+  return $form;
 }
 
 /**
@@ -85,6 +129,25 @@ function filefield_sources_widget_settings_alter(&$field, $op) {
  */
 function filefield_sources_process($element, $edit, &$form_state, $form) {
   static $js_added;
+
+  // Do all processing as needed by each source.
+  $sources = filefield_sources_info();
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $enabled_sources = (array) $field['widget']['filefield_sources'];
+  foreach ($sources as $source_name => $source) {
+    if (!$enabled_sources[$source_name]) {
+      unset($sources[$source_name]);
+    }
+    elseif (isset($source['process'])) {
+      $function = $source['process'];
+      $element = $function($element, $edit, $form_state, $form);
+    }
+  }
+
+  // Exit out if not adding any sources.
+  if (empty($sources)) {
+    return $element;
+  }
 
   // Add basic JS and CSS.
   $path = drupal_get_path('module', 'filefield_sources');
@@ -101,11 +164,10 @@ function filefield_sources_process($element, $edit, &$form_state, $form) {
   }
 
   // Add the list of sources to the element for toggling between sources.
-  $info = filefield_sources_info();
   if (empty($element['fid']['#value'])) {
     $element['filefield_sources_list'] = array(
       '#type' => 'markup',
-      '#value' => theme('filefield_sources_list', $element, $info),
+      '#value' => theme('filefield_sources_list', $element, $sources),
       '#weight' => -1,
     );
   }
@@ -113,6 +175,37 @@ function filefield_sources_process($element, $edit, &$form_state, $form) {
   return $element;
 }
 
+/**
+ * An #element_validate function to run source validations.
+ */
+function filefield_sources_validate($element, &$form_state, $form) {
+  // Do all processing as needed by each source.
+  $sources = filefield_sources_info();
+  foreach ($sources as $source) {
+    if (isset($source['validate'])) {
+      $function = $source['validate'];
+      $function($element, $form_state, $form);
+    }
+  }
+}
+
+/**
+ * A #filefield_value_callback to run source value callbacks.
+ */
+function filefield_sources_value($element, &$item) {
+  // Do all processing as needed by each source.
+  $sources = filefield_sources_info();
+  foreach ($sources as $source) {
+    if (isset($source['value'])) {
+      $function = $source['value'];
+      $function($element, $item);
+    }
+  }
+}
+
+/**
+ * Call all FileField Source hooks stored in the available include files.
+ */
 function filefield_sources_invoke_all($method, &$params) {
   $return = array();
   foreach (filefield_sources_includes() as $source) {
@@ -137,6 +230,24 @@ function filefield_sources_info() {
   $info = module_invoke_all('filefield_sources_info');
   drupal_alter('filefield_sources_info', $info);
   return $info;
+}
+
+/**
+ * Create a list of FileField Sources by name, suitable for a select list.
+ */
+function filefield_sources_list($include_default = TRUE) {
+  $info = filefield_sources_info();
+  $list = array();
+
+  if ($include_default) {
+    $list['upload'] = t('Upload');
+  }
+
+  foreach ($info as $key => $source) {
+    $list[$key] = $source['name'];
+  }
+
+  return $list;
 }
 
 /**

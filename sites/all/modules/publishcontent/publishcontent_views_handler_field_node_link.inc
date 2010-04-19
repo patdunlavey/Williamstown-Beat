@@ -1,5 +1,5 @@
 <?php
-// $Id: publishcontent_views_handler_field_node_link.inc,v 1.1.2.4 2009/03/13 01:27:41 malaussene Exp $
+// $Id: publishcontent_views_handler_field_node_link.inc,v 1.1.2.5 2009/05/18 04:29:48 malaussene Exp $
 
 /**
  * Field handler to present a link node publish.
@@ -10,6 +10,7 @@ class publishcontent_views_handler_field_node_link extends views_handler_field {
     $this->additional_fields['nid'] = 'nid';
     $this->additional_fields['type'] = 'type';
     $this->additional_fields['status'] = 'status';
+    $this->additional_fields['uid'] = 'uid';
   }
 
   function option_definition() {
@@ -46,6 +47,7 @@ class publishcontent_views_handler_field_node_link extends views_handler_field {
     $node->nid = $values->{$this->aliases['nid']};
     $node->type = $values->{$this->aliases['type']};
     $node->status = $values->{$this->aliases['status']};
+    $node->uid = $values->{$this->aliases['uid']};
 
     $options = array('query' => drupal_get_destination());
 

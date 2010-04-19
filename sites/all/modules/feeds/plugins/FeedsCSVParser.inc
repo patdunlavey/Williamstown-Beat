@@ -1,5 +1,5 @@
 <?php
-// $Id: FeedsCSVParser.inc,v 1.6 2010/01/27 15:26:32 alexb Exp $
+// $Id: FeedsCSVParser.inc,v 1.8 2010/03/29 04:02:37 alexb Exp $
 
 /**
  * Parses a given file as a CSV file.
@@ -25,7 +25,7 @@ class FeedsCSVParser extends FeedsParser {
     // @todo Push this functionality into ParserCSV.
     $header = array_shift($rows);
     foreach ($header as $i => $title) {
-      $header[$i] = strtolower($title); // Use lower case only.
+      $header[$i] = drupal_strtolower($title); // Use lower case only.
     }
     $result_rows = array();
     foreach ($rows as $i => $row) {
@@ -45,7 +45,7 @@ class FeedsCSVParser extends FeedsParser {
    * Override parent::getSourceElement() to use only lower keys.
    */
   public function getSourceElement($item, $element_key) {
-    $element_key = strtolower($element_key);
+    $element_key = drupal_strtolower($element_key);
     return isset($item[$element_key]) ? $item[$element_key] : '';
   }
 

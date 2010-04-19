@@ -1,5 +1,5 @@
 <?php
-// $Id: date_popup.module,v 1.42.2.1.2.52 2009/08/13 16:17:29 karens Exp $
+// $Id: date_popup.module,v 1.42.2.1.2.53 2010/04/13 20:09:42 karens Exp $
 /**
  * @file
  * A module to enable jquery calendar and time entry popups.
@@ -244,7 +244,7 @@ function date_popup_process_date(&$element, $edit = NULL, $date = NULL) {
   $id = date_popup_js_settings_id($element['#id'], 'datepicker', $settings);
   $sub_element = array(
     '#type' => 'textfield',
-    '#default_value' => (!empty($element['#value']['date']) || !empty($edit['date'])) && is_object($date) ? date_format($date, $date_format) : '',
+    '#default_value' => (!empty($element['#value']['date']) || !empty($edit['date'])) && is_object($date) ? date_format_date($date, 'custom', $date_format) : '',
     '#id' => $id,    
     '#size' => !empty($element['#size']) ? $element['#size'] : 20,
     '#maxlength' => !empty($element['#maxlength']) ? $element['#maxlength'] : 30,
@@ -256,7 +256,7 @@ function date_popup_process_date(&$element, $edit = NULL, $date = NULL) {
     $sub_element['#value'] = $sub_element['#default_value'];
   }
   // TODO, figure out exactly when we want this description. In many places it is not desired.
-  $sub_element['#description'] = ' '. t('Format: @date', array('@date' => date($date_format, time())));
+  $sub_element['#description'] = ' '. t('Format: @date', array('@date' => date_format_date(date($date_format, time())), 'custom', $date_format));
   return $sub_element;
 }
 

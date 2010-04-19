@@ -1,4 +1,4 @@
-// $Id: README.txt,v 1.3 2010/03/01 20:27:52 quicksketch Exp $
+// $Id: README.txt,v 1.4 2010/03/13 01:33:05 quicksketch Exp $
 
 The Node Reference URL Widget module adds a new widget to the Node Reference
 CCK field type. It auto-populates a node reference field with a value from the
@@ -61,7 +61,7 @@ To do so, add additional paths to your settings.php with the following code:
 
 $conf['nodereference_url_paths'] = array(
   'node/add/%type/%nid',
-  'node/%/add/%type/%nid,
+  'node/%/add/%type/%nid',
 );
 
 Only two tokens are supported:

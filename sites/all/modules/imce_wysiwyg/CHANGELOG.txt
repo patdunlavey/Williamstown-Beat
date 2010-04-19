@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.4 2009/07/06 22:27:13 sun Exp $
+// $Id: CHANGELOG.txt,v 1.4.2.2 2010/03/12 22:38:03 sun Exp $
 
 IMCE Wysiwyg x.x-x.x, xxxx-xx-xx
 --------------------------------
@@ -6,6 +6,11 @@ IMCE Wysiwyg x.x-x.x, xxxx-xx-xx
 
 IMCE Wysiwyg 6.x-1.x, xxxx-xx-xx
 --------------------------------
+
+
+IMCE Wysiwyg 6.x-1.1, 2010-03-12
+--------------------------------
+#533168 by suhock, that0n3guy, Niels Hackius: Added support for CKeditor.
 #508180 by joachim: Added mention to README of needing Image plugin enabled.
 
 
