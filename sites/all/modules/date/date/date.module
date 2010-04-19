@@ -1,5 +1,5 @@
 <?php
-// $Id: date.module,v 1.61.2.4.2.68 2010/04/13 20:27:21 karens Exp $
+// $Id: date.module,v 1.61.2.4.2.66 2010/03/26 13:26:23 karens Exp $
 
 /**
  * @file
@@ -195,18 +195,6 @@ function date_widget_info() {
     }
   }
   return $info;
-}
-
-function date_default_format($type) {
-  if (stristr($type, 'date_popup') && module_exists('date_popup')) {
-    $formats = date_popup_formats();
-    $default_format = array_shift($formats);
-  }
-  else {
-    // example input formats must show all possible date parts, so add seconds.
-    $default_format = str_replace('i', 'i:s', variable_get('date_format_short', 'm/d/Y - H:i'));
-  }
-  return $default_format;
 }
 
 function date_input_value($field, $element) {
@@ -486,7 +474,6 @@ function date_field($op, &$node, $field, &$items, $teaser, $page) {
       return _date_field_validate($op, $node, $field, $items, $teaser, $page);
       break;
 
-    case 'presave':
     case 'insert':
     case 'update':
       require_once('./'. drupal_get_path('module', 'date') .'/date_elements.inc');
@@ -572,7 +559,7 @@ function date_formatter_format($formatter, $field_name) {
   }
  
   if (empty($format)) {
-    $format = $default;
+    $format = $default_format;
   }
   // A selected format might include timezone information.
   $granularity = date_granularity($field);

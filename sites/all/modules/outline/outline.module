@@ -946,9 +946,9 @@ function outline_check_perm($node, $outline_action, $perm) {
   elseif ($node->uid == $user->uid) {
     $outline_action = TRUE;
   }
-  elseif (  array_key_exists($user->uid, $node->coherent_access['editors']) ) {
-    $outline_action = TRUE;
-  }
+//  elseif (  array_key_exists($user->uid, $node->coherent_access['editors']) ) {
+//    $outline_action = TRUE;
+//  }
   elseif ($node->outline['books'][$bid]['book_role_perm']) {
     $rids = array();
     foreach ($user->roles AS $rid => $role) {

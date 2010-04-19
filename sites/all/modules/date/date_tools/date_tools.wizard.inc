@@ -1,5 +1,5 @@
 <?php
-// $Id: date_tools.wizard.inc,v 1.1.2.3 2010/04/13 19:32:28 karens Exp $
+// $Id: date_tools.wizard.inc,v 1.1.2.1 2010/03/08 23:39:42 karens Exp $
 
 function date_tools_wizard_form() {
   
@@ -94,7 +94,18 @@ function date_tools_wizard_form() {
     '#options' => array(0 => t('No'), 1 => t('Yes')),
     '#default_value' => 0,
     '#title' => t('Add calendar blocks to the current theme'),
-    );   
+    );  
+  $form['location_field'] = array(
+    '#type' => 'value',
+    '#default_value' => '',
+    '#title' => t('Location field name'),
+    );  
+  $form['signup'] = array(
+    '#type' => 'select',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#default_value' => module_exists('signup'),
+    '#title' => t('Turn on signup'),
+    );  
      
   $form['submit'] = array(
     '#type' => 'submit',
@@ -146,6 +157,13 @@ function date_tools_wizard_build($form_values) {
   // an existing type.
   $types = node_get_types('names');
   $type_settings = array();
+  if (!empty($signup)) {
+    $type_settings['signup_node_default_state'] = 'enabled_on';
+    $type_settings['signup_date_field'] = $field_name;
+    variable_set('signup_fieldset_collapsed', 0);
+    variable_set("signup_date_field_$type_name", $field_name);
+    variable_set('signup_node_default_state_'. $type_name, 'enabled_on');
+  }
   if (!array_key_exists($type_name, $types)) {
     date_tools_wizard_create_content_type($name, $type_name, $type_description, $type_settings);
   }
@@ -178,14 +196,95 @@ function date_tools_wizard_build($form_values) {
     
   $date_field = date_tools_wizard_create_date_field($field_type, $widget_type, $tz_handling, $field_settings);
   
+  $location_field = array();
+  $location_field_name = '';
+  if (!empty($location)) {
+    $location_field = date_tools_wizard_create_location_field($type_name);
+    $location_field_name = $location_field['field_name'];
+  }
   $view_name = '';
   if (!empty($calendar)) {
-    $view_name = date_tools_wizard_create_calendar($name, $type_name, $date_field);
+    $view_name = date_tools_wizard_create_calendar($name, $type_name, $date_field, $location_field);
     if (!empty($blocks)) {
       date_tools_wizard_create_blocks($type_name);  
     }
   }
   return $view_name;
+  
+}
+
+function date_tools_wizard_create_ical_feed($type_name, $feed_url, $feed_title) {
+  
+  // If the ical_feed content type has not yet been created, create it.
+  $ical_feed_type = node_get_types('name', 'ical_feed');
+  if (empty($ical_feed_type)) {
+    $type_settings =  array(
+      'body_label' => '',
+      'feedapi' => array (
+        'enabled' => 1,
+        'refresh_on_create' => 0,
+        'update_existing' => 1,
+        'skip' => 0,
+        'items_delete' => '0',
+        'parsers' => array (
+          'parser_ical' => array (
+             'enabled' => 1,
+             'weight' => '0',
+          ),
+        ),
+        'processors' => array (
+          'feedapi_node' => array (
+            'enabled' => 1,
+            'weight' => '0',
+            'content_type' => $type_name,
+            'node_date' => 'feed',
+            'promote' => '3',
+            'x_dedupe' => '0',
+          ),
+        ),
+      ),
+    );
+    date_tools_wizard_create_content_type('ical_feed', $description, $type_settings);  
+  }
+  
+  // Then create a new feed node for this url.
+  $node = new stdClass();
+  $node->title = $feed_title;
+  $node->type = 'ical_feed';
+  
+  $node->feed = new stdClass;
+  $node->feed->url = $url;
+  $node->feed->feed_type = 'iCal Feed';
+  $node->feed->processors = array('feedapi_node');
+  $node->feed->parsers = array('ical_feed');
+  $node->feed->checked = 0;
+  $node->feed->hash = NULL;
+  $node->feed->link = '';
+  $node->feed->half_done = NULL;
+  $node->feed->skip = 0;
+
+  $node->feed->settings = array(
+    'feedapi_url' => $url,
+    'refresh_on_create' => 0,
+    'update_existing' => 1,
+    'skip' => 0,
+    'items_delete' => 0,
+    'processors' => array(
+      'feedapi_node' => array(
+        'content_type' => $type_name,
+        'node_date' => 'feed',
+        'promote' => 3,
+        'x_dedupe' => 0,
+      ),
+    ),
+  );
+  node_create($node);
+  $node->feed->feed_nid = $node->nid;
+  node_save($node);
+  
+  // TODO Can we map the node when we create it?
+  // TODO Can we refresh the node automatically after mapping it?
+  drupal_goto('node/'. $node->nid .'/map');
   
 }
 
@@ -200,7 +299,10 @@ function date_tools_wizard_include() {
 function date_tools_wizard_options($options = array()) {
   $default_options = array(
     'popups', // Use popup features like Date Popup and Calendar Popup?
+    'signup', // Add Signup capability?
+    'feedapi',  // Add ical feed import?
     'repeat', // Use repeating dates?
+    'location',  // Add event locations?
     'linked',  // Create links between calendars and dates?
     );
   // Allow override of default options.
@@ -227,6 +329,24 @@ function date_tools_wizard_required_modules($options = array()) {
   if (in_array('repeat', $options)) {
     $modules = array_merge($modules, array('date_repeat'));
   }
+  if (in_array('location', $options) || in_array('linked', $options)) {
+    $modules = array_merge($modules, array('text', 'optionwidgets', 'nodereference'));
+  }
+  if (in_array('signup', $options)) {
+    $modules = array_merge($modules, array('signup'));
+  }
+  if (in_array('feedapi', $options)) {
+    
+    // iCal imports may use RRULEs that need to be interpreted.
+    if (!in_array('date_repeat', $modules)) {
+      $modules = array_merge($modules, array('date_repeat'));
+    }
+    if (!in_array('calendar_ical', $modules)) {
+      $modules = array_merge($modules, array('calendar_ical'));
+    }
+    $modules = array_merge($modules, array(
+      'feedapi', 'parser_ical', 'feedapi_node', 'feedapi_mapper'));
+  }
   return $modules;
 }
 
@@ -241,9 +361,14 @@ function date_tools_wizard_modules() {
     'date_repeat' => t('Date Repeat'),
     'date_popup' => t('Date Popup'),
     'jcalendar' => t('Calendar Popup'),
+    'signup' => t('Signup'),
     'text' => t('Text'),
     'optionwidgets' => t('Optionwidgets'),
     'nodereference' => t('Nodereference'),
+    'feedapi' => t('Feed API'),
+    'parser_ical' => t('Parser iCal'),
+    'feedapi_node' => t('Feed API Node'),
+    'feedapi_mapper' => t('Feed API Mapper'),
     'views' => t('Views'),
     'views_ui' => t('Views UI'),
     );
@@ -432,8 +557,14 @@ function date_tools_wizard_create_date_field($field_type, $widget_type, $tz_hand
   return $field;
 }
 
-function date_tools_wizard_create_calendar($name, $type_name, $date_field) {
+function date_tools_wizard_create_location($type_name) {
+  // Get the basic field array with content module default values.
+  return content_field_default_values($field_type);
+}
+
+function date_tools_wizard_create_calendar($name, $type_name, $date_field, $location_field = array()) {
   
+  $location_name = !empty($location_field) ? $location_field['field_name'] : '';
   $date_name = !empty($date_field) ? $date_field['field_name'] : '';
   $path = 'calendar-'. str_replace('field_', '', $date_name);
   
@@ -448,7 +579,7 @@ function date_tools_wizard_create_calendar($name, $type_name, $date_field) {
     'path' => $path,
     'types' => array($type_name => $name),
     'date_fields' => array($date_name),
-    'display_fields' => array('title' => array(), $date_name => array()),
+    'display_fields' => !empty($location_name) ? array('title' => array(), $date_name => array(), $location_name => array()) : array('title' => array(), $date_name => array()),
   );
   $calendar_options['calendar_'. $type_name] = $option;
   variable_set('calendar_default_view_options', $calendar_options);
@@ -509,6 +640,6 @@ function date_tools_wizard_add_block($block) {
   }
   else {
     $block->bid = $bid;
-    drupal_write_record('blocks', $block, 'bid');
+    drupal_write_record('blocks', $block, array($block->bid));
   }
 }

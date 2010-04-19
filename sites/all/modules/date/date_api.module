@@ -1,5 +1,5 @@
 <?php
-// $Id: date_api.module,v 1.64.2.5.2.95 2010/04/13 20:17:11 karens Exp $
+// $Id: date_api.module,v 1.64.2.5.2.94 2010/02/28 21:12:41 karens Exp $
 /**
  * @file
  * This module will make the date API available to other modules.
@@ -495,7 +495,7 @@ function date_timezone_names($required = FALSE, $refresh = FALSE) {
         // compatibility reasons and should not be used, the list is 
         // filtered by a regular expression.
         if (preg_match('!^((Africa|America|Antarctica|Arctic|Asia|Atlantic|Australia|Europe|Indian|Pacific)/|UTC$)!', $zone)) {
-          $zonenames[$zone] = $zone;
+          $zonenames[$zone] = t($zone);
         }      
       }
       // If using PHP4, filter the list down to only the timezones
@@ -524,8 +524,10 @@ function date_timezone_names($required = FALSE, $refresh = FALSE) {
         cache_set('date_timezone_identifiers_list', $zonenames);
       }
     }
-    foreach ($zonenames as $zone) {
-      $zonenames[$zone] = t('!timezone', array('!timezone' => $zone));
+    else {
+      foreach ($zonenames as $zone) {
+        $zonenames[$zone] = t('!timezone', array('!timezone' => $zone));
+      }
     }
   }
   $none = array('' => '');
