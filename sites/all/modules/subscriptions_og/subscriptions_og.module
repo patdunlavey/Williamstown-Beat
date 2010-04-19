@@ -1,0 +1,1116 @@
+<?php
+// $Id: subscriptions_og.module,v 1.1.2.52 2008/04/29 22:02:01 develCuy Exp $
+
+/**
+ * @file
+ * Subscriptions to Organic Groups.
+ *
+ * Subscriptions_og extends the subscription module to allow users to subscribe
+ * by group. This is very similar to what the subscribe_taxonomy module does
+ * for taxonomy terms. If a user subscribes to a group he will receive
+ * notifications each time a node is published to that group. The user can also
+ * select to receive notifications when such a node is updated or commented.
+ */
+
+include_once drupal_get_path('module', 'subscriptions_og') .'/subscriptions_og_views.inc';
+
+/**
+ * Implementation of hook_subscriptions().
+ *
+ * This is called by subscriptions_queue(), subscriptions_types() at
+ * subscriptions.module and by subscriptions_add_form_submit() at
+ * subscriptions.admin.inc.
+ *
+ * @see subscriptions_queue(), subscriptions_types(), subscriptions_add_form_submit()
+ */
+function subscriptions_og_subscriptions($op, $arg0 = NULL, $arg1 = NULL, $arg2 = NULL) {
+
+  // the operations 'types', 'node_options' and 'access' are delegated to separate functions
+  $function = '_subscriptions_og_'. $op;
+  if (function_exists($function)) {
+    return $function($arg0, $arg1, $arg2);
+  }
+  // the remaining operations are handled below
+  switch ($op) {
+    case 'queue':
+      // $arg0 is $event array.
+      if ($arg0['module'] == 'node') {
+        $node = $arg0['node'];
+        $params['node']['group_nid'] = array(
+          'join' => 'INNER JOIN {og_ancestry} a ON s.value = a.group_nid',
+          'where' => 'a.nid = %d',
+          'args' => array($node->nid),
+        );
+        if ($arg0['type'] == 'comment') {
+          $where = ' AND s.send_comments = 1';
+        }
+        elseif ($arg0['type'] == 'node' && $arg0['action'] == 'update') {
+          $where  = ' AND s.send_updates = 1';
+        }
+        if (isset($where)) {
+          $params['node']['group_nid']['where'] .= $where;
+        }
+        return $params;
+      }
+      break;
+    case 'fields': // Parameter is module
+      if ($arg0 == 'node' || $arg0 == 'comment') {
+        return array(
+          'group_nid' => array(
+            'mailvars_function' => '_subscriptions_content_node_mailvars',
+            '!subs_type' => t('group'),
+          ),
+        );
+      }
+      break;
+    case 'stypes':
+      return array('group' => array('node', 'group_nid'));
+    case 'stype':
+      return $arg0 == 'group' ? array('node', 'group_nid', $arg1, $arg2) : NULL;
+  }
+}
+
+/**
+ * Implementation of _hook_node_options(), subhook of hook_subscriptions().
+ *
+ * This is called by subscriptions_ui_node_form() at subscriptions_ui.module.
+ *
+ * @see subscritions_ui_node_form()
+ */
+function _subscriptions_og_node_options($account, $node) {
+
+  $options = array();
+  $omits   = variable_get('subscriptions_omitted_og', array());
+
+  if (!og_is_group_type($node->type)) { // not a groups node
+
+    // Retrieve accessible nodes - Prevents showing Private groups
+    $node_groups = og_node_groups_distinguish($node->og_groups_both, FALSE);
+    $node_groups = $node_groups['accessible'];
+
+    if (count($node_groups)) {
+      // Fetch group nodes
+      $query = "
+  SELECT
+    nid, type
+  FROM
+    {node} n
+  WHERE
+    nid IN(". str_repeat("%d,", count($node_groups)-1) ."%d)
+      ";
+      $rs = call_user_func_array('db_query', array_merge(array($query), array_keys($node_groups)));
+      $groups_types = array();
+      while ($group = db_fetch_object($rs)) {
+        $groups_types[$group->nid] = $group->type;
+      }
+      foreach ($node_groups as $group_nid => $label) {
+        if (!in_array($groups_types[$group_nid], $omits)) {
+          $options['group_nid'][] = array(
+            'name' => t('To group %label', array('%label' => $label['title'])),
+            'params' => array(
+              'module' => 'node',
+              'field' => 'group_nid',
+              'value' => $group_nid
+            ),
+            'link' => 'node/'. $group_nid,
+          );
+        }
+      }
+    }
+  }
+  else {
+    if (!in_array($node->type, $omits)) {
+      // Organic Groups "group" node
+      $options['group_nid'][] = array(
+        'name' => t('To this group'),
+          'params' => array(
+          'module' => 'node',
+          'field' => 'group_nid',
+          'value' => $node->nid
+        ),
+        'link' => 'node/'. $node->nid,
+      );
+    }
+  }
+  $options['group_nid']['weight'] = -3;
+  return $options;
+}
+
+/**
+ * Inplementation of _hook_types(), subhook of hook_subscriptions().
+ *
+ * This is called by subscriptions_types() at subscriptions.module.
+ *
+ * @return
+ *   Returns information of types for Subscriptions module interface.
+ *
+ * @see subscriptions_types()
+ */
+function _subscriptions_og_types() {
+  $types['group'] = array(
+    'title' => t('Groups'),
+    'access' => 'subscribe to organic groups',
+    'page' => 'subscriptions_og_page_group_type',
+    'fields' => array('node', 'group_nid'),
+    'weight' => -1,
+  );
+  return $types;
+}
+
+
+/**
+ * Implementation of hook_form_subscriptions_settings_form_alter().
+ *
+ * Adds the Taxonomy Settings part to admin/settings/subscriptions.
+ *
+ * @ingroup hooks
+ * @ingroup form
+ */
+function subscriptions_og_form_subscriptions_settings_form_alter(&$form, &$form_state) {
+
+  $form['group'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Group settings'),
+    '#collapsible' => TRUE,
+    '#weight' => -10,
+  );
+
+  $select[0] = '<'. t('none') .'>';
+  $select = array_merge($select, variable_get('og_node_types', array('og')));
+
+  $form['group']['subscriptions_restricted_og'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Restricted group types'),
+    '#default_value' => variable_get('subscriptions_restricted_og', array()),
+    '#options'       => $select,
+    '#description'   => t("For the selected group types only those groups will be listed on the user's group subscription page (user/#uid/subscriptions/group) in which either the user is a member or to which the user has already subscribed."),
+    '#multiple'      => TRUE,
+  );
+  $form['group']['subscriptions_omitted_og'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Omitted group types'),
+    '#default_value' => variable_get('subscriptions_omitted_og', array()),
+    '#options'       => $select,
+    '#description'   => t('Select group types which should be <strong>omitted</strong> from subscription listings. Users will not be able to subscribe to groups of this type.'),
+    '#multiple'      => TRUE,
+  );
+
+  $form['group']['subscriptions_og_list_joined_only'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Limit listing of subscriptions in account(user/#uid/subscriptions/group) to those where user is member.'),
+    '#default_value' => variable_get('subscriptions_og_list_joined_only', FALSE),
+  );
+
+}
+
+/**
+ * Returns a list of group subscriptions by group type.
+ *
+ * @param $account
+ *   This param is delegated to subscriptions_og_group_type_form().
+ * @param $form
+ *   This param is delegated to subscriptions_og_group_type_form().
+ *
+ * @see _subscriptions_og_types(), subscriptions_og_group_type_form()
+ */
+function subscriptions_og_page_group_type($account, $form) {
+
+  // Load group types into array indexed by type
+  foreach (og_get_types('group') as $type) {
+    $group_types[$type] = $type;
+  }
+
+  // omit undesired group types from listing
+  $omits = variable_get('subscriptions_omitted_og', array());
+  foreach ($omits as $omit) {
+    unset($group_types[$omit]);
+  }
+
+  if (count($group_types)) {
+
+    // Add human-readable type name
+    $query = "
+SELECT
+  nt.type,
+  nt.name
+FROM
+  {node_type} nt
+WHERE
+  nt.type IN('". implode("','", $group_types) ."')
+    ";
+    $rs = db_query($query);
+    while ($gt = db_fetch_object($rs)) {
+      $group_types[$gt->type] = $gt;
+    }
+
+    return drupal_get_form(
+      'subscriptions_og_group_type_form', $group_types, $account, $form);
+  }
+  else {
+    return t(
+      'There are no available !subs_types.', array('!subs_types' => t('groups')));
+  }
+}
+
+/**
+ * Returns the group type subscription form, which may be called trough User
+ * account or Subscriptions user defaults.
+ *
+ * This is called by subscriptions_og_page_group_type().
+ *
+ * @param $group_types
+ *   Array of group types available to given $account.
+ * @param $account
+ *   Must be a user object or will be populted with negated
+ *   DRUPAL_AUTHENTICATED_RID to set defaults.
+ * @param $form
+ *   Form definition to be extended with each Group subscription controls.
+ *
+ * @ingroup forms
+ *
+ * @see subscriptions_og_page_group_type()
+ */
+function subscriptions_og_group_type_form(&$form_state, $group_types, $account, $form) {
+
+  include_once drupal_get_path('module', 'subscriptions') .'/subscriptions.admin.inc';
+
+  // Load and prepare a list of 1) given account subscriptions or 2) defaults for groups
+
+  $uid = (isset($account) ? $account->uid : (is_numeric(arg(5)) ? -arg(5) : -DRUPAL_AUTHENTICATED_RID));
+  // For user defaults, $account must be a valid user object
+  if (!is_object($account)) {
+    $account = user_load(array('uid' => 0));
+  }
+
+  // Load list of types with their groups
+  if (count($group_types)) {
+    $query = "
+SELECT
+  n.*,
+  g.og_private as private
+FROM
+  {node} n JOIN
+  {og} g ON
+    n.nid = g.nid
+WHERE
+  n.type IN('". implode("','", array_keys($group_types)) ."')
+    ";
+
+    $rs = db_query($query);
+    while ($group = db_fetch_object($rs)) {
+      $groups_by_types[$group->type][$group->nid] = $group;
+    }
+  }
+
+  // load subscriptions
+  $sql = db_rewrite_sql("
+SELECT
+  s.value, s.send_interval, s.author_uid,
+  s.send_comments, s.send_updates, n.type, n.title
+FROM
+  {node} n JOIN
+  {og} g ON
+    g.nid = n.nid JOIN
+  {subscriptions} s ON
+    g.nid = s.value
+WHERE
+  s.module = 'node' AND
+  s.field = 'group_nid' AND
+  s.recipient_uid = %d
+ORDER BY
+  s.author_uid
+  ");
+
+  $result = db_query($sql, $uid);
+  while ($s = db_fetch_array($result)) {
+    $subscriptions[$s['type']][$s['value']][$s['author_uid']] = $s;
+    $subscriptions_groups_by_type[$s['type']][$s['value']] = $groups_by_types[$s['type']][$s['value']];
+  }
+
+  // Determines if we must restrict subscriptions listing in user account
+  $list_joined_only = variable_get("subscriptions_og_list_joined_only", FALSE);
+
+  // Construct groups subscriptions form
+  foreach ($group_types as $type) {
+    // display group types name and group nodes together
+    $form[$type->type] = array(
+      '#type' => 'fieldset',
+      '#title' => $type->name,
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    $form[$type->type][0] = array(
+      '#tree' => TRUE,
+      '#theme' => 'subscriptions_form_table',
+    );
+
+    $subscriptions_type = (isset($subscriptions[$type->type]) ? $subscriptions[$type->type] : NULL);
+
+    // Check if $type->type is a rectricted group type
+    $types_to_restrict = variable_get('subscriptions_restricted_og', array());
+    if (!in_array($type->type, $types_to_restrict)) {
+      $tree = $groups_by_types[$type->type];
+    }
+    else {
+      $tree = $subscriptions_groups_by_type[$type->type];
+      // add user's groups
+      foreach ($account->og_groups as $group) {
+        $group = (object)$group;
+        $tree[$group->nid] = $groups_by_types[$type->type][$group->nid];
+      }
+      $form[$type->type][1] = array(
+        '#type' => 'item',
+        '#description' => '<div>'. t("Only groups that you have already subscribed to or that you are a member of are listed here. You may be able to subscribe to other groups from their group home pages.") .'</div>',
+      );
+    }
+    $defaults = array();
+    if (isset($tree)) {
+      foreach ($tree as $group) {
+        if ($account->uid == 0 || ((!$group->private && !$list_joined_only) || in_array($group->nid, array_keys($account->og_groups)))) {
+          subscriptions_og_group_form(
+            $form[$type->type][0], $subscriptions_type[$group->nid],
+            $defaults, $group, $uid, $account
+          );
+        }
+      }
+    }
+    $form[$type->type][0]['defaults'] = array(
+      '#type' => 'value',
+      '#value' => $defaults,
+    );
+    subscriptions_form_column_filter($form[$type->type][0], $uid);
+  }
+
+  if (empty($form)) {
+    $form = array('#value' => t('There are no active group types.'));
+  }
+  else {
+    $form['#tree'] = TRUE;
+    $form['uid']    = array('#type' => 'value', '#value' => $uid);
+    // From Salvis's Patch: http://drupal.org/node/220459#comment-726120
+    $form['access_key'] = array('#type' => 'value', '#value' => 'group');
+    $form['module'] = array('#type' => 'value', '#value' => 'node');
+    $form['field']  = array('#type' => 'value', '#value' => 'group_nid');
+    $form['submit'] = array('#type' => 'submit', '#value' => t('Save'), '#weight' => 10);
+    $form['#submit'][] = 'subscriptions_page_form_submit';
+  }
+
+  return $form;
+}
+
+/**
+ * Implementation of hook_mailkeys().
+ *
+ * Called by mail_edit_overview() in mail_edit.module.
+ */
+function subscriptions_og_mailkeys() {
+  return array('node-group_nid' => t('Notifications for Group subscriptions'));
+}
+
+/**
+ * Implementation of hook_mail_edit_tokens_list().
+ *
+ * Provide replacable tokens for mail_edit.
+ *
+ * @ingroup hooks
+ */
+function subscriptions_og_mail_edit_tokens_list($mailkey, $options = array()) {
+  $tokens = array();
+  switch ($mailkey) {
+    case 'node-group_nid':
+      $tokens['!group_name']= t('The name of the group.');
+      break;
+  }
+  if (isset($options['tokens'])) {
+    $tokens += $options['tokens'];
+  }
+  $tokens = subscriptions_content_mail_edit_tokens_list($mailkey, array('tokens' => $tokens));
+  return $tokens;
+}
+
+/**
+ * Implementation of hook_mail_edit_text().
+ *
+ * Provide default template strings for mail_edit.
+ *
+ * @ingroup hooks
+ */
+function subscriptions_og_mail_edit_text($mailkey, $language) {
+  $return = subscriptions_content_mail_edit_text($mailkey, $language);
+  return $return;
+}
+
+/*
+ * Implementation of hook_disable().
+ */
+function subscriptions_og_disable() {
+  db_query("DELETE FROM {subscriptions_queue} WHERE module = 'node' AND field = 'group_nid'");
+}
+
+// Up to here this module was in direct analogy to the subscriptions_taxonomy module
+
+// Now comes stuff that was not necessary for taxonomy subscriptions
+
+/*
+ * Implementation of hook_count_user_subscriptions().
+ *
+ * Called by subscriptions_page_user_overview() at subscriptions.admin.inc.
+ *
+ * @see subscriptions_page_user_overview()
+ */
+function subscriptions_og_count_user_subscriptions($count, $uid) {
+  $type   = _subscriptions_og_types();
+  $fields = $type['group']['fields'];
+  $query = "
+SELECT count(*)
+FROM {subscriptions}
+WHERE
+  module = 'node' AND
+  field = 'group_nid' AND
+  recipient_uid = %d
+  ";
+  $count[$fields[0]][$fields[1]] = db_result(db_query($query, $uid));
+  return $count;
+}
+
+
+/**
+ * Extends given form with subscriptions controls by given parameters. Wrapper
+ * of subscriptions_form_helper().
+ *
+ * @param &$form
+ *   Form definition to be extended.
+ * @param &$subscriptions
+ *   Array with valid subscription objects.
+ * @param &$defaults
+ *   Commonly an empty array, it is full filled by subscriptions_form_helper().
+ * @param $group
+ *   A valid group object.
+ * @param $uid
+ *   Used for adding author-less item.
+ * @param $account
+ *   Used for adding author-less item.
+ *
+ * @see subscriptions_form_helper()
+ *
+ * @ingroup forms
+ */
+function subscriptions_og_group_form(&$form, &$subscriptions, &$defaults, $group, $uid, $account) {
+  include_once drupal_get_path('module', 'subscriptions') .'/subscriptions.admin.inc';
+
+  if (is_array($group)) {
+    $group = (object)$group;
+  }
+  $title = l($group->title, 'node/'. $group->nid);
+  if (!isset($subscriptions[-1])) {
+    // author-less item is missing -- add it here:
+    $subscriptions[-1] = array(
+      'send_interval' => _subscriptions_get_setting('send_interval', ($uid < 0 ? $uid : $account)),
+      'send_comments' => _subscriptions_get_setting('send_comments', ($uid < 0 ? $uid : $account)),
+      'send_updates' => _subscriptions_get_setting('send_updates', ($uid < 0 ? $uid : $account)),
+      'author_uid' => FALSE,
+    );
+  }
+  // add the active subscriptions
+  foreach ($subscriptions as $author_uid => $subscription) {
+    subscriptions_form_helper($form, $defaults, $author_uid, $group->nid, $title, $subscription);
+  }
+}
+
+// Now comes stuff specific to the integration with the og module
+
+
+/**
+ * Implementation of hook_og().
+ */
+function subscriptions_og_og($op, $gid, $uid, $args) {
+  switch ($op) {
+    case 'user insert': // Called by og_save_subscription() and og_subscribe_user()
+      subscriptions_write_subscription(
+        'node', 'group_nid', $gid, $author_uid = -1, $recipient = $uid,
+        $send_interval = _subscriptions_get_setting('send_interval', $uid),
+        $send_updates = _subscriptions_get_setting('send_updates', $uid),
+        $send_comments = _subscriptions_get_setting('send_comments', $uid)
+      );
+      /*
+      global $_subscriptions_og_history;
+      global $_subscriptions_og_history_values;
+      $_subscriptions_og_history[] = 'subscriptions_og_group';
+
+      $no_autosubs = FALSE;
+
+      // If user is subscribed to group from og_confirm_subscribe
+      if (isset(
+        $_subscriptions_og_history_values['subscriptions_og_group_confirm_subscribe_submit']
+      )) {
+        // Recover needed data
+        $form_values =& $_subscriptions_og_history_values['subscriptions_og_group_confirm_subscribe_submit'];
+        $params =& $form_values['params'];
+        $subscriptions =& $form_values['subscriptions'];
+
+        for ($i = 0; $i < count($params); $i++) {
+          if (
+              $params[$i+1]['field'] == 'group_nid' &&
+                !$subscriptions[$i+1]
+          ) {
+            $no_autosubs = TRUE;
+          }
+        }
+      }
+
+      if (
+          variable_get('subscriptions_autosubs_og', 0) &&
+          user_access('subscribe to organic groups') &&
+          !$no_autosubs
+      ) {
+        subscriptions_autosubscribe('node', 'group_nid', $gid, 'on_post');
+      }
+      */
+      break;
+    case 'user delete':
+      db_query("DELETE FROM {subscriptions} WHERE module = 'node' AND field = 'group_nid' AND value = '%d' AND recipient_uid = '%d'", $gid, $uid);
+      db_query("DELETE FROM {subscriptions_queue} WHERE module = 'node' AND field = 'group_nid' AND value = '%d' AND uid = '%d'", $gid, $uid);
+      break;
+    case 'user request':
+      // This and other notifications related ops drop down to the same case.
+      // These different ops have been provided for consistency and flexibility
+      // during use by other modules.
+    case 'user approve':
+    case 'user deny':
+    case 'admin create':
+    case 'admin new':
+    case 'user broadcast':
+      $destinations = is_array($uid) ? $uid : array($uid);
+      foreach ($destinations as $uid) {
+        subscriptions_og_send($uid, $args['subject'], $args['body']);
+      }
+      break;
+  }
+}
+
+/**
+ * Sends out a notification for a user
+ *
+ * @param $uid
+ *   User id for destination
+ * @param $subject
+ *   Notification subject
+ * @param $body
+ *   Optional notification body
+ * @param $action
+ *   Optional action name
+ */
+function subscriptions_og_send($uid, $subject, $body = '', $action = 'default') {
+    $account = user_load(array('uid' => $uid));
+    $params = array(
+      'type' => 'subscriptions_og',
+      'subject' => $subject,
+      'body' => empty($body) ? $subject : $body,
+    );
+    return drupal_mail('subscriptions_og', $action, $account->mail, user_preferred_language($account), $params);
+
+}
+/**
+ * Implementation of hook_mail()
+ */
+function subscriptions_og_mail($key, &$message, $params) {
+  $message['subject'] = $params['subject'];
+  $message['body'] = $params['body'];
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function subscriptions_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  global $user;
+
+  switch ($op) {
+    /*
+    case 'insert':
+    case 'update':
+      if (og_is_group_type($node->type)) {
+        $varname = 'subscriptions_og_autosubs_'. $node->nid;
+        variable_set($varname, $node->$varname);
+      }
+      break;
+    */
+    case 'delete':
+      if (og_is_group_type($node->type))
+        // delete subscriptions for this group
+        db_query("DELETE FROM {subscriptions} WHERE module = 'node' AND field = 'group_nid' AND value = '%d'", $node->nid);
+        db_query("DELETE FROM {subscriptions_queue} WHERE module = 'node' AND field = 'group_nid' AND value = '%d'", $node->nid);
+        /*
+        variable_del('subscriptions_og_autosubs_'. $node->nid);
+        */
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+/*
+function subscriptions_og_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+  global $_subscriptions_og_history;
+
+  // Replace "Email notification" section with the same "Subscribe" fieldset
+  // subscriptions controls.
+  if ($form_id == 'og_manage_form') {
+    // Remove unnecesary options
+    unset($form['mail_type']);
+    unset($form['op']);
+    // giving user account a clear name
+    if ($form_id == 'og_manage_form')
+      $account = $user;
+
+    // Append subscriptions controls
+    subscriptions_og_attach_subscriptions_controls(
+      $form, $account, $form['#parameters'][1], FALSE);
+
+    //Make subscription controls expanded by default
+    $form['subscription']['wrapper']['#collapsed'] = FALSE;
+    // Avoid bad redirection
+    unset($form['#submit']['og_manage_form_submit']);
+  }
+
+  // Identify if current is an OG node form.
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $group_types = variable_get('og_node_types', array());
+    if (in_array($form['#node']->type, $group_types)) {
+      $group_nid = $form['#node']->nid;
+      // Grouping "Group" settings
+      $new_form = array(
+        '#type' => 'fieldset',
+        '#title' => 'Group settings',
+        '#collapsible' => TRUE,
+        '#weight' => 0.01,
+      );
+      $extract = array('og_selective', 'og_register',
+                        'og_directory', 'og_private');
+      foreach ($extract as $item) {
+        $new_form[$item] = $form[$item];
+        unset($form[$item]);
+      }
+
+      // Adding new option
+      $new_form['subscriptions_og_autosubs_'. $group_nid] = array(
+        '#type' => 'checkbox',
+        '#title' => t('New members are subscribed to notifications automatically.'),
+        '#description' => t('If checked then new group members will have'.
+          ' "subscribe to this post" enabled by default.'),
+        '#default_value' =>
+          variable_get('subscriptions_og_autosubs_'. $group_nid, 0),
+      );
+
+      // Commit changes
+      $form['og_settings'] = $new_form;
+      unset($new_form);
+    }
+  }
+
+  if (
+    in_array($form_id, array('og_confirm_subscribe', 'og_confirm_unsubscribe'))
+  ) {
+    $_subscriptions_og_history[] = $form_id;
+    // Append subscriptions controls
+    $account = $form['#parameters'][3];
+    if (!is_object($account)) $account = user_load(array('uid' => $account));
+
+    subscriptions_og_attach_subscriptions_controls(
+      $form, $account, $form['#parameters'][2]);
+  }
+
+  if ($form_id == 'user_edit') {
+  // Take out "Organic groups settings" fieldset
+    unset($form['og_settings']);
+  }
+
+  if ($form_id == 'subscriptions_ui_node_form') {
+    $values =& $form['params']['#value'];
+    // Look for group row in Subscription controls
+    for ($i = 1; $i <= count($values); $i++) {
+      if ($values[$i]['field'] == 'group_nid') {
+        // Get default $values
+
+        $defaults = subscriptions_get_full_subscription(
+          $form['account']['#value']->uid, 'node', 'group_nid',
+          $values[$i]['value']
+        );
+
+        // Adjust send_comments value according to subscription control
+        if ($defaults->send_comments) {
+          $defaults->send_comments = $i;
+        }
+        elseif (!is_object($defaults)) {
+          if (_subscriptions_get_setting('send_comments', $form['account']['#value']))
+            $defaults = (object)array('send_comments' => $i);
+        }
+
+        // Activate column "On comment"
+        if (module_exists('comment') && user_access('access comments')) {
+          $form['wrapper']['comments']['#default_value'][$i -1] =
+            $defaults->send_comments;
+          $form['wrapper']['comments']['#options'][$i] = '';
+          $_subscriptions_og_history[] = 'subscriptions_ui_node_form';
+
+          // Implements auto-subscription when a user is asked to be joined
+          if (
+            variable_get('subscriptions_og_autosubs_'. $values[$i]['value'], 0) &&
+            in_array('og_confirm_subscribe', $_subscriptions_og_history)) {
+            $form['wrapper']['subscriptions']['#default_value'][$i -1] = 1;
+          }
+        }
+      }
+    }
+    // Completion of column "On comment"
+    if (module_exists('comment') && user_access('access comments')) {
+      $form['wrapper']['comments']['#type'] = 'checkboxes';
+      $form['wrapper']['comments']['#access'] =
+        _subscriptions_get_setting('send_comments_visible',
+          $form['account']['#value']) > 0;
+    }
+  }
+
+  if ($form_id == 'og_admin_settings') {
+    $pattern = array(
+      'og_settings' => array(
+        // Remove the "Group email notifications" section as it was moved to
+        // admin/settings/subscriptions
+        'group_details' => array('og_notification'),
+        'email' => array(
+          // Remove the "Omitted node type" control because that is replaced by
+          // the existing "Omitted node type" control on
+          // admin/settings/subscriptions.
+          'og_omitted_email_node_types',
+          // Remove the "New content subject" and "New content body"
+          'og_new_node_subject',
+          'og_new_node_body',
+        ),
+      ),
+    );
+    $form = _subscriptions_og_unset_array_items($form, $pattern);
+  }
+}
+*/
+
+/**
+ * Implementation of hook_menu().
+ *
+ * Provide an extra tab called "Subscriptions" at og/users/#group_nid.
+ */
+ /*
+function subscriptions_og_menu($may_cache) {
+  global $user;
+
+  $items = array();
+  $group_nid = arg(2);
+
+  if (!$may_cache && arg(0) == 'og' && arg(1) == 'users' && is_numeric($group_nid)) {
+    if ($node = node_load($group_nid)) {
+      $items[] = array(
+        'path' => "og/users/". $group_nid ."/subscriptions",
+        'type' => MENU_LOCAL_TASK,
+        'title' => t('Subscriptions'),
+        'callback' => 'og_menu_check',
+        'callback arguments' => array(
+          'subscriptions_og_group_subscriptions',
+          $group_nid,
+          'members'
+        ),
+        'type' => MENU_LOCAL_TASK,
+        'access' => og_is_node_admin($node),
+      );
+      $items[] = array(
+        'path' => "og/users/". $group_nid ."/subscriptions/members",
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'title' => t('Members'),
+      );
+      $items[] = array(
+        'path' => "og/users/". $group_nid ."/subscriptions/nonmembers",
+        'type' => MENU_LOCAL_TASK,
+        'title' => t('Non-members'),
+        'callback' => 'og_menu_check',
+        'callback arguments' => array(
+          'subscriptions_og_group_subscriptions',
+          $group_nid,
+          'nonmembers'
+        ),
+        'access' => og_is_node_admin($node),
+      );
+    }
+  }
+  return $items;
+}*/
+
+/**
+ * Wrapper of Form listing members and subscribers.
+ * @param $group_nid
+ *   Gets passed through to subscriptions_og_group_subscriptions_form().
+ * @param $type
+ *   Either 'members' or 'nonmembers'. Gets passed through to subscriptions_og_group_subscriptions_form().
+ * @return
+ *   Output from subscriptions_og_group_subscriptions_form().
+ *//*
+function subscriptions_og_group_subscriptions($group_nid, $type) {
+  $group = node_load($group_nid);
+  return
+    drupal_get_form('subscriptions_og_group_subscriptions_form', $group, $type) .
+    theme('pager', NULL, 50)
+  ;
+}*/
+
+/**
+ * Form listing group members or subscribers.
+ *
+ * Allows group admins to administer group subscriptions.
+ *
+ * @param $group
+ *   Group node
+ * @param $type
+ *   Either 'members' or 'nonmembers'. Determines which users to show on form
+ *
+ * @return
+ *   Rendered form.
+ *
+ * @ingroup forms
+ *//*
+function subscriptions_og_group_subscriptions_form($group, $type) {
+
+  switch ($type) {
+    case 'members':
+      $query = og_list_users_sql(0, 0, 'ou.is_admin DESC, ou.is_active ASC, u.name ASC');
+      break;
+    case 'nonmembers':
+      $query = "
+SELECT
+  u.uid
+FROM
+  {subscriptions} s INNER JOIN
+  {users} u ON
+    s.recipient_uid = u.uid
+WHERE
+  s.field = 'group_nid' AND
+  s.value = %d AND
+  u.status > 0 AND
+  u.uid NOT IN(SELECT uid FROM {og_uid} WHERE nid = %d)
+ORDER BY
+  u.name ASC
+      ";
+      break;
+  }
+  $rs = pager_query($query, 50, 0, NULL, $group->nid, $group->nid);
+  $form = array();
+
+  while ($row = db_fetch_object($rs)) {
+    $account = user_load(array('uid' => $row->uid));
+    $form[] = subscriptions_og_group_member_form($account, $group, count($form));
+  }
+  $form['count'] = array(
+    '#type' => 'value',
+    '#value' => count($form),
+  );
+
+  $form['#submit']['subscriptions_og_group_subscriptions_form_submit'] = array();
+  return $form;
+}*/
+
+/**
+ * Group subscriptions form submit handler.
+ *//*
+function subscriptions_og_group_subscriptions_form_submit($form_id, $form_state) {
+  // Look for pressed button
+  for ($i = 0; $i < $form_state['count']; $i++) {
+    //$op = ;
+    if (isset($form_state['op_'. $i])) break;
+  }
+  // Recover User ID
+  $uid = $form_state[$i]['uid'];
+  // Construct new form
+  $form[0] = $form_state[$i];
+  unset($form[0]['uid']);
+  $form['uid'] = $uid;
+  foreach (array('access_key', 'module', 'field', 'submit') as $key)
+    $form[$key] = $form_state[$key];
+  $form['op'] = $form_state['op_'. $i];
+
+  // Dispatch new form
+  subscriptions_page_form_submit($form_id, $form);
+}*/
+
+/**
+ * Group member form.
+ *
+ * Helper function to construct subscriptions controls just for given member
+ * account and group.
+ *
+ * @param $account
+ *   A valid user object.
+ * @param $group
+ *   A valid group object.
+ * @param $delta
+ *   Form delta to distingish subscriptions controls.
+ *
+ * @return
+ *   Form definition.
+ *
+ * @ingroup forms
+ *//*
+function subscriptions_og_group_member_form($account, $group, $delta) {
+
+  $defaults = array();
+  $subscriptions = array();
+
+  // Load user subscription
+  $subscription = subscriptions_get_full_subscription(
+    $account->uid, 'node', 'group_nid', $group->nid
+  );
+  // Validate and normalize
+  if (is_object($subscription)) {
+    $subscription->type = $group->type;
+    $subscriptions = array(-1 => (array)$subscription);
+  }
+  $form = array(
+    '#type' => 'fieldset',
+    '#parents' => array(0),
+  );
+  $form[$delta] = array(
+    '#tree' => TRUE,
+    '#theme' => 'subscriptions_form_table',
+  );
+
+  subscriptions_og_group_form(
+    $form[$delta], $subscriptions, $defaults, $group,
+    $account->uid, $account
+  );
+
+  $form[$delta]['defaults'] = array(
+    '#type' => 'value',
+    '#value' => $defaults,
+  );
+  subscriptions_form_column_filter($form[$delta], -1);
+
+  // Label with user name
+  $form[$delta]['checkboxes'][$group->nid][-1]['#title'] = $account->name;
+
+  // Add confirmation for notify user about changes.
+  /* $form[]  = array(
+    '#type' => 'checkbox',
+    '#value' => 1,
+    '#default_value' => 1,
+    '#title' => t('Notify user about changes.'),
+    '#description' => t('TRUE by default. If checked, system will generate an '.
+      'email to notify user about changes in her subscription.'),
+    '#parents' => array($delta, 'notify'),
+  ); *//*
+
+  // Configure submission data
+  $form['access_key'] = array('#type' => 'value', '#value' => 'group');
+  $form['module'] = array('#type' => 'value', '#value' => 'node');
+  $form['field']  = array('#type' => 'value', '#value' => 'group_nid');
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save'), '#weight' => 10);
+  $form['#submit']['subscriptions_page_form_submit'] = array();
+
+  $form[]    = array(
+    '#type' => 'value',
+    '#value' => $account->uid,
+    '#access' => TRUE,
+    '#parents' => array($delta, 'uid'),
+  );
+
+  $form['submit']['#name'] = 'op_'. $delta;
+
+  return $form;
+}*/
+
+/**
+ * Recursively unset sub-arrays of given $array by $pattern.
+ *//*
+function _subscriptions_og_unset_array_items($array, $pattern) {
+  foreach ($pattern as $key => $value) {
+    if (is_array($value))
+      $array[$key] = _subscriptions_og_unset_array_items($array[$key], $pattern[$key]);
+    else {
+      unset($array[$pattern[$key]]);
+    }
+  }
+  return $array;
+}*/
+
+/**
+ * Group confirm suscribe form submit handler.
+ *//*
+function subscriptions_og_group_confirm_subscribe_submit($form_id, $form_values) {
+  $args = func_get_args();
+  // $_subscriptions_og_history is cronological summary of function and form
+  // calls in order of let og and subscriptions module interact each other
+  // within this plug-in
+  global $_subscriptions_og_history;
+  // Optionally, $_subscriptions_og_history_values stores values of
+  // $_subscriptions_og_history
+  global $_subscriptions_og_history_values;
+  $_subscriptions_og_history[] = 'subscriptions_og_group_confirm_subscribe_submit';
+  $_subscriptions_og_history_values['subscriptions_og_group_confirm_subscribe_submit'] =
+    $form_values;
+}*/
+
+/**
+ * Attach subscriptions controls to given array
+ *
+ * It wraps subscriptions_ui_node_form() according to given paramaters to easy
+ * construction of subscriptions controls attached to existing forms.
+ *
+ * @param &$form
+ *   Form definition to be extended with subscription controls.
+ * @param $account
+ *   A valid user object. Delegated to subscriptions_ui_node_form().
+ * @param $node
+ *   A valida node object. Delegated to subscriptions_ui_node_form().
+ * @param $no_submit
+ *   Bolean value. Posible values:
+ *   - TRUE: remove any submit button from attached controls.
+ *   - FALSE: do not remove submit button.
+ *
+ * @ingroup forms
+ *//*
+function subscriptions_og_attach_subscriptions_controls(&$form, $account, $node, $no_submit = TRUE) {
+  $form['subscription'] = subscriptions_ui_node_form(
+    $node, // group node
+    $account // user account
+  );
+
+  if (!count($form['subscription'])) return;
+
+  $form['subscription']['#weight'] = -1;
+  $form['subscription']['#parameters'][1] =& $node;
+
+  // Apply corresponding changes for subscriptions controls
+  subscriptions_og_form_alter('subscriptions_ui_node_form', $form['subscription']);
+
+  // Remove not corresponding options
+  foreach ($form['subscription']['params']['#value'] as $key => $type) {
+    if (!($type['value'] == $node->nid && $type['field'] == 'group_nid')) {
+      unset($form['subscription']['params']['#value'][$key]);
+      unset($form['subscription']['wrapper']['subscriptions']['#options'][$key]);
+      unset($form['subscription']['wrapper']['updates']['#options'][$key]);
+      unset($form['subscription']['send_intervals']['#value'][$key]);
+    }
+  }
+
+  // Remove submit button from subscriptions controls
+  if ($no_submit)
+    unset($form['subscription']['wrapper']['submit']);
+
+  // Attach subscriptions handler
+  $form['#submit'] = array_merge(
+    array(
+      'subscriptions_ui_node_form_submit' => array(),
+      'subscriptions_og_group_confirm_subscribe_submit' => array(),
+    ),
+    // It changes hook_submit execution order for handling auto-subscribe when
+    // joining a group
+    $form['#submit']
+  );
+}*/
+
+

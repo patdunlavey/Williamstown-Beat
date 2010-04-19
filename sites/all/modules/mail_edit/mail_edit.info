@@ -1,0 +1,12 @@
+; $Id: mail_edit.info,v 1.1.4.2 2008/07/06 23:02:15 litwol Exp $
+name = Mail Editor
+description = Allows editing of all mails
+package = Mail
+core = 6.x
+version = VERSION
+; Information added by drupal.org packaging script on 2010-01-28
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "mail_edit"
+datestamp = "1264637417"
+

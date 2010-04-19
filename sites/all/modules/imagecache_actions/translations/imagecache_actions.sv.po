@@ -1,0 +1,729 @@
+# $Id$
+#
+# Swedish translation of Drupal (imagecache_actions)
+# Generated from files:
+#  canvasactions.inc,v 1.1.4.15 2009/05/19 18:03:30 dman
+#  textactions.inc: n/a
+#  utility.inc: n/a
+#  textrender.inc: n/a
+#  imagecache_textactions.module,v 1.2.2.7 2009/05/02 04:54:50 dman
+#  transparency.inc,v 1.3.2.3 2009/03/28 05:10:28 dman
+#  imagecache_coloractions.module,v 1.4.2.9 2009/05/02 04:54:50 dman
+#  imagecache_canvasactions.module,v 1.3.2.12 2009/05/02 04:54:50 dman
+#  imagecache_customactions.module,v 1.1.2.4 2009/06/10 01:42:40 dman
+#  imagecache_canvasactions.install,v 1.1.4.2 2009/02/07 16:31:19 dman
+#  imagecache_coloractions.install,v 1.1.2.2 2009/02/07 16:31:19 dman
+#  imagecache_customactions.install,v 1.1.2.2 2009/02/07 16:31:19 dman
+#  imagecache_canvasactions.info,v 1.2.2.2 2009/03/10 01:52:31 dman
+#  imagecache_coloractions.info,v 1.2.2.1 2008/10/08 07:24:02 dman
+#  imagecache_customactions.info,v 1.1.2.1 2008/11/09 15:33:54 dman
+#  imagecache_textactions.info,v 1.2.2.2 2008/11/09 15:33:54 dman
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Imagecache Actions 6.x\n"
+"POT-Creation-Date: 2010-03-30 20:20+0200\n"
+"PO-Revision-Date: 2010-03-31 01:18+0100\n"
+"Last-Translator: Magnus Gunnarsson <magnus.gunnarsson76@gmail.com>\n"
+"Language-Team: drupalsverige.se\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: Swedish\n"
+"X-Poedit-Country: SWEDEN\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: canvasactions.inc:52
+msgid "Enter no color value for transparent. This will have the effect of adding clear margins around the image."
+msgstr "Ange inte någon färg för genomskinlig. Detta kommer att ha effekten att lägga till genomskinliga marginaler runt bilden."
+
+#: canvasactions.inc:57
+msgid "Resize canvas <em>under</em> image (possibly cropping)"
+msgstr "Ändra storlek på tavla <em>under</em> bild (eventuell beskärning)"
+
+#: canvasactions.inc:59
+msgid "If <em>not</em> set, this will create a solid flat layer, probably totally obscuring the source image"
+msgstr "Om <em>ej</em> satt så kommer detta skapa ett sammanhängande platt lager, vilket förmodligen grumlar hela källbilden."
+
+#: canvasactions.inc:62
+msgid "Enter values in ONLY ONE of the below options. Either exact or relative. Most values are optional - you can adjust only one dimension as needed. If no useful values are set, the current base image size will be used."
+msgstr "Ange värden i ENBART ETT av alternativen nedan. Antingen exakt eller relativt. De flesta värden är valfria - du kan ändra enbart ett mått om du vill. Om inga användbara värden är angivna så kommer den nuvarande basstorleken att användas."
+
+#: canvasactions.inc:69
+msgid "Set the canvas to a precise size, possibly cropping the image. Use to start with a known size."
+msgstr "Ange tavlan till en exakt storlek, vilket förmodligen kommer beskära bilden. Används för att börja med en känd storlek."
+
+#: canvasactions.inc:75
+msgid "Width"
+msgstr "Bredd"
+
+#: canvasactions.inc:77;84
+msgid "Enter a value in pixels or percent"
+msgstr "Ange ett värde i pixlar eller procent"
+
+#: canvasactions.inc:82
+msgid "Height"
+msgstr "Höjd"
+
+#: canvasactions.inc:96
+msgid "Relative size"
+msgstr "Relativ storlek"
+
+#: canvasactions.inc:99
+msgid "Set the canvas to a relative size, based on the current image dimensions. Use to add simple borders or expand by a fixed amount. Negative values may crop the image."
+msgstr "Ange tavlan till en relativ storlek baserad på de nuvarande måtten för bilden. Används för att lägga till enkla kanter eller för att utökas med ett givet värde. Negativa värden kan beskära bilden."
+
+#: canvasactions.inc:103
+msgid "left difference"
+msgstr "skillnad vänster"
+
+#: canvasactions.inc:106;113;120;127
+msgid "Enter an offset in pixels."
+msgstr "Ange en motvikt i pixlar."
+
+#: canvasactions.inc:110
+msgid "right difference"
+msgstr "skillnad höger"
+
+#: canvasactions.inc:117
+msgid "top difference"
+msgstr "skillnad över"
+
+#: canvasactions.inc:124
+msgid "bottom difference"
+msgstr "skillnad under"
+
+#: canvasactions.inc:154
+msgid " <b>under</b> image "
+msgstr "<strong>under</strong> bild "
+
+#: canvasactions.inc:154
+msgid " <b>over</b> image "
+msgstr "<strong>över</strong> bild "
+
+#: canvasactions.inc:349;490;572
+msgid "opacity"
+msgstr "opacitet (ogenomskinlighet)"
+
+#: canvasactions.inc:352
+msgid "Opacity: 0-100. Be aware that values other than 100% may be slow to process."
+msgstr "Opacitet: 0-100. Var beredd på att värden som inte är 100% kan slöa ned bearbetning."
+
+#: canvasactions.inc:356;497
+msgid "file name"
+msgstr "filnamn"
+
+#: canvasactions.inc:358;499
+msgid "File may be in the \"files/\" folder, or relative to the Drupal siteroot."
+msgstr "Fil kan vara i katalogen \"files/\", eller relativ till Drupals rotkatalog för webbplatsen."
+
+#: canvasactions.inc:363
+msgid "final dimensions"
+msgstr "slutliga mått"
+
+#: canvasactions.inc:366
+msgid "What to do when the background image is a different size from the source image. Backgrounds are not tiled, but may be arbitrarily large."
+msgstr "Vad som skall göras mär bakgrundsbilden är en annan storlek än källbilden. Bakgrunder läggs inte bredvid varandra, men kan vara godtyckligt stora."
+
+#: canvasactions.inc:484
+msgid "Note that using a transparent overlay that is larger than the source image may result in unwanted results - a solid background."
+msgstr "Observera att används en genomskinlig överlagring som är större än källans bild kan det leda till oönskat resultat - en solid bakgrund."
+
+#: canvasactions.inc:493
+msgid "Opacity: 0-100. <b>Warning:</b> Due to a limitation in the GD toolkit, using an opacity other than 100% requires the system to use an algorithm that's much slower than the built-in functions. If you want partial transparency, you are better to use an already-transparent png as the overlay source image."
+msgstr "Opacitet: 0-100 <strong>Varning:</strong> Används en opacitet som inte är 100% kräver det att systemet använder en algoritm som är mycket långsammare än den inbyggda funktionen på grund av en begränsning i verktyget GD."
+
+#: canvasactions.inc:511
+msgid "Unable to find the named file '%filepath' in either the site or the files directory. Please check the path. Use relative paths only."
+msgstr "Kunde inte hitta den nämnda filen '%filepath' i vare sig katalogen \"sites\" eller \"files\". Var vänlig kontrollera sökvägen. Använd enbart relativa sökvägar."
+
+#: canvasactions.inc:541
+msgid "Failed to find overlay image %path for imagecache_actions file-to-canvas action. File was not found in the sites 'files' path or the current theme folder."
+msgstr "Kunde inte hitta överlagrad bild %path för imagecache_actions file-to-canvas action. Fil kunde inte hittas i sökvägen under \"sites/files\" eller den nuvarande temakatalogen."
+
+#: canvasactions.inc:575
+msgid "Opacity: 0-100."
+msgstr "Opacitet: 0-100."
+
+#: canvasactions.inc:637
+msgid "radius"
+msgstr "radie"
+
+#: canvasactions.inc:644
+msgid "Individual Corner Values"
+msgstr "Individuella värden för hörn"
+
+#: canvasactions.inc:650
+msgid "Set Corners Independently"
+msgstr "Ange hörn oberoende av varandra"
+
+#: canvasactions.inc:654
+msgid "Top Left Radius"
+msgstr "Översta vänstra radie"
+
+#: canvasactions.inc:655
+msgid "Top Right Radius"
+msgstr "Översta högra radie"
+
+#: canvasactions.inc:656
+msgid "Bottom Left Radius"
+msgstr "Nedre vänstra radie"
+
+#: canvasactions.inc:657
+msgid "Bottom Right Radius"
+msgstr "Nedre högra radie"
+
+#: canvasactions.inc:680
+msgid ""
+"\n"
+"        Note: the rounded corners effect uses true alpha transparency masking. \n"
+"        This means that this effect <b>will fail to be saved</b> on jpegs \n"
+"        <em>unless</em> you either <ul>\n"
+"        <li>convert the image to PNG (using the coloractions filter for that),</li>\n"
+"        <li>define a canvas underneath it (using canvasactions-define-canvas) or</li> \n"
+"        <li>underlay a solid color (using coloractions-alpha-flatten) or</li> \n"
+"        <li>underlay a background image (canvasactions-underlay)</li> \n"
+"        </ul>\n"
+"        as a later part of this imagecache pipeline.\n"
+"        <br/>\n"
+"      "
+msgstr "Observera: effekten rundade hörn använder riktig alfagenomskinlighet för maskering. Detta innebär att denna effekt <strong>inte kommer att sparas</strong> på JPEG-bilder <em>såvida</em> du inte antingen <ul><li>konverterar bilden till PNG (genom att använda filtret coloractions),</li><li>definierar en tavla under den (genom att använda canvasactions-define-canvas) eller</li><li>lägger under en färg (genom att använda coloractions-alpha-flatten) eller</li><li>lägger under en bakgrundsbild (canvasactions-underlay)</li></ul>som en senare del av denna förbindelse i ImageCache.<br />"
+
+#: canvasactions.inc:930
+msgid "You must create the two presets to use <em>before</em> enabling this process."
+msgstr "Du måste skapa de två förinställningarna som skall användas <em>innan</em> du aktiverar denna behandling."
+
+#: canvasactions.inc:941
+msgid "Preset to use if the image is portrait (vertical)"
+msgstr "Förinställning att använda om bilden är stående (vertikal)"
+
+#: canvasactions.inc:947
+msgid "Preset to use if the image is landscape (horizontal)"
+msgstr "Förinställning att använda om bilden är liggande (horisontell)"
+
+#: canvasactions.inc:954
+msgid "Ratio Adjustment (advanced)"
+msgstr "Anpassning av förhållande (avancerat)"
+
+#: canvasactions.inc:957
+msgid ""
+"\n"
+"This allows you to bend the rules for how different the proportions need to be to trigger the switch.  \n"
+"<br/>If the (width/height)*n is greater than 1, use 'landscape', otherwise use 'portrait'.\n"
+"<br/>When n = 1 (the default) it will switch between portrait and landscape modes.\n"
+"<br/>If n > 1, images that are slightly wide will still be treated as portraits.\n"
+"If n < 1 then blunt portraits will be treated as landscape.\n"
+"    "
+msgstr "Detta låter dig töja på reglerna för hur olika proportionerna behöver vara för att utlösa bytet.<br />Om (bredden/höjden)*n är större än 1, använd \"stående\", annars använd \"liggande\".<br />När n = 1 (standard) så kommer det att byta mellan stående och liggande läge.<br />Om n > 1 så kommer bilder som är lite breda fortfarande att betraktas som stående. Om n < 1 så kommer trubbiga stående att betraktas som liggande."
+
+#: textactions.inc:47
+msgid "Size"
+msgstr "Storlek"
+
+#: textactions.inc:49
+msgid "Size: The font size. Depending on your version of GD, this should be specified as the pixel size (GD1) or point size (GD2)."
+msgstr "Storlek: Fontstorleken. Beroende på din version av GD så bör detta specificeras som en pixelstorlek (GD1) eller punktstorlek (GD2)."
+
+#: textactions.inc:54
+msgid "Angle"
+msgstr "Vinkel"
+
+#: textactions.inc:56
+msgid "Angle: The angle in degrees, with 0 degrees being left-to-right reading text. Higher values represent a counter-clockwise rotation. For example, a value of 90 would result in bottom-to-top reading text."
+msgstr "Vinkel: Vinkeln i grader, med 0 grader innebär det att text läses från vänster till höger. Högre värden representerar moturs. Till exempel skulle ett värde av 90 resultera i texten läses nedifrån och upp."
+
+#: textactions.inc:61
+msgid "Opacity"
+msgstr "Opacitet"
+
+#: textactions.inc:64
+msgid "Opacity: 1-100."
+msgstr "Opacitet: 1-100"
+
+#: textactions.inc:69
+#: utility.inc:47
+msgid "X offset"
+msgstr "X"
+
+#: textactions.inc:71
+msgid "Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>. Syntax like <em>right-20</em> is also valid."
+msgstr "Ange en motvikt i pixlar eller använd nyckelord: <em>left</em>, <em>center</em>, eller <em>right</em>. Syntax såsom <em>right-20</em> är också giltigt."
+
+#: textactions.inc:76
+#: utility.inc:55
+msgid "Y offset"
+msgstr "Y"
+
+#: textactions.inc:78
+msgid "Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>. Syntax like <em>bottom-20</em> is also valid."
+msgstr "Ange en motvikt i pixlar eller använd ett nyckelord: <em>top</em>, <em>center</em>, eller <em>bottom</em>. Syntax såsom <em>bottom-20</em> är också giltigt."
+
+#: textactions.inc:84
+msgid "Font file name"
+msgstr "Namn på fontfil"
+
+#: textactions.inc:86
+msgid "Font file is either the full system path (eg <code>/usr/share/fonts/truetype/ttf-bitstream-vera/VeraMono.ttf</code>), a font file inside the in the module dir \"%moduledir\" or the files \"%filedir\" folder). Example: \"arial.ttf\". You <em>might</em> find a list of fonts available at !helplink if your system supports it."
+msgstr "Fontfil är antingen den fullständiga systemsökvägen (till exempel <code>/usr/share/fonts/truetype/ttf-bitstream-vera/VeraMono.ttf</code>), en fontfil inuti modulkatalogen \"%moduledir\" eller filmappen \"%filedir\". Exempel: \"arial.ttf\". Du <em>kanske</em> hittar en lista på tillgängliga fonter på !helplink om ditt system stöder det."
+
+#: textactions.inc:92
+#: textrender.inc:51
+#: imagecache_textactions.module:20
+msgid "Text"
+msgstr "Text"
+
+#: textactions.inc:94
+#: textrender.inc:53
+msgid "The text string. If you are using a WYSIWYG editor, you should disable it for this field!"
+msgstr "Textsträngen. Om du använder en redigerare av typen WYSIWYG så bör du avaktivera den för detta fält!"
+
+#: textactions.inc:99
+#: textrender.inc:58
+msgid "Evaluate text as PHP code"
+msgstr "Utvärdera text som PHP-kod"
+
+#: textactions.inc:101
+msgid ""
+"If selected, the text will be treated as PHP code.\n"
+"      <p>\n"
+"        Enter PHP code that will <b>return</b> your dynamic text. Do not use %php tags. \n"
+"        <br />EG <code>return format_date(time());</code>  \n"
+"        <br /><code>return $file_data->description ? $file_data->description : $node->title;</code>\n"
+"      </p>\n"
+"      <p>Note that executing incorrect PHP-code can break your Drupal site.</p>\n"
+"      <p>\n"
+"        <b>If it's an image.module image</b> then a <b>$node</b> object with its values \n"
+"        <em>may</em> be available.\n"
+"        <br/><code>return $node->title;</code>\n"
+"        <br/><code>return format_date($node->created);</code>\n"
+"      </p>\n"
+"\n"
+"      <p>\n"
+"        If it's an image that has been attached to a node using <b>CCK-filefield-imagefield</b>\n"
+"        (or just filefield)\n"
+"        then as well as the parent <b>$node</b> object,\n"
+"        a <b>$file_data</b> object that may contain a file description from that file field.\n"
+"        <br/><code>return $file_data->description;</code>\n"
+"        <small>So far that seems to be the only available 'data' provided by filefield, \n"
+"        but you can investigate the node structure using devel.module or print_r() \n"
+"        to see what else this array actually contains</small>.\n"
+"      </p>\n"
+"      <p>\n"
+"        If it's a file that's just been <b>attached using upload.module</b>,\n"
+"        a <b>$file_data</b> object may also have a description.\n"
+"        <br/><code>return $file_data->description;</code>\n"
+"      </p>\n"
+"      <p>\n"
+"        If the image path is detected as belonging to more than one node, just the\n"
+"        data for the first one found is returned. \n"
+"      </p>\n"
+"\n"
+"      <p>\n"
+"        An \"<b>$image</b>\" object is also available, but that usually contains only technical data, including \n"
+"        <br/><code>return $image->source;</code>\n"
+"        <br/><code>return basename($image->source);</code>\n"
+"        <br/><code>return $image->info[\"filesize\"];</code>\n"
+"      </p>\n"
+"      "
+msgstr "Om vald så kommer texten att utvärderas som PHP-kod.<p>Ange PHP-kod som kommer <strong>återge/<strong> din dynamiska text. Använd inte taggarna %php.<br />Till exempel <code>return format_date(time());</code><br /><code>return $file_data->description ? $file_data->description : $node->title;</code></p><p>Observera att körs felaktig PHP-kod så kan det förstöra din webbplats.</p><p><strong>Om det är en bild från modulen Image</strong> så <em>kan</em> ett objekt <strong>$node</strong> med dess värden finnas tillgängliga.<br/><code>return $node->title;</code><br/><code>return format_date($node->created);</code></p><p>Om det är en bild som har bifogats till en nod genom <strong>CCK Imagefield</strong (eller bara FileField) så är såväl det överliggande objektet <strong>$node</strong> som kan innehålla en filbeskrivning från detta fält.<br /><code>return $file_data->description;</code><small>Hittills ser det ut som om detta är de enda tillgängliga 'data' tillhandahållit från FileField, men du kan leta vidare i nodstrukturen genom att använda modulen Devel eller print_r() för att se vad denna array egentligen innehåller.</small></p><p>Om det är en fil som precis har blivit <strong>bifogad genom modulen Upload</strong>, så kan ett objekt <strong>$file_data</strong> även ha en beskrivning.<br /><code>return $file_data->description;</code></p><p>Om det upptäcks att bildsökvägen hör till fler än en nod så kommer enbart den först funna att återges.</p><p>Ett objekt av typen \"<strong>$image</strong>\" är också tillgängligt, men det innehåller för det mesta enbart teknisk data, inklusive<br/><code>return $image->source;</code><br/><code>return basename($image->source);</code><br/><code>return $image->info[\"filesize\"];</code></p>"
+
+#: textactions.inc:159
+msgid ""
+"\n"
+"      Unable to confirm that the font '%fontfile' is available on your system. \n"
+"      This may fail, or your system may provide an appropriate fallback, \n"
+"      depending on your toolkit behaviour. \n"
+"      Ensure the path to the ttf file is correct, \n"
+"      and permissions allow the webserver to read the file and directory."
+msgstr "Kunde inte bekräfta att fonten \"%fontfile\" finns tillgänglig i ditt system. Detta kan misslyckas, eller så kan ditt system tillhandahålla en lämplig reservåtgärd beroende på beteendet för ditt verktyg. Säkerställ att sökvägen till tff-filen är korrekt och att rättigheterna tillåter webbservern att läsa filen och katalogen."
+
+#: textactions.inc:168
+msgid "Font was found OK at %fontfile"
+msgstr "Font hittade på %fontfile"
+
+#: textactions.inc:179
+msgid "<br/>%sizepx #%color %alpha% %angle&deg; (%xpos, %ypos)"
+msgstr "<br />%sizepx #%color %alpha% %angle&deg; (%xpos, %ypos)"
+
+#: textactions.inc:202
+msgid "Failed to locate the requested font %fontfile. Cannot overlay text onto image."
+msgstr "Kunde inte hitta den begärda fonten %fontfile. Kan inte lägga över text på bild."
+
+#: textactions.inc:218
+msgid "Failed to generate text image. Cannot calculate text dimensions. Not overlaying text."
+msgstr "Misslyckades med att generera textbild. Kunde inte beräkna textmåtten. Lade inte över text."
+
+#: textrender.inc:60
+msgid "If selected, the text will be treated as PHP code."
+msgstr "Om valt så kommer texten att behandlas som PHP-kod."
+
+#: textrender.inc:66
+msgid "PHP code help"
+msgstr "Hjälp för PHP-kod"
+
+#: textrender.inc:89
+msgid "<em>\"<strong>@data</strong>\"</em><br/>%style<br/>%font"
+msgstr "<em>\"<strong>@data</strong>\"</em><br />%style<br />%font"
+
+#: textrender.inc:132
+msgid "Failed to generate text image using %toolkit. Not overlaying text."
+msgstr "Misslyckades med att geberera textbukd genom att använda %toolkit. Lade inte över text."
+
+#: transparency.inc:26
+msgid ""
+"<p>Alpha toning is an advanced method of greyscaling or colorizing. \n"
+"      It works using transparency, not colour matching. \n"
+"      The results of this filter are excellent for using as watermarks, \n"
+"      and for 'sepia' type imprints on coloured or textured backgrounds. \n"
+"      It converts dark areas of the image to opaque, light to transparent.</p> \n"
+"      <p>Note that if you are working with JPEGs, this alpha effect will not last into the final image \n"
+"      <em>unless</em> you either <strong>flatten</strong> this image against a background color \n"
+"      or image in a later process or <strong>convert</strong> it to a PNG before saving \n"
+"      using available imagecache actions.</p>"
+msgstr "<p>Alpha toning är en avancerad metod för gråskalning eller färgläggning. Det fungerar genom att använda genomskinlighet, inte genom färgmatchning. Resultatet av detta filter är utmärkta för att använda som vattenstämplar, och för avtryck av typen 'sepia' på färgade eller texturiserade bakgrunder. Den konverterar mörka områden av bilden som ogenomskinliga, ljusa till genomskinliga.</p><p>Observera att om du arbetar med bilder av typen JPEG, så kommer denna effekt inte att hänga med till den slutliga bilden <em>såvida</em> du inte antingen <strong>plattar till</strong> denna bild mot en bakgrundsfärg eller bild i en senare behandling eller <strong>omvandla</strong> den till en  PNG innan du sparar med tillgängliga åtgärder för ImageCache.</p>"
+
+#: transparency.inc:40
+msgid "Fill Color"
+msgstr "Fyllnadsfärg"
+
+#: transparency.inc:41
+msgid ""
+"\n"
+"    Although this image will end up as an alpha transparency mask, \n"
+"    it still has to have some colour to be visible. \n"
+"    Black is safe. Dark Sepia #704214 is good too. \n"
+"    If it's not set, the colors will be left as they were, but will unsaturate unevenly.\n"
+"    "
+msgstr "Även om detta bild kommer att sluta som en genomskinlig alfamask, så behöver den fortfarande ha någon färg som är synlig. Svart är säkert. Mörk Sepia #704214 är också bra. Om det inte är angivet så kommer färgerna att lämnas som de är, men kommer att tunnas ut ojämnt."
+
+#: transparency.inc:51
+msgid "Flatten Transparency"
+msgstr "Platta till genomskinlighet"
+
+#: transparency.inc:54
+msgid "The opposite of adding alpha transparency, 'flatten' will place the given colour solidly behind the image. Use this if you can't trust IE, or you really do want the image filled in with a solid colour."
+msgstr "Den motsatta sidan till att lägga till alfagenomskinlighet. \"Platta till\" kommer att placera den givna färgen solitt bakom bilden. Använd detta om du inte kan lita på IE, eller om du verkligen vill vill fylla bilden med en solid färg."
+
+#: transparency.inc:64
+msgid "Flatten"
+msgstr "Platta till"
+
+#: transparency.inc:64
+#: utility.inc:128
+msgid "Transparent"
+msgstr "Genomskinlig"
+
+#: transparency.inc:98
+#: imagecache_coloractions.module:218
+msgid "imagecache"
+msgstr "imagecache"
+
+#: transparency.inc:98
+msgid "Problem converting image to fill behind. Source image returned no info"
+msgstr "Problem uppstod vid konvertering av bild till bakomfyllnad. Källbilden återgav ingen information"
+
+#: utility.inc:25
+msgid "HEX"
+msgstr "HEX"
+
+#: utility.inc:50
+msgid "Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>."
+msgstr "Ange en motvikt i pixlar eller använd nyckelord: <em>left</em>, <em>center</em>, eller <em>right</em>."
+
+#: utility.inc:58
+msgid "Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>."
+msgstr "Ange en motvikt i pixlar eller använd ett nyckelord: <em>top</em>, <em>center</em>, eller <em>bottom</em>."
+
+#: utility.inc:76
+msgid "Opacity must be a number between 1 and 100."
+msgstr "Opacitet måste vara ett tal mellan 1 och 100."
+
+#: imagecache_autorotate.module:37
+msgid "Add autorotate image based on EXIF Orientation."
+msgstr "Lägg till automatiskt rotering av bild baserat på EXIT-orientering"
+
+#: imagecache_canvasactions.module:59
+msgid "Define Canvas"
+msgstr "Definiera tavla"
+
+#: imagecache_canvasactions.module:60
+msgid "Define the size of the working canvas and background color, this controls the dimensions of the output image.."
+msgstr "Definiera storleken på arbetstavlan och bakgrundsfärg. Detta styr måtten för den utmatade bilden."
+
+#: imagecache_canvasactions.module:64
+msgid "Overlay (watermark)"
+msgstr "Övertäckning: (vattenstämpel)"
+
+#: imagecache_canvasactions.module:65
+msgid " Choose the file image you wish to use as an overlay, and position it in a layer on top of the canvas."
+msgstr "Välj den bildfil som du vill använda som övertäckning, och positionera det i ett lager över tavlan."
+
+#: imagecache_canvasactions.module:69
+msgid "Underlay (background)"
+msgstr "Underlager (bakgrund)"
+
+#: imagecache_canvasactions.module:70
+msgid " Choose the file image you wish to use as an background, and position the processed image on it."
+msgstr "Välj den bildfil som du vill använda som bakgrund, och positionera den bearbetade bilden på den."
+
+#: imagecache_canvasactions.module:74
+msgid "Overlay: source image to canvas"
+msgstr "Täck över: källbild att lägga till tavla"
+
+#: imagecache_canvasactions.module:75
+msgid "Places the source image onto the canvas for compositing."
+msgstr "Placerar källbilden på tavlan för blandning."
+
+#: imagecache_canvasactions.module:79
+msgid "Rounded Corners"
+msgstr "Rundade hörn"
+
+#: imagecache_canvasactions.module:80
+msgid " This is true cropping, not overlays, so the result <em>can</em> be transparent."
+msgstr "Detta är riktig beskärning, ej övertäckning, så resultatet <em>kan</em> bli genomskinligt."
+
+#: imagecache_canvasactions.module:84
+msgid "Aspect switcher: Switch between portrait and landscape."
+msgstr "Byter beroende på aspekt: Byter mellan stående och liggande."
+
+#: imagecache_canvasactions.module:85
+msgid " Use different effects depending on whether the image is landscape of portrait shaped. This re-uses other preset definitions, and just chooses between them based on the rule."
+msgstr "Använd olika effekt beroende på huruvida bilden är stående eller liggande. Detta återanvänder andra förinställda definitioner, och väljer bara mellan dem baserat på regeln."
+
+#: imagecache_coloractions.module:40
+msgid "Negative Image"
+msgstr "Negativ bild"
+
+#: imagecache_coloractions.module:41
+msgid "Invert colors and brightness."
+msgstr "Invertera färger och ljusstyrka."
+
+#: imagecache_coloractions.module:44
+msgid "Change File format"
+msgstr "Ändra filformat"
+
+#: imagecache_coloractions.module:45
+msgid "Choose to save the image as a different filetype."
+msgstr "Välj för att spara bilden som en annan filtyp."
+
+#: imagecache_coloractions.module:48
+msgid "Alpha Transparency"
+msgstr "Alfagenomskinlighet"
+
+#: imagecache_coloractions.module:49
+msgid "Adjust transparency."
+msgstr "Ändra genomskinlighet."
+
+#: imagecache_coloractions.module:90
+msgid ""
+"<p>\n"
+"    Note that colorshift is a mathematical filter that doesn't always \n"
+"    have the expected result. \n"
+"    To shift an image precisely TO a target color, \n"
+"    desaturate (greyscale) it before colorizing.\n"
+"    The hue (color wheel) is the <em>direction</em> the \n"
+"    existing colors are shifted. The tone (inner box) is the amount.\n"
+"    Keep the tone half-way up the left site of the color box \n"
+"    for best results.\n"
+"  </p>"
+msgstr "<p>Observera att colorshift är ett matematiskt filter som inte alltid har det förväntade resultatet. För att ändra en bild till exakt RÄTT målfärg, tunna ut (gör den till gråskala) innan färgläggning. Nyansen (färghjulet) är <em>riktningen</em> befintliga färgerna byts mot. Tonen (inre rutan) är värdet. Håll tonen halvvägs upp på vänster sida av färgrutan för bästa resultat.</p>"
+
+#: imagecache_coloractions.module:145
+msgid "The brightness effect seldom looks good on its own, but can be useful to wash out an image before making it transparent - eg for a watermark."
+msgstr "Effekten för ljusstyrka ser sällan bra ut i sig självt, men kan vara användbart för att tvätta en bild innan man gör den genomskinlig - till exempel för en vattenstämpel."
+
+#: imagecache_coloractions.module:148
+msgid "Brightness"
+msgstr "Ljusstyrka"
+
+#: imagecache_coloractions.module:149
+msgid "-255 - +255"
+msgstr "-255 - +255"
+
+#: imagecache_coloractions.module:170
+msgid "Adjust"
+msgstr "Ändra"
+
+#: imagecache_coloractions.module:267
+msgid "If you've been using transparencies in the process, the result may get saved as a PNG (as the image was treated as a one in in-between processes). If this is not desired (file sizes may get too big) you should use this process to force a flatten action before saving. "
+msgstr "Om du har använt genomskinlighet i behandlingen så kan resultatet ha sparats som en PNG (eftersom bilden behandlades som en sådan i processen). Om detta inte önskas (filstorleken kanske blir för står) så bör du använda denna behandling för att tvinga fram en ihopplattadande åtgärd innan sparande."
+
+#: imagecache_coloractions.module:271
+msgid "For technical reasons, changing the file format within imagecache does <em>not</em> change the filename suffix. A png may be saved as a *.jpg or vice versa. This may confuse some browsers and image software, but most of them have no trouble. "
+msgstr "På grund av tekniska orsaker så ändras <em>inte/em> filändelsen om filformatet ändras inom ImageCache. En PNG kan sparas som en *.jpg och tvärtom. Detta kan förvirra vissa webbläsare och bildprogram, men de flesta har inget problem med detta."
+
+#: imagecache_coloractions.module:274
+msgid "File format"
+msgstr "Filformat"
+
+#: imagecache_coloractions.module:288
+msgid "Convert to"
+msgstr "Konvertera till"
+
+#: imagecache_coloractions.module:218
+msgid "imagecache_imagefilter failed. image: %image, data: %data."
+msgstr "imagecache_imagefilter misslyckades. bild: %image, data: %data."
+
+#: imagecache_customactions.module:54
+msgid "Custom action"
+msgstr "Anpassad åtgärd"
+
+#: imagecache_customactions.module:55
+msgid "Runs custom PHP code"
+msgstr "Kör anpassad PHP-kod"
+
+#: imagecache_customactions.module:75
+msgid "Code"
+msgstr "Kod"
+
+#: imagecache_customactions.module:77
+msgid ""
+"\n"
+"      <p>Enter PHP code for your custom action. Source image is available in the $image object\n"
+"      which contains an <code>$image->info</code> array,\n"
+"      and a <code>$image->resource</code> which is the php toolkit object itself.\n"
+"      Your code must <b>return</b> an image object of the same structure (see ImageAPI).\n"
+"      For convenience, the images current <code>$image->info</code> variables \n"
+"      - <code>$width</code>, <code>$height</code> are available in the current scope.\n"
+"      <br/>Do not use %php tags. </p>\n"
+"      <p>If possible, the owning $node object may also be available.</p>\n"
+"      <p>Note that executing incorrect PHP-code can break your Drupal site.</p>\n"
+"      <p>If you are using a WYSIWYG, you must disable it for this edit area.</p>\n"
+"<h3>example:</h3>\n"
+"<pre style=\"overflow:auto; background-color:#EEEEEE;padding:0.3em; font-size:0.8em; line-height:1em;\">\n"
+"// Wave an image\n"
+"  $amplitude = 10; $period = 10;\n"
+"  $x=0; $y=0;\n"
+"// Make a copy of the image twice the size\n"
+"  $height2 = $height * 2; $width2 = $width * 2;\n"
+"  $img2 = imagecreatetruecolor($width2, $height2);\n"
+"  imagecopyresampled($img2, $image->resource, 0, 0, $x, $y, $width2, $height2, $width, $height);\n"
+"// Wave it\n"
+"  for($i = 0; $i < ($width2); $i += 2)\n"
+"    imagecopy($img2, $img2, $x+$i-2, $y+sin($i/$period)*$amplitude, $x+$i, $y, 2, $height2);\n"
+"// Resample it down again\n"
+"  imagecopyresampled($image->resource, $img2, $x, $y, 0, 0, $width, $height, $width2, $height2);\n"
+"  imagedestroy($img2);\n"
+"return $image;\n"
+"\n"
+"# code modified from bokehman at http://www.sitepoint.com/forums/showpost.php?p=3655457\n"
+"</pre>\n"
+"      "
+msgstr ""
+"<p>Ange PHP-kod för dina anpassade åtgärder. Källbilden är tillgänglig i objektet $image som innehåller en <code>$image->info</code> array, och <code>$image->resource</code> som är själva objektet för PHP:s verktygslåda. Din kod måste <strong>återge</strong> ett bildobjekt med samma struktur (se ImageAPI). För enkelhetens skull så är bildernas nuvarande variabler <code>$image-> info</code> - <code>$width</code>, <code>$height</code> tillgängliga i den nuvarande omfattning.<br />Använd inte taggarna %php.</p><p>Om möjligt, så finns även det ägande objektet till $node tillgängligt.</p><p>Observera att körs felaktig PHP-kod så kan det förstöra din webbplats.</p><p> Om du använder en redigerare av typen WYSIWYG, måste du inaktivera den för detta redigeringsfält.</p><h3>Exempel:</h3><pre style=\"overflow:auto; background-color:#EEEEEE;padding:0.3em; font-size:0.8em; line-height:1em;\">\n"
+"// Wave an image\n"
+"  $amplitude = 10; $period = 10;\n"
+"  $x=0; $y=0;\n"
+"// Make a copy of the image twice the size\n"
+"  $height2 = $height * 2; $width2 = $width * 2;\n"
+"  $img2 = imagecreatetruecolor($width2, $height2);\n"
+"  imagecopyresampled($img2, $image->resource, 0, 0, $x, $y, $width2, $height2, $width, $height);\n"
+"// Wave it\n"
+"  for($i = 0; $i < ($width2); $i += 2)\n"
+"    imagecopy($img2, $img2, $x+$i-2, $y+sin($i/$period)*$amplitude, $x+$i, $y, 2, $height2);\n"
+"// Resample it down again\n"
+"  imagecopyresampled($image->resource, $img2, $x, $y, 0, 0, $width, $height, $width2, $height2);\n"
+"  imagedestroy($img2);\n"
+"return $image;\n"
+"\n"
+"# code modified from bokehman at http://www.sitepoint.com/forums/showpost.php?p=3655457\n"
+"</pre>\n"
+
+#: imagecache_textactions.module:21
+msgid "Add static or dynamic (coded) text to an image."
+msgstr "Lägger till statisk eller dynamisk (kodad) text till en bild."
+
+#: imagecache_textactions.module:25
+msgid "Render Text"
+msgstr "Tolkad text"
+
+#: imagecache_textactions.module:26
+msgid "EXPERIMENTAL Add static or dynamic (coded) text to an image using <a href=\"!imageapi_link\">imageapi_text</a> CSS-like effects."
+msgstr "EXPERIMENTELL Lägger till statisk eller dynamisk (kodad) text till en bild genom att använda <a href=\"!imageapi_link\">imageapi_text</a> CSS-liknande effekter."
+
+#: imagecache_textactions.module:64
+msgid "<p>Files directory is !files</p>"
+msgstr "<p>Filkatalog är !files</p>"
+
+#: imagecache_textactions.module:66
+msgid ""
+"<p>\n"
+"          It appears PHP 'safe mode' is on. \n"
+"          This prevents me for knowing which fonts are on your system. \n"
+"          You will have to know the exact path and filename of the fonts you intend to use \n"
+"          - or upload some *.ttf files to your 'files' directory and use them from there.\n"
+"        </p>"
+msgstr "<p>Det verkar som om \"safe mode\" är på för PHP. Detta hindrar mig från att veta vilken font som finns på ditt system. Du måste veta den exakta sökvägen och filnamnet för fonterna som du vill använda - eller ladda upp några filer av typen *.tff till din filkatalog och använda dem därifrån.</p>"
+
+#: imagecache_canvasactions.install:13
+#: imagecache_coloractions.install:13
+#: imagecache_customactions.install:13
+msgid "Additional imagecache actions should now be available in the presets !settings_link"
+msgstr "Ytterligare åtgärder för ImageCache bör nu finnas tillgängliga i förinställningarna !settings_link"
+
+#: imagecache_canvasactions.install:13
+#: imagecache_coloractions.install:13
+#: imagecache_customactions.install:13
+msgid "settings"
+msgstr "inställningar"
+
+#: imagecache_autorotate.info:0
+msgid "Imagecache Autorotate"
+msgstr "Automatisk rotering för ImageCache"
+
+#: imagecache_autorotate.info:0
+msgid "Autorotate image based on EXIF Orientation."
+msgstr "Rotera bild automatiskt baserat på EXIF-orientering"
+
+#: imagecache_autorotate.info:0
+#: imagecache_canvasactions.info:0
+#: imagecache_coloractions.info:0
+#: imagecache_customactions.info:0
+#: imagecache_textactions.info:0
+msgid "ImageCache"
+msgstr "ImageCache"
+
+#: imagecache_canvasactions.info:0
+msgid "Imagecache Canvas Actions"
+msgstr "Åtgärder för att skapa en tavla i ImageCache"
+
+#: imagecache_canvasactions.info:0
+msgid "Actions for manipulating image canvases layers, including watermark and background effect. Also an aspect switcher (portrait/landscape)"
+msgstr "Åtgärder för att manipulera tavellager på bilder, inklusive vattenmärke och bakgrundseffekt. Byter också beroende på aspekt (stående/liggande)."
+
+#: imagecache_coloractions.info:0
+msgid "Imagecache Color Actions"
+msgstr "Åtgärder för färger i ImageCache"
+
+#: imagecache_coloractions.info:0
+msgid "Additional ImageCache actions, providing color-shifting, brightness and alpha transparency effects."
+msgstr "Ytterligare åtgärder för ImageCache, vilket tillhandahåller effeter för färgbyte, ljusstyrka och alfagenomskinlighet."
+
+#: imagecache_customactions.info:0
+msgid "Imagecache Custom Actions"
+msgstr "Anpassade åtgärder för ImageCache"
+
+#: imagecache_customactions.info:0
+msgid "Allow direct PHP code manipulation of imagecache images."
+msgstr "Tillåter manipulation av bilder i ImageCache genom direkt PHP-kod."
+
+#: imagecache_textactions.info:0
+msgid "Imagecache Text Actions"
+msgstr "Åtgärder för text i ImageCache"
+
+#: imagecache_textactions.info:0
+msgid "Display simple or dynamic captions on images."
+msgstr "Visa enkla eller dynamiska överskrifter på bilder."
+
+#~ msgid "antialias"
+#~ msgstr "kantutjämning"
+#~ msgid "Attempt antialias smoothing when drawing the corners"
+#~ msgstr "Försök använd kantutjämning vid ritande av hörnen"
+#~ msgid "Underlay: place a file image under the current image (background)"
+#~ msgstr "Underlag: placera en bildfil under den nuvarande bilden (bakgrund)"
+#~ msgid "Rounded Corners: Set a radius to crop corners by."
+#~ msgstr "Rundade hörn: Ange en radie att beskära hörn efter."
+#~ msgid "Aspect switcher: "
+#~ msgstr "Byter beroende på aspekt "
+

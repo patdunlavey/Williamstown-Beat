@@ -6,9 +6,9 @@ dependencies[] = og_views
 package = Organic groups
 core = 6.x
 
-; Information added by drupal.org packaging script on 2009-07-01
-version = "6.x-4.x-dev"
+; Information added by drupal.org packaging script on 2010-03-11
+version = "6.x-4.1"
 core = "6.x"
 project = "og_user_roles"
-datestamp = "1246451773"
+datestamp = "1268286609"
 

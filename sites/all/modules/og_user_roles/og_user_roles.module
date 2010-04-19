@@ -1,5 +1,5 @@
 <?php
-// $Id: og_user_roles.module,v 1.38 2009/07/01 11:56:31 sun Exp $
+// $Id: og_user_roles.module,v 1.45 2009/12/22 14:56:21 sun Exp $
 
 /**
  * @file
@@ -30,6 +30,7 @@ function og_user_roles_help($path, $arg) {
 function og_user_roles_perm() {
   return array(
     'configure member roles',
+    'override group default role',
   );
 }
 
@@ -122,6 +123,17 @@ function og_user_roles_init() {
 
   // Try to determine group context using customized menu system functions.
   $group_node = og_user_roles_determine_context();
+
+  // If no group context could be determined, additionally check for a custom
+  // group context that might have been set via og_set_group_context() to allow
+  // for usage of extended context support in organic groups. Only modules that
+  // set a context before og_user_roles_init() runs will have an effect. Since
+  // og_user_roles module sets its weight to -1, other modules may have to align
+  // their module weights to be able to set a custom group context early enough.
+  if (!isset($group_node)) {
+    $group_node = og_get_group_context();
+  }
+
   // Assign additional user roles to current user (if any).
   og_user_roles_grant_roles($user, $group_node);
 }
@@ -157,7 +169,12 @@ function og_user_roles_determine_context() {
     $node = node_load($gid);
   }
   elseif ((!empty($item['map'][0]) && $item['map'][0] == 'og' && !empty($item['map'][2])) || $path == 'comment/reply/%') {
-    $node = og_user_roles_menu_get_object('node', 2);
+    if (is_numeric($item['map'][2])) {
+      $node = node_load($item['map'][2]);
+    }
+    else {
+      $node = og_user_roles_menu_get_object('node', 2);
+    }
   }
   elseif ($path == 'comment/edit' || $path == 'comment/delete') {
     // Get the node from the comment object.
@@ -179,7 +196,7 @@ function og_user_roles_determine_context() {
  *
  * In Drupal 7, this fork can probably be replaced with
  * @code
- * drupal_static_reset('menu_get_item');
+ *   drupal_static_reset('menu_get_item');
  * @endcode
  *
  * @see menu_get_item()
@@ -198,7 +215,8 @@ function og_user_roles_menu_get_item($path = NULL, $router_item = NULL) {
     list($ancestors, $placeholders) = menu_get_ancestors($parts);
 
     if ($router_item = db_fetch_array(db_query_range('SELECT * FROM {menu_router} WHERE path IN ('. implode (',', $placeholders) .') ORDER BY fit DESC', $ancestors, 0, 1))) {
-      $map = _menu_translate($router_item, $original_map);
+      // OGUR: Allow privilege escalation; do not invoke access callbacks.
+      $map = og_user_roles_menu_translate($router_item, $original_map);
       if ($map === FALSE) {
         $router_items[$path] = FALSE;
         return FALSE;
@@ -212,6 +230,64 @@ function og_user_roles_menu_get_item($path = NULL, $router_item = NULL) {
     $router_items[$path] = $router_item;
   }
   return $router_items[$path];
+}
+
+/**
+ * Handles dynamic path translation and menu access control.
+ *
+ * Certain menu access callbacks (like _node_revision_access()) statically cache
+ * the result of the access check for performance. We only want to retrieve and
+ * determine the group context in og_user_roles_init(), resp.
+ * og_user_roles_menu_get_item(), where no additional roles have been granted
+ * yet. _menu_translate() would normally also invoke the access callback for the
+ * current page. Therefore, certain menu access callbacks, which statically
+ * cache their result, would return that result in subsequent invocations (i.e.
+ * FALSE when the user does not have permissions).
+ *
+ * Since OG user roles only wants to retrieve context and all of the regular
+ * menu system's behavior is and should not be modified, we simply skip the
+ * access check in this fork.
+ *
+ * In Drupal 7, this wrapper can probably be replaced with (or similar):
+ * @code
+ *   drupal_static_reset('_node_revision_access');
+ * @endcode
+ *
+ * @see _menu_translate()
+ * @see og_user_roles_menu_get_item()
+ */
+function og_user_roles_menu_translate(&$router_item, $map, $to_arg = FALSE) {
+  if ($to_arg) {
+    // Fill in missing path elements, such as the current uid.
+    _menu_link_map_translate($map, $router_item['to_arg_functions']);
+  }
+  // The $path_map saves the pieces of the path as strings, while elements in
+  // $map may be replaced with loaded objects.
+  $path_map = $map;
+  if (!_menu_load_objects($router_item, $map)) {
+    // An error occurred loading an object.
+    $router_item['access'] = FALSE;
+    return FALSE;
+  }
+
+  // Generate the link path for the page request or local tasks.
+  $link_map = explode('/', $router_item['path']);
+  for ($i = 0; $i < $router_item['number_parts']; $i++) {
+    if ($link_map[$i] == '%') {
+      $link_map[$i] = $path_map[$i];
+    }
+  }
+  $router_item['href'] = implode('/', $link_map);
+  $router_item['options'] = array();
+  // OGUR: Allow privilege escalation; do not invoke access callbacks.
+  //_menu_check_access($router_item, $map);
+  
+  // For performance, don't localize an item the user can't access.
+  if (!empty($router_item['access'])) {
+    _menu_item_localize($router_item, $map);
+  }
+
+  return $map;
 }
 
 /**
@@ -280,17 +356,8 @@ function og_user_roles_grant_roles(&$account, $group_node = NULL) {
     $placeholders = db_placeholders($args);
     array_unshift($args, $account->uid);
     // INNER JOIN as extra sanity check (not only for role name).
-    // $result = db_query("SELECT ogur.rid, r.name FROM {og_users_roles} ogur INNER JOIN {role} r ON r.rid = ogur.rid WHERE ogur.uid = %d AND ogur.gid IN ($placeholders)", $args);
-    // Modification of above by PD to limit role promotion to active members 
-    // Why: If a membership request is not accepted, the user should not get promoted to
-    // group-member role within the group context
-      $result = db_query("
-	 SELECT ogur.rid, r.name FROM {og_users_roles} ogur 
-	 INNER JOIN {role} r ON r.rid = ogur.rid 
-	 INNER JOIN {og_uid} ogu ON ogu.uid = ogur.uid AND ogu.nid = ogur.gid 
-	 WHERE ogur.uid = %d AND ogur.gid IN ($placeholders) AND ogu.is_active = 1"
-	 , $args);
-      while ($role = db_fetch_object($result)) {
+    $result = db_query("SELECT ogur.rid, r.name FROM {og_users_roles} ogur INNER JOIN {role} r ON r.rid = ogur.rid WHERE ogur.uid = %d AND ogur.gid IN ($placeholders)", $args);
+    while ($role = db_fetch_object($result)) {
       // Add roles to account first, so we can statically cache all roles
       // afterwards.
       $account->roles[$role->rid] = $role->name;
@@ -325,27 +392,24 @@ function og_user_roles_grant_roles(&$account, $group_node = NULL) {
  *   Associative array containing details about the subscription.
  */
 function og_user_roles_og($op, $nid, $uid, $args = array()) {
-$node = node_load($nid);
-$appendtype = "_".$node->type;
-
-switch ($op) {
+  switch ($op) {
     case 'user insert':
       // Add default role for new group members, if configured.
-      if ($default_role = variable_get('og_user_roles_default_role'.$appendtype, 0)) {
+      if ($default_role = og_user_roles_get_group_default_role($nid)) {
         og_user_roles_role_add($nid, $uid, $default_role);
       }
 
       // Add default role for new group admins, if configured.
       if (isset($args['is_admin']) && $args['is_admin']) {
-        if (($default_admin_role = variable_get('og_user_roles_default_admin_role'.$appendtype, 0)) && $default_admin_role != $default_role) {
+        if (($default_admin_role = variable_get('og_user_roles_default_admin_role', 0)) && $default_admin_role != $default_role) {
           og_user_roles_role_add($nid, $uid, $default_admin_role);
         }
       }
       break;
 
     case 'user update':
-      $default_admin_role = variable_get('og_user_roles_default_admin_role'.$appendtype, 0);
-      $default_role = variable_get('og_user_roles_default_role'.$appendtype, 0);
+      $default_admin_role = variable_get('og_user_roles_default_admin_role', 0);
+      $default_role = og_user_roles_get_group_default_role($nid);
       if ($default_admin_role > 0 && $default_admin_role != $default_role) {
         // Grant role for new group admin.
         if (isset($args['is_admin']) && $args['is_admin']) {
@@ -370,10 +434,35 @@ switch ($op) {
  */
 function og_user_roles_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   switch ($op) {
+    case 'load':
+      if (og_is_group_type($node->type)) {
+        $rid = db_result(db_query("SELECT default_role FROM {og_users_roles_group} WHERE gid = %d", $node->nid));
+        if ($rid) {
+          $node->og_user_roles_default_role = $rid;
+        }
+      }
+      break;
+
+    case 'insert':
+      if (!empty($node->og_user_roles_default_role) && og_is_group_type($node->type)) {
+        db_query("INSERT INTO {og_users_roles_group} (gid, default_role) VALUES (%d, %d)", $node->nid, $node->og_user_roles_default_role);
+      }
+      break;
+
+    case 'update':
+      if (!empty($node->og_user_roles_default_role) && og_is_group_type($node->type)) {
+        db_query("UPDATE {og_users_roles_group} SET default_role = %d WHERE gid = %d", $node->og_user_roles_default_role, $node->nid);
+        if (!db_affected_rows()) {
+          db_query("INSERT INTO {og_users_roles_group} (gid, default_role) VALUES (%d, %d)", $node->nid, $node->og_user_roles_default_role);
+        }
+      }
+      break;
+
     case 'delete':
       // Remove all data for a deleted group.
       if (og_is_group_type($node->type)) {
         db_query("DELETE FROM {og_users_roles} WHERE gid = %d", $node->nid);
+        db_query("DELETE FROM {og_users_roles_group} WHERE gid = %d", $node->nid);
       }
       break;
   }
@@ -392,6 +481,9 @@ function og_user_roles_form_user_admin_role_alter(&$form, $form_state) {
 function og_user_roles_user_admin_role_delete_submit($form, &$form_state) {
   // Remove all role assignments for deleted user role.
   db_query('DELETE FROM {og_users_roles} WHERE rid = %d', $form_state['values']['rid']);
+  db_query("DELETE FROM {og_users_roles_group} WHERE default_role = %d", $form_state['values']['rid']);
+  // Invoke default submit handler (not converted to button submit handler yet).
+  user_admin_role_submit($form, $form_state);
 }
 
 /**
@@ -429,20 +521,16 @@ function og_user_roles_get_roles_by_group($gid, $uid) {
  *   The user ID.
  * @param $rid
  *   The role ID to grant.
- * @param $args
- *   An array containing values set by other modules that are passed to hook_og implementations.
  */
-function og_user_roles_role_add($gid, $uid, $rid, $args = array()) {
-   $granted = db_result(db_query_range("SELECT rid FROM {og_users_roles} WHERE gid = %d AND uid = %d AND rid = %d", $gid, $uid, $rid, 0, 1));
-   if (!$granted) {
-     db_query("INSERT INTO {og_users_roles} (uid, gid, rid) VALUES (%d, %d, %d)", $uid, $gid, $rid);
-    $args['rid'] = $rid;
-    module_invoke_all('og', 'user role add', $gid, $uid, $args);
-   }
- }
- 
+function og_user_roles_role_add($gid, $uid, $rid) {
+  $granted = db_result(db_query_range("SELECT rid FROM {og_users_roles} WHERE gid = %d AND uid = %d AND rid = %d", $gid, $uid, $rid, 0, 1));
+  if (!$granted) {
+    db_query("INSERT INTO {og_users_roles} (uid, gid, rid) VALUES (%d, %d, %d)", $uid, $gid, $rid);
+  }
+}
+
 /**
- * Remove a role or all roles for a user in a group.
+ * Revoke a role or all roles for a user in a group.
  *
  * @param $gid
  *   The group ID.
@@ -450,54 +538,74 @@ function og_user_roles_role_add($gid, $uid, $rid, $args = array()) {
  *   The user ID.
  * @param $rid
  *   (Optional) The role ID to remove. If omitted, all roles are removed.
- * @param $args
- *   An array containing values set by other modules that are passed to hook_og implementations.
  */
-function og_user_roles_role_delete($gid, $uid, $rid = NULL, $args = array()) {
-   if (is_null($rid)) {
-     db_query("DELETE FROM {og_users_roles} WHERE gid = %d AND uid = %d", $gid, $uid);
-   }
-   else {
-     db_query("DELETE FROM {og_users_roles} WHERE gid = %d AND uid = %d AND rid = %d", $gid, $uid, $rid);
-   }
-  $args['rid'] = $rid;
-  module_invoke_all('og', 'user role delete', $gid, $uid, $args);
- }
+function og_user_roles_role_delete($gid, $uid, $rid = NULL) {
+  if (is_null($rid)) {
+    db_query("DELETE FROM {og_users_roles} WHERE gid = %d AND uid = %d", $gid, $uid);
+  }
+  else {
+    db_query("DELETE FROM {og_users_roles} WHERE gid = %d AND uid = %d AND rid = %d", $gid, $uid, $rid);
+  }
+}
 
-
-// MY MODIFICATIONS - Can these og_hooks be used to weed out inappropriate create content links?
 /**
- * hook_og_link_alter
- *
- * Remove create_ links for content types that the og user role(s) does not permit.
+ * Retrieve all roles assignable in a group.
  */
-function og_user_roles_og_links_alter(&$links, $group_node) {
-static $perms;
-global $user;
-if($user->uid != 1) {
-if(!isset($perms)) {
-    $rids = array_keys($user->roles);
-    $placeholders = implode(',', array_fill(0, count($rids), '%d'));
-    $result = db_query("SELECT DISTINCT(p.perm) FROM {role} r INNER JOIN {permission} p ON p.rid = r.rid WHERE r.rid IN ($placeholders)", $rids);
-    while ($row = db_fetch_object($result)) {
-      $perm .= "$row->perm, ";
+function og_user_roles_get_group_roles($node_type) {
+  $roles = array();
+  $allowed_roles = array_filter(variable_get("og_user_roles_roles_{$node_type}", array()));
+  $user_roles = user_roles();
+  foreach ($allowed_roles as $rid => $checked) {
+    $roles[$rid] = check_plain($user_roles[$rid]);
+  }
+  return $roles;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function og_user_roles_form_alter(&$form, &$form_state, $form_id) {
+  // Add default user role option to node form.
+  // @todo Consider a better UI location for this.
+  if (isset($form['#node']) && $form_id == $form['#node']->type . '_node_form') {
+    $node = $form['#node'];
+    if (og_is_group_type($node->type) && user_access('override group default role')) {
+      $default = (!empty($node->og_user_roles_default_role) ? $node->og_user_roles_default_role : 0);
+      $options = array(0 => t('<default>'));
+      $options += og_user_roles_get_group_roles($node->type);
+
+      $form['og_user_roles_default_role'] = array(
+        '#type' => 'select',
+        '#title' => t('Default role for new members'),
+        '#options' => $options,
+        '#default_value' => $default,
+        '#description' => t('Configure a default role to be assigned to new group members.'),
+      );
     }
-    $perms = explode(',', $perm);
-    foreach($perms as $key => $value) {
-      if(substr(trim($value),0,7) != 'create ' || substr(trim($value),-8) != ' content') {
-        unset($perms["$key"]);
-	}
-      else
-      {
-	 $perms["$key"] = str_replace(' ', '_' , substr(trim($value),0,-8));
-      }
-    }
-    $perms = array_flip($perms);
-    }
-    foreach($links as $key => $value) {
-      if((substr($key,0,7) == 'create_' && !isset($perms["$key"])) || substr($key,0,12) == 'create_photo') {
-        unset($links["$key"]);
-      }
-    }
-    }
+  }
+}
+
+/**
+ * Implementation of hook_content_extra_fields().
+ */
+function og_user_roles_content_extra_fields($type_name) {
+  if (og_is_group_type($type_name)) {
+    $extra['og_user_roles_default_role'] = array(
+      'label' => t('Default role for new members'),
+      'description' => t('Configure a default role to be assigned to new group members.'),
+      'weight' => 0,
+    );
+    return $extra;
+  }
+}
+
+/**
+ * Return default role for a group.
+ */
+function og_user_roles_get_group_default_role($nid) {
+  $default_role = db_result(db_query("SELECT default_role FROM {og_users_roles_group} WHERE gid = %d", $nid));
+  if (!$default_role) {
+    $default_role = variable_get('og_user_roles_default_role', 0);
+  }
+  return $default_role;
 }

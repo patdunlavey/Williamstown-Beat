@@ -1,5 +1,5 @@
 <?php
-// $Id: og_user_roles.install,v 1.9 2009/06/16 21:44:47 sun Exp $
+// $Id: og_user_roles.install,v 1.10 2009/08/14 12:00:30 sun Exp $
 
 /**
  * Implementation of hook_schema().
@@ -12,6 +12,13 @@ function og_user_roles_schema() {
       'rid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     ),
     'primary key' => array('gid', 'uid', 'rid'),
+  );
+  $schema['og_users_roles_group'] = array(
+    'fields' => array(
+      'gid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'default_role' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+    ),
+    'primary key' => array('gid'),
   );
   return $schema;
 }
@@ -74,28 +81,17 @@ function og_user_roles_update_6202() {
  */
 function og_user_roles_update_6203() {
   $ret = array();
-  
-  // Get list of all og-enabled node types.
-  $group_types = og_get_types('group');
-  $types = array();
-  foreach ($group_types as $type) {
-    $types[$type] = node_get_types('name', $type);
-  }
 
   // Convert remaining variables.
   variable_del('og_user_roles_assign_basicgrouprole');
   if ($default_role = variable_get('og_user_roles_basicgrouprole_value', NULL)) {
-  foreach ($types as $type => $name) {
-    variable_set("og_user_roles_default_role_$type", $default_role);
-    }
+    variable_set('og_user_roles_default_role', $default_role);
   }
   variable_del('og_user_roles_basicgrouprole_value');
 
   variable_del('og_user_roles_assign_admingrouprole');
   if ($admin_role = variable_get('og_user_roles_admingrouprole_value', NULL)) {
-  foreach ($types as $type => $name) {
-    variable_set("og_user_roles_default_admin_role_$type", $admin_role);
-    }
+    variable_set('og_user_roles_default_admin_role', $admin_role);
   }
   variable_del('og_user_roles_admingrouprole_value');
 
@@ -112,6 +108,24 @@ function og_user_roles_update_6203() {
   db_query("DELETE FROM {variable} WHERE name LIKE 'og_user_roles_regcoderole_value_%%'");
 
   $ret[] = array('success' => TRUE, 'query' => 'Obsolete variables have been removed.');
+  return $ret;
+}
+
+/**
+ * Create {og_users_roles_group} table.
+ */
+function og_user_roles_update_6204() {
+  $ret = array();
+  if (db_table_exists('og_users_roles_group')) {
+    return $ret;
+  }
+  db_create_table($ret, 'og_users_roles_group', array(
+    'fields' => array(
+      'gid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'default_role' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+    ),
+    'primary key' => array('gid'),
+  ));
   return $ret;
 }
 

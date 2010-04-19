@@ -1,0 +1,73 @@
+<?php
+// $Id: subscriptions_og.install,v 1.1.2.9 2008/04/29 22:02:01 develCuy Exp $
+
+/**
+ * Implementation of hook_install().
+ *
+ * @ingroup hooks
+ */
+function subscriptions_og_install() {
+  $t = get_t();
+  
+  // Check for availability of required tables
+  $og_uid_global = db_table_exists('og_uid_global');
+  $og_uid = db_table_exists('og_uid');
+  $subscriptions = db_table_exists('subscriptions');
+  if ($og_uid_global && $og_uid && $subscriptions) {
+    // It performs a look-up of notification settings by user
+    $notifications = db_query("SELECT * FROM {og_uid_global} WHERE og_email >= %d", 1);
+    if (db_num_rows($notifications)) {
+      // Load available groups
+      include_once "subscriptions_og.module";
+      $groups_by_types = subscriptions_og_get_groups_by_types();
+
+      // Extract group IDs
+      $group_nids = array();
+      foreach ($groups_by_types as $group_type => $groups) {
+        $group_nids = array_merge($group_nids, array_keys($groups));
+      }
+      // Generate subscriptions
+      $defaults = (object)array(
+        'send_interval' => 1,
+        'send_updates' => 0,
+        'send_comments' => 1,
+      );
+      while ($account = db_fetch_object($notifications)) {
+        if ($account->og_email == 1) {
+          // Activate subscriptions in all groups
+          foreach ($group_nids as $group_nid) {
+            subscriptions_write_subscription(
+              'node', 'group_nid', $group_nid, -1, $account->uid,
+              $defaults->send_interval, $defaults->send_updates,
+              $defaults->send_comments);
+          }
+        }
+        elseif ($account->og_email == 2) {
+          // Activate subscriptions according to table og_uid
+          $settings = db_query("SELECT nid group_nid FROM {og_uid} WHERE uid = %d AND mail_type > 0", $account->uid);
+          while ($subscription = db_fetch_object($settings)) {
+            subscriptions_write_subscription(
+              'node', 'group_nid', $subscription->group_nid, -1, $account->uid,
+              $defaults->send_interval, $defaults->send_updates,
+              $defaults->send_comments);
+          }
+        }
+      }
+      drupal_set_message($t("Organic Groups user's notification settings successfully migrated to Subscriptions."));
+    }
+  }
+  else {
+    drupal_set_message($t("Current version of OG module is not supported for migration from group notifications to subscriptions. Please update OG module to avoid checking user account's settings manually."), 'warning');
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ *
+ * @ingroup hooks
+ */
+function subscriptions_og_uninstall() {
+  if (db_table_exists('subscriptions')) {
+    db_query("DELETE FROM {subscriptions} WHERE field = 'group_nid'");
+  }
+}

@@ -1,0 +1,95 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Drupal Mail Editor V6.x\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: JanDoemen <jandoemen@gmail.com>\n"
+"Language-Team: JanDoemen <jandoemen@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: Nederlands\n"
+"X-Poedit-Country: BELGIUM\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: mail_edit_user.inc:7
+msgid " Welcome message for user created by the admin"
+msgstr "Welkomstbericht voor users aangemaakt door de admin"
+
+#: mail_edit_user.inc:8
+msgid " Welcome message when user self-registers"
+msgstr "Welkomstbericht voor users die zichzelf hebben geregistreerd"
+
+#: mail_edit_user.inc:9
+msgid " Welcome message, user pending admin approval"
+msgstr "Welkomstbericht voor users die wachten op goedkeuring"
+
+#: mail_edit_user.inc:10
+msgid " Password recovery request"
+msgstr "Aanvraag nieuw paswoord"
+
+#: mail_edit_user.inc:11
+msgid " Account activated"
+msgstr "Account geactiveerd"
+
+#: mail_edit_user.inc:12
+msgid " Account blocked"
+msgstr "Account geblokkeerd"
+
+#: mail_edit_user.inc:13
+msgid " Account deleted"
+msgstr "Account verwijderd"
+
+#: mail_edit.module:17;24
+msgid "Edit mails being sent out by Drupal."
+msgstr "Wijzig e-mails die door Drupal verstuurd worden."
+
+#: mail_edit.module:18;25
+msgid "Mail templates"
+msgstr "E-Mail sjablonen"
+
+#: mail_edit.module:80
+msgid "description"
+msgstr "Beschrijving"
+
+#: mail_edit.module:86
+msgid "Template"
+msgstr "Sjabloon"
+
+#: mail_edit.module:90
+msgid "Subject"
+msgstr "Onderwerp"
+
+#: mail_edit.module:95
+msgid "Body"
+msgstr "Inhoud"
+
+#: mail_edit.module:110
+msgid "Replacement patterns"
+msgstr "Vervangpatronen"
+
+#: mail_edit.module:120
+msgid "Update template"
+msgstr "Sjaboon bijwerken"
+
+#: mail_edit.module:120
+msgid "Save new template"
+msgstr "Nieuw sjabloon bewaren"
+
+#: mail_edit.module:0
+msgid "mail_edit"
+msgstr "mail_edit"
+
+#: mail_edit.info:0
+msgid "Mail Editor"
+msgstr "Mail Editor"
+
+#: mail_edit.info:0
+msgid "Allows editing of all mails"
+msgstr "Laat toe alle mails te wijzigen"
+
+#: mail_edit.info:0
+msgid "Mail"
+msgstr "E-Mail"
+

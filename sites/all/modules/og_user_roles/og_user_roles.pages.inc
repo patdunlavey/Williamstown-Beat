@@ -1,5 +1,5 @@
 <?php
-// $Id: og_user_roles.pages.inc,v 1.3 2009/06/08 13:00:05 sun Exp $
+// $Id: og_user_roles.pages.inc,v 1.5 2009/12/06 19:26:37 sun Exp $
 
 /**
  * @file
@@ -18,7 +18,7 @@ function og_user_roles_admin_settings() {
   }
 
   // Get list of roles, not counting authenticated and anonymous user.
-  $all_roles = user_roles();
+  $all_roles = array_map('check_plain', user_roles());
   foreach ($all_roles as $rid => $role) {
     if ($rid > DRUPAL_AUTHENTICATED_RID) {
       $roles[$rid] = $role;
@@ -52,21 +52,20 @@ function og_user_roles_admin_settings() {
     '#description' => t('Select a role to automatically assign to users who join a group.'),
     '#collapsible' => TRUE,
   );
-  foreach ($types as $type => $name) {
-      $form['og_user_roles_defaults']["og_user_roles_default_admin_role_$type"] = array(
-	 '#type' => 'select',
-	 '#title' => t("Default role for new $name administrators"),
-	 '#options' => array(0 => t('None')) + $roles,
-	 '#default_value' => variable_get("og_user_roles_default_admin_role_$type", 0),
-	 '#description' => t('This role can only be unassigned by removing a user from the administrators of a group.'),
-      );
-      $form['og_user_roles_defaults']["og_user_roles_default_role_$type"] = array(
-	 '#type' => 'select',
-	 '#title' => t("Default role for new $name members"),
-	 '#options' => array(0 => t('None')) + $roles,
-	 '#default_value' => variable_get("og_user_roles_default_role_$type", 0),
-      );
-  }
+  $form['og_user_roles_defaults']['og_user_roles_default_admin_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Default role for new group administrators'),
+    '#options' => array(0 => t('None')) + $roles,
+    '#default_value' => variable_get('og_user_roles_default_admin_role', 0),
+    '#description' => t('This role can only be unassigned by removing a user from the administrators of a group.'),
+  );
+  $form['og_user_roles_defaults']['og_user_roles_default_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Default role for new group members'),
+    '#options' => array(0 => t('None')) + $roles,
+    '#default_value' => variable_get('og_user_roles_default_role', 0),
+    '#description' => t('This setting can be overridden at the group level by group admins with the %permission permission.', array('%permission' => 'override group default role')),
+  );
 
   return system_settings_form($form);
 }
@@ -77,11 +76,7 @@ function og_user_roles_admin_settings() {
 function og_user_roles_page($node) {
   drupal_set_title(t('Member roles for !title', array('!title' => l($node->title, "node/$node->nid"))));
 
-  $allowed_roles = array_filter(variable_get("og_user_roles_roles_{$node->type}", array()));
-  $user_roles = user_roles();
-  foreach ($allowed_roles as $rid => $checked) {
-    $roles[$rid] = $user_roles[$rid];
-  }
+  $roles = og_user_roles_get_group_roles($node->type);
 
   // Retrieve list of all group users
   $sql = og_list_users_sql(0, 0, 'ou.is_admin DESC, ou.is_active ASC, u.name ASC');
@@ -102,7 +97,8 @@ function og_user_roles_page_form($form_state, $node, $roles, $result) {
   $form['#node'] = $node;
   // Used for theming.
   $form['#id'] = 'og-user-roles';
-  $form['#roles'] = $roles;
+  $form['#assignable_roles'] = $roles;
+  $all_roles = array_map('check_plain', user_roles());
 
   // Unset role titles.
   foreach ($roles as $rid => $name) {
@@ -114,17 +110,22 @@ function og_user_roles_page_form($form_state, $node, $roles, $result) {
     $form['user_roles'][$account->uid]['user'] = array(
       '#value' => theme('username', $account),
     );
+    $account_roles = og_user_roles_get_roles_by_group($node->nid, $account->uid);
     $form['user_roles'][$account->uid]['roles'] = array(
       '#type' => 'checkboxes',
-      '#default_value' => og_user_roles_get_roles_by_group($node->nid, $account->uid),
+      '#default_value' => $account_roles,
       '#options' => $roles,
       '#parents' => array('user_roles', $account->uid),
     );
-    // save the user's original roles. Compared with the values in $form['user_roles'][$uid]['roles']['new']
-    // to determine which roles were added and deleted. Used in the submit handler.
-    $form['user_roles'][$account->uid]['original_roles'] = array(
-      '#type' => 'value',
-      '#value' => og_user_roles_get_roles_by_group($node->nid, $account->uid),
+    // Add default roles that do not appear in the form.
+    $default_roles = array();
+    foreach ($account_roles as $rid) {
+      if (!isset($roles[$rid])) {
+        $default_roles[$rid] = $all_roles[$rid];
+      }
+    }
+    $form['user_roles'][$account->uid]['default_roles'] = array(
+      '#value' => implode(', ', $default_roles),
     );
   }
   $form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
@@ -136,31 +137,18 @@ function og_user_roles_page_form($form_state, $node, $roles, $result) {
  * Form submit handler for group user roles assignment form.
  */
 function og_user_roles_page_form_submit($form, &$form_state) {
-   $gid = $form['#node']->nid;
-  foreach ($form_state['values']['user_roles'] as $uid => $roles) {
-    $original_roles = ($roles['original_roles']) ? $roles['original_roles'] : array();
-    $new_roles = array();
-    foreach($roles as $rid => $checked) {
-      if(is_numeric($rid)) {
-        $new_roles[$rid] = $checked;
+  $gid = $form['#node']->nid;
+
+  foreach ($form_state['values']['user_roles'] as $uid => $new_roles) {
+    foreach ($form['#assignable_roles'] as $rid => $name) {
+      if (empty($new_roles[$rid])) {
+        og_user_roles_role_delete($gid, $uid, $rid);
+      }
+      else {
+        og_user_roles_role_add($gid, $uid, $rid);
       }
     }
-      
-    //determine which roles to add
-    $add_roles = array_diff($new_roles, $original_roles);
-    $add_roles = array_filter($add_roles);
- 
-    //determine which roles to delete
-    $delete_roles = array_diff($original_roles, $new_roles);
- 
-    foreach ($delete_roles as $rid => $checked) {
-      og_user_roles_role_delete($gid, $uid, $rid);
-    }
-    
-    foreach ($add_roles as $rid => $checked) {
-       og_user_roles_role_add($gid, $uid, $rid);
-     }
-   }
+  }
 
   drupal_set_message(t('The changes have been saved.'));
 }
@@ -169,12 +157,13 @@ function og_user_roles_page_form_submit($form, &$form_state) {
  * Render the group user roles assignment form like user permissions table.
  */
 function theme_og_user_roles_page_form($form) {
-  $header = array_merge(array(''), $form['#roles']);
+  $header = array_merge(array('', t('Default roles')), $form['#assignable_roles']);
 
   $rows = array();
   foreach (element_children($form['user_roles']) as $item) {
     $row = array();
     $row[] = drupal_render($form['user_roles'][$item]['user']);
+    $row[] = drupal_render($form['user_roles'][$item]['default_roles']);
     foreach (element_children($form['user_roles'][$item]['roles']) as $role) {
       $row[] = drupal_render($form['user_roles'][$item]['roles'][$role]);
     }

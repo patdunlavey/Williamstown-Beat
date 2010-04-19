@@ -1,0 +1,95 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Drupal Mail Editor V6.x\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Frank Tartler <frank.tartler@googlemail.com>\n"
+"Language-Team: Frank Tartler <frank.tartler@googlemail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: German\n"
+"X-Poedit-Country: GERMANY\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: mail_edit_user.inc:7
+msgid " Welcome message for user created by the admin"
+msgstr "Willkommensnachricht für vom Administrator erstellte Benutzer"
+
+#: mail_edit_user.inc:8
+msgid " Welcome message when user self-registers"
+msgstr "Willkommensnachricht für Benutzer, die sich selbst registriert haben"
+
+#: mail_edit_user.inc:9
+msgid " Welcome message, user pending admin approval"
+msgstr "Willkommensnachricht für Benutzer mit ausstehender Genehmigung"
+
+#: mail_edit_user.inc:10
+msgid " Password recovery request"
+msgstr "Antrag auf Passwort-Rücksetzung"
+
+#: mail_edit_user.inc:11
+msgid " Account activated"
+msgstr "Konto aktiviert"
+
+#: mail_edit_user.inc:12
+msgid " Account blocked"
+msgstr "Konto gesperrt"
+
+#: mail_edit_user.inc:13
+msgid " Account deleted"
+msgstr "Konto gelöscht"
+
+#: mail_edit.module:17;24
+msgid "Edit mails being sent out by Drupal."
+msgstr "E-Mail, die von Drupal gesendet werden."
+
+#: mail_edit.module:18;25
+msgid "Mail templates"
+msgstr "E-Mail-Vorlagen"
+
+#: mail_edit.module:80
+msgid "description"
+msgstr "Beschreibung"
+
+#: mail_edit.module:86
+msgid "Template"
+msgstr "Vorlage"
+
+#: mail_edit.module:90
+msgid "Subject"
+msgstr "Betreff"
+
+#: mail_edit.module:95
+msgid "Body"
+msgstr "Textkörper"
+
+#: mail_edit.module:110
+msgid "Replacement patterns"
+msgstr "Ersetzungsmuster"
+
+#: mail_edit.module:120
+msgid "Update template"
+msgstr "Vorlage aktualisieren"
+
+#: mail_edit.module:120
+msgid "Save new template"
+msgstr "Neue Vorlage speichern"
+
+#: mail_edit.module:0
+msgid "mail_edit"
+msgstr "mail_edit"
+
+#: mail_edit.info:0
+msgid "Mail Editor"
+msgstr "Mail Editor"
+
+#: mail_edit.info:0
+msgid "Allows editing of all mails"
+msgstr "Ermöglicht es, alle E-Mails zu bearbeiten"
+
+#: mail_edit.info:0
+msgid "Mail"
+msgstr "E-Mail"
+

@@ -1,0 +1,10 @@
+; $Id: subscriptions_og.info,v 1.1.2.3 2008/03/14 22:54:21 develCuy Exp $
+
+name = Organic Groups Subscriptions
+description = Allows users to subscribe to organic groups.
+package = "Subscriptions"
+dependencies[] = subscriptions
+dependencies[] = subscriptions_content
+dependencies[] = og
+dependencies[] = mail_edit
+core = 6.x
