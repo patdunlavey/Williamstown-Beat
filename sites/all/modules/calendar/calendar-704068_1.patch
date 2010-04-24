@@ -1,0 +1,191 @@
+? .calendar-704068.patch.swp
+? calendar-704068.patch
+Index: calendar.module
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/calendar/calendar.module,v
+retrieving revision 1.121.2.38
+diff -u -p -r1.121.2.38 calendar.module
+--- calendar.module	17 Mar 2009 18:03:36 -0000	1.121.2.38
++++ calendar.module	16 Apr 2010 10:26:05 -0000
+@@ -271,6 +271,52 @@ function calendar_node_taxonomy_stripe($
+ 
+ 
+ /**
++ * Create a stripe based on group.
++ *
++ * @param $node - the node object
++ * @param $query_name - the views queryname for this date field
++ * @param $delta - the delta for this field, used to distinguish fields that appear more than once in the calendar
++ * @param $stripe - the hex code for this stripe.
++ * @param $label - the label to give this stripe.
++ * 
++ * TODO Reconsider use of $GLOBALS as a method of triggering the legend, there
++ * may be a better way.
++ */
++function calendar_node_group_stripe($view, &$node, $query_name, $delta, $stripe = NULL, $label = '') {
++  $colors_group = isset($view->date_info->calendar_colors_group) ? $view->date_info->calendar_colors_group : array();
++  if (empty($colors_group)) {
++    return;
++  }
++  if (!function_exists('og_get_node_groups')) {
++    return;
++  }
++
++  $groups_for_node = og_get_node_groups($node);
++  if(!(isset($node->stripe))){
++    $node->stripe = array();
++    $node->stripe_label = array();
++  }
++  if (count($groups_for_node)){
++    foreach($groups_for_node as $gid => $group_name){
++      if (!array_key_exists($gid, $colors_group)) {
++        continue;
++      }
++      $stripe = $colors_group[$gid];
++      $stripe_label = $group_name;
++      $node->stripe[] = $stripe;
++      $node->stripe_label[] = $stripe_label;
++      $GLOBALS['calendar_stripe_labels'][][$gid] = array('stripe' => $stripe, 'label' => $stripe_label);
++    }
++  }
++  else {
++    $node->stripe[] = '';
++    $node->stripe_label[] = '';
++  } 
++  return $stripe;
++}
++
++
++/**
+  * Helper function to figure out a group gid to use in blocks.
+  *
+  * @return an array of group nodes that are relevant.
+@@ -492,4 +538,4 @@ function calendar_remove($view_name) {
+     $view->delete();
+   }
+   views_invalidate_cache();
+-}
+\ No newline at end of file
++}
+Index: includes/calendar.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/calendar/includes/calendar.inc,v
+retrieving revision 1.1.2.40
+diff -u -p -r1.1.2.40 calendar.inc
+--- includes/calendar.inc	11 May 2009 22:24:27 -0000	1.1.2.40
++++ includes/calendar.inc	16 Apr 2010 10:26:06 -0000
+@@ -546,6 +546,7 @@ function calendar_build_nodes(&$view, &$
+           else {
+             calendar_node_stripe($view, $node, $alias, $alias);
+             calendar_node_taxonomy_stripe($view, $node, $alias, $alias);
++            calendar_node_group_stripe($view, $node, $alias, $alias);
+             $node->date_id = $id .':'. $pos;
+ 
+             $nodes[] = $node;
+Index: includes/calendar.views_default.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/calendar/includes/calendar.views_default.inc,v
+retrieving revision 1.1.2.21
+diff -u -p -r1.1.2.21 calendar.views_default.inc
+--- includes/calendar.views_default.inc	21 Feb 2009 16:33:15 -0000	1.1.2.21
++++ includes/calendar.views_default.inc	16 Apr 2010 10:26:06 -0000
+@@ -332,6 +332,7 @@ $handler->override_option('tab_options',
+ $handler->override_option('calendar_colors', array($colors));
+ $handler->override_option('calendar_colors_vocabulary', array());
+ $handler->override_option('calendar_colors_taxonomy', array());
++$handler->override_option('calendar_colors_group', array());
+ $handler->override_option('calendar_popup', 0);
+ $handler->override_option('calendar_date_link', $date_link_type);
+ // Calendar block.
+@@ -491,4 +492,4 @@ $handler->override_option('block_descrip
+ $handler->override_option('block_caching', -1);
+ 
+ return $view;
+-}
+\ No newline at end of file
++}
+Index: includes/calendar_plugin_display_attachment.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/calendar/includes/calendar_plugin_display_attachment.inc,v
+retrieving revision 1.1.2.17
+diff -u -p -r1.1.2.17 calendar_plugin_display_attachment.inc
+--- includes/calendar_plugin_display_attachment.inc	17 Mar 2009 18:03:36 -0000	1.1.2.17
++++ includes/calendar_plugin_display_attachment.inc	16 Apr 2010 10:26:06 -0000
+@@ -133,6 +133,7 @@ class calendar_plugin_display_attachment
+     elseif (substr($display_id, 0, 9) == 'calendar_') {
+       $this->view->date_info->calendar_colors = $this->view->display[$display_id]->handler->options['calendar_colors'];
+       $this->view->date_info->calendar_colors_taxonomy = $this->view->display[$display_id]->handler->options['calendar_colors_taxonomy'];
++      $this->view->date_info->calendar_colors_group = $this->view->display[$display_id]->handler->options['calendar_colors_group'];
+       $this->view->date_info->calendar_popup = $this->view->display[$display_id]->handler->options['calendar_popup'];
+       $this->view->date_info->calendar_date_link = $this->view->display[$display_id]->handler->options['calendar_date_link'];
+     }  
+Index: includes/calendar_plugin_display_page.inc
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/calendar/includes/calendar_plugin_display_page.inc,v
+retrieving revision 1.1.2.20
+diff -u -p -r1.1.2.20 calendar_plugin_display_page.inc
+--- includes/calendar_plugin_display_page.inc	24 Jul 2009 19:44:09 -0000	1.1.2.20
++++ includes/calendar_plugin_display_page.inc	16 Apr 2010 10:26:06 -0000
+@@ -60,6 +60,7 @@ class calendar_plugin_display_page exten
+     $options['calendar_colors'] = array('default' => array());
+     $options['calendar_colors_vocabulary'] = array('default' => array());
+     $options['calendar_colors_taxonomy'] = array('default' => array());
++    $options['calendar_colors_group'] = array('default' => array());
+     $options['calendar_popup'] = array('default' => 0);
+     $options['calendar_date_link'] = array('default' => '');
+     $options['style_plugin'] = array('default' => 'calendar_nav');
+@@ -96,6 +97,14 @@ class calendar_plugin_display_page exten
+       'title' => t('Legend Terms'),
+       'value' => t('Edit'),
+     );
++    if (function_exists('og_all_groups_options')) {
++      $colors_group = $this->get_option('calendar_colors_group');
++      $options['calendar_colors_group'] = array(
++        'category' => 'calendar_settings',
++        'title' => t('Legend Groups'),
++        'value' => t('Edit'),
++      );
++    }
+     $popup_options = $this->popup_options();
+     $default = $this->get_option('calendar_popup');
+     $options['calendar_popup'] = array(
+@@ -219,6 +228,31 @@ class calendar_plugin_display_page exten
+ 	      }
+ 	      $form['calendar_colors_taxonomy']['color']['#suffix'] = '</div>';
+         break;
++
++      case 'calendar_colors_group':
++        $colors_group = $this->get_option('calendar_colors_group');
++        $form['#title'] .= t('Group Legend Colors');
++        $form['calendar_colors_group']['#prefix'] = '';
++        $form['calendar_colors_group']['#prefix'] .= t('<div class="form-item"><label>Group</label><p>Set a hex color value (like #ffffff) to use in the calendar legend for each group. Groups with empty values will have no stripe in the calendar and will not be added to the legend.</p></div>');
++        $form['calendar_colors_group']['#tree'] = TRUE;
++        $form['calendar_colors_group']['colorpicker'] = array(
++          '#type' => 'calendar_colorpicker',
++          '#prefix' => '<div class="clear-block"><div style="float:left">',
++          '#suffix' => '</div>',
++        );
++        $groups = og_all_groups_options();
++        foreach ($groups as $gid => $group_name){
++          $form['calendar_colors_group']['color'][$gid] = array(
++	          '#title' => t($group_name),
++	          '#type' => 'calendar_colorfield',
++	          '#default_value' => isset($colors_group[$gid]) ? $colors_group[$gid] : '#ffffff',
++	          '#calendar_colorpicker' => 'calendar-colors-group-colorpicker',
++	          '#prefix' => '<div style="float:left;margin-right:10px">',
++	          '#suffix' => '</div>',
++	          );
++	      }
++	      $form['calendar_colors_group']['color']['#suffix'] = '</div>';
++        break;
+     }
+   }
+ 
+@@ -235,6 +269,7 @@ class calendar_plugin_display_page exten
+         break;
+       case 'calendar_colors':
+       case 'calendar_colors_taxonomy':
++      case 'calendar_colors_group':
+         $this->set_option($form_state['section'], $form_state['values'][$form_state['section']]['color']);
+         break;
+       case 'calendar_colors_vocabulary':

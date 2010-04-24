@@ -1,0 +1,84 @@
+--- profiles/managingnews/modules/contrib/feeds/libraries/common_syndication_parser.inc.old	2010-04-15 17:20:57.000000000 +0200
++++ profiles/managingnews/modules/contrib/feeds/libraries/common_syndication_parser.inc	2010-04-15 17:22:25.000000000 +0200
+@@ -231,7 +231,7 @@ function _parser_common_syndication_RDF1
+     $parsed_source = array(
+       'title'       => _parser_common_syndication_title((string)$rss_channel->title),
+       'description' => (string)$rss_channel->description,
+-      'options'     => (object)array('link' => (string)$rss_channel->link),
++      'link'        => (string)$rss_channel->link,
+       'items'       => array(),
+     );
+     break;
+@@ -260,16 +260,14 @@ function _parser_common_syndication_RDF1
+     }
+ 
+     // Declaratively define mappings that determine how to construct the result object.
+-    $item = _parser_common_syndication_RDF10_item($rdf_data, (object)array(
++    $item = _parser_common_syndication_RDF10_item($rdf_data, array(
+       'title'       => array('rss:title', 'dc:title'),
+       'description' => array('rss:description', 'dc:description', 'content:encoded'),
+-      'options'     => (object)array(
+-        'guid'            => 'rdf:about',
+-        'timestamp'       => 'dc:date',
+-        'author' => array('dc:creator', 'dc:publisher'),
+-        'url'    => array('rss:link', 'rdf:about'),
+-        'tags'            => 'dc:subject',
+-      ),
++      'url'         => array('rss:link', 'rdf:about'),
++      'author_name'      => array('dc:creator', 'dc:publisher'),
++      'guid'        => 'rdf:about',
++      'timestamp'   => 'dc:date',
++      'tags'        => 'dc:subject'
+     ));
+ 
+     // Special handling for the title:
+@@ -278,18 +276,13 @@ function _parser_common_syndication_RDF1
+     // Parse any date/time values into Unix timestamps:
+     $item['timestamp'] = _parser_common_syndication_parse_date($item['timestamp']);
+ 
+-    // If no author name found, use the feed title:
+-    if (empty($item['author'])) {
+-      $item['author_name'] = $parsed_source['title'];
+-    }
+-
+     // If no GUID found, use the URL of the feed.
+     if (empty($item['guid'])) {
+       $item['guid'] = $item['url'];
+     }
+ 
+     // Add every found RDF property to the feed item.
+-    $item['rdf'] = (object)array();
++    $item['rdf'] = array();
+     foreach ($rdf_data as $rdf_property => $rdf_value) {
+       // looks nicer in the mapper UI
+       // @todo Revisit, not used with feedapi mapper anymore.
+@@ -299,7 +292,7 @@ function _parser_common_syndication_RDF1
+ 
+     $parsed_source['items'][] = $item;
+   }
+-
++ 
+   return $parsed_source;
+ }
+ 
+@@ -314,16 +307,11 @@ function _parser_common_syndication_RDF1
+ }
+ 
+ function _parser_common_syndication_RDF10_item($rdf_data, $mappings) {
+-  foreach (get_object_vars($mappings) as $k => $v) {
+-    if (is_object($v)) {
+-      $mappings->$k = _parser_common_syndication_RDF10_item($rdf_data, $v);
+-    }
+-    else {
+-      $values = _parser_common_syndication_RDF10_property($rdf_data, $v);
+-      $mappings->$k = !is_array($values) || count($values) > 1 ? $values : reset($values);
+-    }
++  foreach ( $mappings as $k => $v) {
++    $values = _parser_common_syndication_RDF10_property($rdf_data, $v);
++    $mappings[$k] = !is_array($values) || count($values) > 1 ? $values : reset($values);
+   }
+-  return (object)$mappings;
++  return $mappings;
+ }
+ 
+ /**
