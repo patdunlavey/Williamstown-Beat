@@ -58,7 +58,10 @@ class RPX {
   }
 
   /* get the list and order of providers */
-  function get_enabled_providers($realm, $realm_scheme){
+  function get_enabled_providers($realm, $realm_scheme = 'http'){
+    if (!in_array($realm_scheme, array('http', 'https'))) {
+      $realm_scheme = 'http';
+    }
     
     $url = $realm_scheme."://" . $realm . "/openid/ui_config";
     $context = stream_context_create();

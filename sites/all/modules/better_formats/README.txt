@@ -9,7 +9,7 @@ Features
     * Expand the selection fieldset by default.
     * Disable the expand/collapse of the selection fieldset.
     * Set selection fieldset title.
-    * Set default formats for nodes and comments separately.
+    * Set default formats for nodes, comments, and blocks separately.
     * Works with CCK textareas.
     * Panels comment support.
     * I18n module support.
@@ -34,6 +34,27 @@ Simple 4-step usage:
 4. If you enable the "Control formats per node type" option. Go to your content
    type admin page to set those settings (example /admin/content/node-type/page).
    The settings are under the Input format settings fieldset.
+
+-------------------------------------------------------------------
+
+Important:
+
+When setting default formats ensure that you arranged the roles correctly
+placing roles in their order of precedence. This is used to determine what
+default a user will get when they have more than 1 role.
+
+NOTE:
+All logged in users are automatically assigned the authenticated user role
+so this role must be below all other roles that you want to set a default for or
+they will get the authenticated user role default instead.
+
+Example:
+Let's say you have the 2 roles that come with Drupal and have added an
+'admin' role. You would most likely want to arrange the roles in this order:
+
+  admin
+  authenticated user
+  anonymous user
 
 -------------------------------------------------------------------
 
@@ -64,3 +85,11 @@ Extended usage and notes:
   3. Global default format
   4. First allowed format
   5. Drupal core site default format
+
+* User 1 is treated the same as all other users when it comes to a default
+  format. If user 1 has not been assigned any roles then it will be assigned
+  the authenticated user role's default format. If you want user 1 to have the
+  default of another role assign that role to user 1.
+
+* Ensure you read the important notes in the previous section marked important.
+  It explains how you must order your roles to effectively get your defaults.

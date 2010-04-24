@@ -241,4 +241,8 @@ function tma2_custom_local_tasks($primary = '', $secondary = '') {
   return $output;
 }
 
+function tma2_date_all_day_label() {
+  return '<!-- ('. date_t('All day', 'datetime') .') -->';
+}
+
 

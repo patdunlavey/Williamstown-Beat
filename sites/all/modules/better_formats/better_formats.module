@@ -1,5 +1,5 @@
 <?php
-// $Id: better_formats.module,v 1.23.2.9 2009/03/18 15:24:30 dragonwize Exp $
+// $Id: better_formats.module,v 1.23.2.17 2010/02/05 13:59:18 dragonwize Exp $
 
 /**
  * @file
@@ -18,11 +18,6 @@ function better_formats_help($path, $arg) {
       $output = '<p>' . t('See the module README.txt file in the better_formats module directory for help.') . '</p>';
       break;
 
-    case 'admin/settings/filters/defaults':
-      $output  = '<p>' . t('Set the global default formats per role for NEW nodes and comments. These settings will be applied to all nodes and comments in the site unless overriden by specific content type defaults.') . '</p>';
-      $output .= '<p>' . t('Arrange the roles to provide weight that will determine what format is selected when a user has more than one role. Remember, that all logged in users are automatically given the authenticated user role in addition to their other assigned roles. For example, if you have an admin role place it at the top and generally you would want your anonymous user role at the bottom.') . '</p>';
-      break;
-
     default:
       $output = '';
   }
@@ -34,7 +29,9 @@ function better_formats_help($path, $arg) {
  */
 function better_formats_perm() {
   return array(
-    'show format selection',
+    'show format selection for nodes',
+    'show format selection for comments',
+    'show format selection for blocks',
     'show format tips',
     'show more format tips link',
     'collapse format fieldset by default',
@@ -104,6 +101,11 @@ function better_formats_form_alter(&$form, $form_state, $form_id) {
 
     case 'node-form':
       better_formats_set_node_format($form);
+      break;
+
+    case 'block-add-block-form':
+    case 'block-admin-configure':
+      better_formats_set_block_format($form);
       break;
   }
 
@@ -242,6 +244,7 @@ function better_formats_new_role($form, &$form_state) {
           VALUES (%d, '%s', %d, %d, %d)";
   db_query($sql, $rid, 'node', 0, 1, 25);
   db_query($sql, $rid, 'comment', 0, 1, 25);
+  db_query($sql, $rid, 'block', 0, 1, 25);
 }
 
 /**
@@ -274,25 +277,29 @@ function better_formats_node_type($op, $info) {
 /**
  * Implementation of hook_elements().
  *
- * Adds a process function to CCK's textarea FAPI element.
+ * Adds a process function to CCK's text module FAPI elements.
  */
 function better_formats_elements() {
   return array(
+    'text_textfield' => array(
+      '#process' => array('better_formats_text_process'),
+    ),
     'text_textarea' => array(
-      '#process' => array('better_formats_textarea_process'),
+      '#process' => array('better_formats_text_process'),
     ),
   );
 }
 
 /**
- * Processes a CCK textarea element.
+ * Processes a CCK text elements.
  *
- * Resets the textareas filter area with bettter_formats default.
- * This function is used to affect CCK textareas not core fields.
+ * Resets the filter area with bettter_formats default.
+ * This function is used to affect CCK text module fields not core fields.
  *
+ * @see text_textfield_process()
  * @see text_textarea_process()
  */
-function better_formats_textarea_process($element, $edit, $form_state, $form) {
+function better_formats_text_process($element, $edit, $form_state, $form) {
   $field = $form['#field_info'][$element['#field_name']];
 
   if (!empty($field['text_processing'])) {
@@ -303,14 +310,14 @@ function better_formats_textarea_process($element, $edit, $form_state, $form) {
     $default    = better_formats_get_default_format('node', $form['type']['#value']);
 
     // Overwrite format default if new node.
-    if (!isset($form_state['values']['nid']) || !isset($format)) {
+    if (!isset($form_state['values']['nid']) || empty($format)) {
       $format = $default;
     }
     $format = filter_resolve_format($format);
     // Set default format for cck textarea.
     $element['#value'][$filter_key] = $format;
     // Set filter selection form.
-    $element[$filter_key] = better_formats_filter_form($format, $default, $form['type']['#value'], 1, $parents);
+    $element[$filter_key] = better_formats_filter_form($format, $default, 'node', $form['type']['#value'], 1, $parents);
   }
 
   return $element;
@@ -327,7 +334,7 @@ function better_formats_set_node_format(&$form) {
     // Get default for new entries.
     $default = better_formats_get_default_format('node', $form['type']['#value']);
 
-    if (empty($form['nid']['#value'])) {
+    if (empty($form['nid']['#value']) && !isset($form['#parameters'][1]['node_preview'])) {
       // Set format to default for new entries.
       $format = $default;
     }
@@ -337,7 +344,7 @@ function better_formats_set_node_format(&$form) {
     }
 
     // Overwrite the filter form with our own.
-    $form['body_field']['format'] = better_formats_filter_form($format, $default, $form['type']['#value']);
+    $form['body_field']['format'] = better_formats_filter_form($format, $default, 'node', $form['type']['#value']);
   }
 }
 
@@ -362,7 +369,31 @@ function better_formats_set_comment_format(&$form) {
       $format = better_formats_get_current_format($form['comment_filter']['format']);
     }
     // Overwrite the filter form with our own.
-    $form['comment_filter']['format'] = better_formats_filter_form($format, $default, $node->type);
+    $form['comment_filter']['format'] = better_formats_filter_form($format, $default, 'comment', $node->type);
+  }
+}
+
+/**
+ * Processes formats for core block form.
+ *
+ * @see better_formats_form_alter()
+ */
+function better_formats_set_block_format(&$form) {
+  if (isset($form['block_settings']['body_field']['format'])) {
+    // Get BF default format.
+    $default = better_formats_get_default_format('block');
+
+    if (empty($form['delta']['#value'])) {
+      // Set format to default for new entries.
+      $format = $default;
+    }
+    else {
+      // Get existing format for block.
+      $format = better_formats_get_current_format($form['block_settings']['body_field']['format']);
+    }
+
+    // Overwrite the filter form with our own.
+    $form['block_settings']['body_field']['format'] = better_formats_filter_form($format, $default, 'block');
   }
 }
 
@@ -398,7 +429,7 @@ function better_formats_get_current_format($form) {
  * Returns the default format for an new node or comment.
  *
  * @param $mode
- *  'node' or 'comment'. Describes the top level type of default.
+ *  'node', 'comment', or 'block'. Describes the top level type of default.
  * @return
  *  Format ID.
  *
@@ -427,7 +458,7 @@ function better_formats_get_default_format($mode, $node_type = '') {
     $roles  = implode(',', array_keys($user->roles));
 
     // Prepare types for SQL.
-    if ($per_node_type && $node_type) {
+    if ($mode !== 'block' && $per_node_type && $node_type) {
       $types .= "','" . $mode;
     }
 
@@ -454,10 +485,10 @@ function better_formats_get_default_format($mode, $node_type = '') {
  *
  * @see filter_form()
  */
-function better_formats_filter_form($value = FILTER_FORMAT_DEFAULT, $default_format, $node_type = '', $weight = 1, $parents = array('format')) {
+function better_formats_filter_form($value = FILTER_FORMAT_DEFAULT, $default_format, $mode = 'node', $node_type = '', $weight = 1, $parents = array('format')) {
   $value           = filter_resolve_format($value);
   $formats         = filter_formats();
-  $show_selection  = user_access('show format selection');
+  $show_selection  = user_access('show format selection for ' . $mode . 's');
   $show_tips       = user_access('show format tips');
   $show_tips_link  = user_access('show more format tips link');
   $per_node_type   = variable_get('better_formats_per_node_type', FALSE);
@@ -481,7 +512,8 @@ function better_formats_filter_form($value = FILTER_FORMAT_DEFAULT, $default_for
   else if (isset($formats[$default_format])) {
     // Use currently set BF default as a fallback.
     $default = $default_format;
-  } else if (!empty($formats)) {
+  }
+  else if (!empty($formats)) {
     // Current and default format are not allowed, so use first allowed format.
     reset($formats);
     $default = key($formats);

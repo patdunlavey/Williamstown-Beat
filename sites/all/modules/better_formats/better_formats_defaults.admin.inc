@@ -1,5 +1,5 @@
 <?php
-// $Id: better_formats_defaults.admin.inc,v 1.3.2.5 2009/03/17 08:16:52 dragonwize Exp $
+// $Id: better_formats_defaults.admin.inc,v 1.3.2.11 2010/02/05 13:52:48 dragonwize Exp $
 
 /**
  * @file
@@ -23,7 +23,8 @@ function better_formats_defaults_admin_form() {
 
   $nform = better_formats_get_role_default_fields('node');
   $cform = better_formats_get_role_default_fields('comment');
-  $form  = array_merge($form, $nform, $cform);
+  $bform = better_formats_get_role_default_fields('block');
+  $form  = array_merge($form, $nform, $cform, $bform);
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -45,17 +46,18 @@ function better_formats_defaults_admin_form_validate($form, &$form_state) {
     $roles[$fid] = explode(',', $format->roles);
   }
   // Get roles that have administer filters permission.
-  $admin_roles = better_formats_get_filter_admin_roles();
+  $admin_roles = better_formats_get_roles_by_perm('administer filters');
 
   foreach ($form_state['values'] as $key => $values) {
-    if (strpos($key, 'node-') === 0 || strpos($key, 'comment-') === 0) {
+    if (strpos($key, 'node-') === 0 || strpos($key, 'comment-') === 0 || strpos($key, 'block-') === 0) {
       list($type, $rid) = explode('-', $key);
       if (in_array($rid, $admin_roles)) {
         // Role has the 'administer filters' permission so it can use all formats.
         continue;
       }
       $fid = $values['format'];
-      if ($fid != 0 && !in_array($rid, $roles[$fid])) {
+      $site_default = filter_resolve_format(FILTER_FORMAT_DEFAULT);
+      if ($fid != 0 && !in_array($rid, $roles[$fid]) && $fid !== $site_default) {
         form_set_error($key, t('Role does not have access to selected format.'));
       }
     }
@@ -75,7 +77,7 @@ function better_formats_defaults_admin_form_submit($form, &$form_state) {
           WHERE rid=%d AND type='%s'";
 
   foreach ($form_state['values'] as $key => $values) {
-    if (strpos($key, 'node-') === 0 || strpos($key, 'comment-') === 0) {
+    if (strpos($key, 'node-') === 0 || strpos($key, 'comment-') === 0 || strpos($key, 'block-') === 0) {
       list($type, $rid) = explode('-', $key);
       db_query($sql, $values['format'], $values['weight'], $rid, $type);
     }
@@ -88,7 +90,7 @@ function better_formats_defaults_admin_form_submit($form, &$form_state) {
  * Builds FAPI form elements for the default format selection.
  *
  * @param $mode
- *  'node' or 'comment'. Top most level type for requested default.
+ *  'node', 'comment', or 'block'. Top most level type for requested default.
  * @param $node_type
  *  Type of node this request is for.
  * @return
@@ -161,7 +163,7 @@ function better_formats_get_formats_per_role() {
   $roles   = user_roles();
 
   // Get roles that have administer filters permission.
-  $admin_roles = better_formats_get_filter_admin_roles();
+  $admin_roles = better_formats_get_roles_by_perm('administer filters');
 
   $site_default_format = filter_resolve_format(FILTER_FORMAT_DEFAULT);
 
@@ -179,39 +181,44 @@ function better_formats_get_formats_per_role() {
 }
 
 /**
- * Get a list of roles that have the admin filter perm.
+ * Get a list of roles that have a permission.
  *
+ * @param $perm
+ *  Permission string to get roles for.
+ * @param $reset
+ *  Boolean to clear static cache.
  * @return
- *  An numeric indexed key of role IDs.
+ *  An array of role IDs that have the requested permission.
  */
-function better_formats_get_filter_admin_roles() {
+function better_formats_get_roles_by_perm($perm, $reset = FALSE) {
   static $roles;
-  if (!$roles) {
+  if ($reset || !isset($roles[$perm])) {
     $sql = "SELECT rid
             FROM {permission}
-            WHERE perm LIKE '%administer filters%'
+            WHERE perm LIKE '%$perm%'
             ORDER BY rid";
     $result = db_query($sql);
-    $roles = array();
+    $roles[$perm] = array();
     while ($row = db_fetch_object($result)) {
-      $roles[] = $row->rid;
+      $roles[$perm][] = $row->rid;
     }
   }
-  return $roles;
+  return $roles[$perm];
 }
 
 /**
  * Process variables for better-defaults-admin-form.tpl.php.
  *
- * @param $variables
+ * @param $vars
  *  The $variables array contains the following arguments:
  *    - $form
  */
-function template_preprocess_better_formats_defaults_admin_form(&$variables) {
-  foreach (element_children($variables['form']) as $key) {
-    $form_row = &$variables['form'][$key];
+function template_preprocess_better_formats_defaults_admin_form(&$vars) {
+  foreach (element_children($vars['form']) as $key) {
+    $form_row = &$vars['form'][$key];
 
-    $type = strpos($key, 'node-') === 0 ? 'node' : 'comment';
+    //$type = strpos($key, 'node-') === 0 ? 'node' : 'comment';
+    $type = substr($key, 0, strpos($key, '-'));
 
     if (isset($form_row['role'])) {
       // Set special classes needed for table drag and drop.
@@ -222,9 +229,9 @@ function template_preprocess_better_formats_defaults_admin_form(&$variables) {
       $row->format_select = drupal_render($form_row['format']);
       $row->weight_select = drupal_render($form_row['weight']);
 
-      $variables[$type . '_default_rows'][$key] = $row;
+      $vars[$type . '_default_rows'][$key] = $row;
     }
   }
 
-  $variables['form_submit'] = drupal_render($variables['form']);
+  $vars['form_submit'] = drupal_render($vars['form']);
 }

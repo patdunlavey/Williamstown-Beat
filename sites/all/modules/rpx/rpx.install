@@ -11,6 +11,15 @@ function rpx_update_6000() {
 }
 
 /**
+ * Update to clear menu cache on dev release
+ */
+function rpx_update_6005() {
+  $ret = array();
+  // An empty update to make sure updates are run so the menu cache is cleared
+  return $ret;
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function rpx_uninstall() {

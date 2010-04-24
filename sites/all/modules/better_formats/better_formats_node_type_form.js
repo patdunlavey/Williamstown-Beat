@@ -1,4 +1,4 @@
-// $Id: better_formats_node_type_form.js,v 1.4.2.2 2009/02/25 06:44:17 dragonwize Exp $
+// $Id: better_formats_node_type_form.js,v 1.4.2.3 2009/05/31 17:53:41 dragonwize Exp $
 
 /**
  * @file
@@ -12,21 +12,21 @@
 /**
  * Initialize Better Formats setttings and defaults.
  */
-function better_formats_init() {
+function betterFormatsInit() {
   // Set default settings check for use of global allowed formats.
-  Drupal.settings.better_formats = {"num_checked" : $('input.bf-allowed-formats:checked').length};
+  Drupal.settings.betterFormats = {"numChecked" : $('input.bf-allowed-formats:checked').length};
 
   // Collapsing the input format setting after the weight columns have been hidden.
   $('.input-format-settings > legend > a').click();
 
   // Add hide/show events for allowed formats.
-  var format_boxes = $('input.bf-allowed-formats');
-  format_boxes.click(function() {
-    better_formats_toggle_formats($(this));
+  var formatBoxes = $('input.bf-allowed-formats');
+  formatBoxes.click(function() {
+    betterFormatsToggleFormats($(this));
   });
-  if (Drupal.settings.better_formats.num_checked > 0) {
-    format_boxes.each(function() {
-      better_formats_toggle_formats($(this), true);
+  if (Drupal.settings.betterFormats.numChecked > 0) {
+    formatBoxes.each(function() {
+      betterFormatsToggleFormats($(this), true);
     });
   }
 }
@@ -39,9 +39,9 @@ function better_formats_init() {
  * @param init
  *  Boolean value to determine first toggle.
  */
-function better_formats_toggle_formats(el, init) {
+function betterFormatsToggleFormats(el, init) {
   // Hide all formats except site default when the first box is checked.
-  if (Drupal.settings.better_formats.num_checked === 0) {
+  if (Drupal.settings.betterFormats.numChecked === 0) {
     $('select.bf-default-formats option[value != "0"][value != "' + el.val() + '"]').removeAttr('selected').hide();
   }
 
@@ -56,22 +56,22 @@ function better_formats_toggle_formats(el, init) {
   });
 
   // Do not modify count on intial run.
-  if ( ! init) {
+  if (!init) {
     if (el.attr('checked')) {
-      Drupal.settings.better_formats.num_checked += 1;
+      Drupal.settings.betterFormats.numChecked += 1;
     }
-    else if (Drupal.settings.better_formats.num_checked > 0) {
+    else if (Drupal.settings.betterFormats.numChecked > 0) {
       // Keep num_checked from going below zero.
-      Drupal.settings.better_formats.num_checked -= 1;
+      Drupal.settings.betterFormats.numChecked -= 1;
     }
   }
 
   // Show all globally allowed formats if no boxes are checked.
-  if (Drupal.settings.better_formats.num_checked === 0) {
+  if (Drupal.settings.betterFormats.numChecked === 0) {
     // Show global formats available to roles because no format allowed boxes are checked.
     $('select.bf-default-formats option').show();
   }
 }
 
 
-$(document).ready(better_formats_init);
+$(document).ready(betterFormatsInit);

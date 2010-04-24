@@ -3,9 +3,9 @@ name = Better Formats
 description = Enhances the core input format system by managing input format defaults and settings.
 core = 6.x
 
-; Information added by drupal.org packaging script on 2009-04-14
-version = "6.x-1.0"
+; Information added by drupal.org packaging script on 2010-02-05
+version = "6.x-1.2"
 core = "6.x"
 project = "better_formats"
-datestamp = "1239721808"
+datestamp = "1265402405"
 

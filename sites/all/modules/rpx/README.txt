@@ -1,7 +1,7 @@
 // $Id$
 
 Module: RPX
-Author: Peat Bakke <peat@janrain.com>, Nathan Rambeck <www.rambeck.com>, Rendahl Weishar <ren@janrain.com>
+Author: Peat Bakke <peat@janrain.com>, Nathan Rambeck <http://nathan.rambeck.org>, Rendahl Weishar <ren@janrain.com>
 
 Description
 ===========
@@ -25,7 +25,14 @@ installed for you.
 
 In order to enable Facebook, MySpace, and Windows Live accounts, you must register with the
 respective services.  Links from the control panel are provided, with step-by-step setup 
-instructions. 
+instructions.
+
+Troubleshooting
+===============
+
+Problem: Users get an error during registration that says "The configured token URL has not been whitelisted"
+Solution: Try editing the settings in your RPX account to use a wildcard for subdomains. So your domains would
+  include mysite.com and also *.mysite.com. http://rpxnow.com/account
 
 For detailed technical documention, please visit:
 

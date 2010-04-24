@@ -1,5 +1,5 @@
 <?php
-// $Id: gmap_settings_ui.inc,v 1.12 2009/02/12 23:45:23 bdragon Exp $
+// $Id: gmap_settings_ui.inc,v 1.12.2.3 2010/04/08 13:40:19 rooby Exp $
 
 /**
  * @file
@@ -17,24 +17,25 @@ function gmap_admin_settings(&$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Google Map Initialize'),
   );
-  if (!module_exists('keys_api')) {
+
+  if (!module_exists('keys_api') && !module_exists('keys')) {
     $form['initialization']['googlemap_api_key'] = array(
       '#type' => 'textfield',
-      '#title' => t('Google Maps API Key'),
       '#default_value' => variable_get('googlemap_api_key', ''),
       '#size' => 50,
       '#maxlength' => 255,
-      '#description' => t('Your personal Googlemaps API key.  You must get this for each separate website at <a href="http://www.google.com/apis/maps/">Google Map API website</a>.'),
     );
   }
   else {
     $form['initialization']['googlemap_api_key'] = array(
       '#type' => 'item',
       '#title' => t('Google Maps API Key'),
-      '#description' => t('Your personal Googlemaps API key.  You must get this for each separate website at <a href="http://www.google.com/apis/maps/">Google Map API website</a>.'),
-      '#value' => t("Managed by <a href='@url'>keys api</a>.", array('@url' => url('admin/settings/keys'))),
+      '#value' => t('Managed by <a href="@url">Keys</a>.', array('@url' => url('admin/settings/keys'))),
     );
   }
+
+  $form['initialization']['googlemap_api_key']['#title'] = t('Google Maps API Key');
+  $form['initialization']['googlemap_api_key']['#description'] = t('Your personal Googlemaps API key.  You must get this for each separate website at <a href="http://www.google.com/apis/maps/">Google Map API website</a>.');
 
   if (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) != FILE_DOWNLOADS_PUBLIC) {
     $form['initialization']['gmap_private_markerfile'] = array(
@@ -142,6 +143,15 @@ function gmap_admin_settings(&$form_state) {
     '#title' => t('Polygon default style'),
     '#description' => t('Polygons without a specific style defined will fall back to this style'),
     '#default_value' => $defaults['styles']['poly_default'],
+  );
+  $form['gmap_default']['styles']['highlight_color'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Highlight color'),
+    '#size' => 6,
+    '#maxlength' => 6,
+    '#field_prefix' => '#',
+    '#description' => t('This sets the color of the marker highlight when the "highlight : Highlight marker on rollover" behaviour is enabled. Hex color value. Example: #00AA33'),
+    '#default_value' => $defaults['styles']['highlight_color'],
   );
 
   $form['gmap_default']['controltype'] = array(
@@ -465,7 +475,7 @@ function gmap_admin_settings(&$form_state) {
   $form['gmap_markermanager']['clusterer'] = array(
     '#type' => 'fieldset',
     '#title' => t('Clusterer settings'),
-    '#description' => t("Clusterer is a marker manager written by Jef Poskanzer of acme.com. To use, you must place Clusterer2.js (available ".'<a href="@url">here</a>) into the "thirdparty" folder.', array('@url' => 'http://acme.com/javascript/Clusterer2.js')),
+    '#description' => t('Clusterer is a marker manager written by Jef Poskanzer of acme.com. To use, you must place Clusterer2.js (available <a href="@url">here</a>) into the "thirdparty" folder.', array('@url' => 'http://acme.com/javascript/Clusterer2.js')),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
