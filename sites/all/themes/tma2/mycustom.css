@@ -20,7 +20,16 @@ h2,  a.article_title, .views-field-title a { font-size:1.2em; line-height:1.1em;
  }
 
 td.j div {
-	float:left;
+  float:left;
+}
+td.j font>br {
+display:none;
+}
+
+#content div.views-row {
+  border:1px solid #ccc;
+  padding:4px;
+  margin-top:10px;
 }
 
 div.feeds-container.active-container{
@@ -222,8 +231,6 @@ margin-right:10px;
 padding:4px;
 }
 
-.breadcrumb {float:none;}
-
 #edit-comment { height:8em;}
 
 html,body,div,span,applet,object,iframe, h1,h2,h3,h4,h5,h6,p,blockquote,pre, a,abbr,acronym,address,big,cite,code, del,dfn,em,font,img,ins,kbd,q,s,samp, small,strike,strong,sub,sup,tt,var, dl,dt,dd,ol,ul,li, fieldset,form,label,legend, table,caption,tbody,tfoot,thead,tr,th,td
@@ -237,5 +244,139 @@ padding:2px;
 }
 li.active a.qt_ajax_tab {
 background-color:#cccccc;
+}
 
+
+/* Calendar customization
+ *
+ */
+th.calendar-legend {
+display:none;
+}
+
+table.calendar-legend div.stripe {
+width: 50px;
+}
+
+
+.calendar-calendar td .inner div.calendar div, .calendar-calendar td .inner div.calendar div a {
+background-color:transparent;
+}
+
+.calendar-calendar td span.date-display-single, .calendar-calendar td span.date-display-start, .calendar-calendar td span.date-display-end, .calendar-calendar td span.date-display-separator {
+font-weight:inherit;
+}
+
+.calendar-calendar td.empty {
+background:url("images/blackstripe.png") repeat scroll 0 50% transparent;
+}
+
+.calendar-calendar div.date-nav {
+background-color:black;
+}
+
+.calendar-calendar div.date-nav a, .calendar-calendar div.date-nav h3 {
+color:white;
+}
+
+.calendar-calendar td.today .inner div.day a {
+color:#ffffff;
+}
+.calendar-calendar td.today .inner div.day, .calendar-calendar td.today .inner div.day a {
+background:none repeat scroll 0 0 #000000;
+}
+
+.calendar-calendar tr td.today, .calendar-calendar tr.odd td.today, .calendar-calendar tr.even td.today {
+background-color:transparent;
+}
+td.mini.today, td.mini.today a {
+background-color:#000000;
+color:#ffffff;
+font-weight:bold;
+}
+.front #topbanner, #topbanner {
+background:url("images/greylock-ink960x70.jpg") no-repeat scroll 0 50% transparent;
+}
+#primary {
+height:1.5em;
+padding:0.1em 0;
+}
+
+#navbar {
+margin-bottom:0;
+border-bottom:none;
+}
+
+
+.breadcrumb {
+/* background:url("images/white50.png") repeat scroll 0 0 transparent; */
+margin:0;
+padding: 3px 6px;
+float:none;
+font:inherit;
+font-size:1.0em;
+color: #ffffff;
+background-color:#000000;
+}
+
+.breadcrumb a {
+color:#ffffff;
+text-transform:uppercase;
+padding: 0px 6px;
+letter-spacing: 0;
+}
+
+.gmap-popup {
+width: 300px;
+}
+.block .gmap-popup {
+width: 180px;
+}
+.gmnoprint {
+width: 200px;
+}
+
+div.status {
+background:url("images/status_icons/information_32.png") no-repeat scroll 2px 3px transparent;
+min-height:26px;
+padding-left:36px;
+background-color:#ddffff;
+}
+
+a.published-No {
+color:gray;
+text-decoration: line-through;
+}
+
+/* holiday items on upcoming events calendar */
+.block .item-list ul li a.term-130 {
+  color:#C86771;
+  text-transform: uppercase;
+  font-size: 80%; 
+}
+
+div.mini-day-on a {
+  background-color:#FFFF80;
+  }
+
+ul.menu li a, li.expanded a, li.collapsed a, li.leaf a, .block .item-list ul li a {
+background:url("images/arrow.png") no-repeat scroll right 3px transparent;
+border-bottom:1px solid #DADADA;
+border-left:3px solid #DADADA;
+color:#000000;
+display:block;
+font-size:1em;
+font-weight:normal;
+height:19px;
+margin:0;
+padding:3px 12px 0 7px;
+text-transform:inherit;
+}
+
+div.node div.field-field-image {
+padding:5px;
+margin-right:10px;
+margin-bottom:0;
+border:1px solid #cccccc;
+float:left;
 }

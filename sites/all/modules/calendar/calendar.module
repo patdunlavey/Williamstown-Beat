@@ -344,10 +344,11 @@ function calendar_node_group_term_stripe($view, &$node, $query_name, $delta, $st
   }
   if (count($groups_for_node)){
 // *********  hard code the vocabulary for now...
-    $vid = 1;
+//    $vid = 1;      
     foreach($groups_for_node as $gid => $group_name){
       $group = node_load($gid);
-      $terms_for_group =  taxonomy_node_get_terms_by_vocabulary($group, $vid);
+  $terms_for_group = taxonomy_node_get_terms($group);
+//      $terms_for_group =  taxonomy_node_get_terms_by_vocabulary($group, $vid);
 //dpm($terms_for_group);     
       foreach($terms_for_group as $tid => $group_term){
         if (!array_key_exists($tid, $colors_group_term)) {

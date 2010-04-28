@@ -49,6 +49,7 @@ regions[left]           = left sidebar
 regions[right]          = right sidebar
 regions[sidebar_top] = above sidebar
 regions[navbar]         = navigation bar
+regions[topbanner_image]         = banner image
 regions[content_top]    = content top
 regions[content_bottom] = content bottom
 regions[content_bottom_left] = content bottom left

@@ -1,0 +1,8 @@
+; $Id:$
+name = "Date Fix"
+description = "Fix calendar date browsing: http://drupal.org/node/395936#comment-1896488"
+package = "Custom"
+core = 6.x
+
+version = "6.x-dev"
+core = "6.x"

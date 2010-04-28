@@ -1,0 +1,14 @@
+<?php
+// $Id$
+/**
+ * Implementation of hook_views_pre_view().
+ * in order to fix calendar browsing:
+ * http://drupal.org/node/395936#comment-1896488
+ */
+function date_fix_views_pre_view(&$view, &$display_id, $args) {
+// dsm($view->name);
+// dsm($display_id);
+  if ($view->name == 'og_calendar' && $display_id == 'calendar_1') { 
+    $view->date_info->block_identifier = 'mini';
+  }
+}

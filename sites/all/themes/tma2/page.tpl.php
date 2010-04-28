@@ -93,10 +93,14 @@
       <?php endif; ?>
 
       <div id="topbanner">
-        <?php if ($breadcrumb): ?>
-          <?php print $breadcrumb; ?>
-        <?php endif; ?>      
+        <?php if ($topbanner_image): ?><?php print $topbanner_image; ?><?php endif;?>
+      
       </div> <!-- /#topbanner -->
+        <?php if ($breadcrumb): ?>
+        <div id="breadcrumb">
+          <?php print $breadcrumb; ?>
+          </div>
+        <?php endif; ?>      
 
       <div id="content"><div id="content-inner">
 
